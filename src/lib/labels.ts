@@ -1,12 +1,14 @@
 import type { Confidentiality, Priority, Role, Status } from "./types";
 
+const MANILA = "Asia/Manila";
+
 export const STATUS_LABEL: Record<Status, string> = {
   registered: "Registered",
   forwarded: "Forwarded",
   received: "Received",
-  under_action: "Under action",
+  under_action: "Being worked on",
   completed: "Completed",
-  released: "Released",
+  released: "Sent out",
   archived: "Archived",
 };
 
@@ -43,6 +45,33 @@ export const CONF_LABEL: Record<Confidentiality, string> = {
   confidential: "Confidential",
 };
 
+/** Plain-language meaning of each confidentiality level, for people who don't know the terms. */
+export const CONF_HELP: Record<Confidentiality, string> = {
+  public: "Anyone in the City offices may see it",
+  internal: "City staff involved with it may see it",
+  confidential: "Only the records desk and the offices handling it",
+};
+
+/** Office name for people: "City Engineering Office" rather than the bare code "CEO". */
+export function officeName(o: { code: string; name: string } | null | undefined) {
+  return o ? o.name : "—";
+}
+
+/** Whole days from today (Manila) to a date: negative when the date has passed. */
+export function daysFromToday(date: string, today = new Date()) {
+  const t = new Intl.DateTimeFormat("en-CA", { timeZone: MANILA }).format(today);
+  return Math.round((Date.parse(date) - Date.parse(t)) / 86_400_000);
+}
+
+/** "2 days late", "due today", "due in 3 days". */
+export function dueText(date: string | null | undefined, today = new Date()) {
+  if (!date) return "";
+  const d = daysFromToday(date.slice(0, 10), today);
+  if (d < 0) return `${-d} day${d === -1 ? "" : "s"} late`;
+  if (d === 0) return "due today";
+  return `due in ${d} day${d === 1 ? "" : "s"}`;
+}
+
 export const STATUS_TONE: Record<Status, string> = {
   registered: "bg-slate-100 text-slate-800",
   forwarded: "bg-amber-100 text-amber-900",
@@ -52,8 +81,6 @@ export const STATUS_TONE: Record<Status, string> = {
   released: "bg-teal-100 text-teal-900",
   archived: "bg-zinc-200 text-zinc-700",
 };
-
-const MANILA = "Asia/Manila";
 
 export function fmtDate(value: string | null | undefined) {
   if (!value) return "—";

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 import { registerRecord } from "./actions";
 
@@ -70,7 +71,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     const file = fileRef.current?.files?.[0];
     if (!file) {
       setAiState("error");
-      setAiMsg("Choose a scanned PDF or photo first.");
+      setAiMsg("Choose the scanned file first, using the button above. No scan? Fill in the form by hand.");
       return;
     }
     setAiState("reading");
@@ -106,7 +107,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
       setAiState("done");
       setAiMsg(
         r.demo
-          ? "Demo mode: sample AI output. This demo has no AI key, so the fields come from a prepared sample letter, not your file. Highlighted fields show what the AI fills in; check them before saving."
+          ? "Practice version: the fields below come from a prepared sample letter, not your file. Highlighted fields show what the assistant fills in. Check them before saving."
           : "Fields filled from the document. Highlighted fields came from the assistant; check them before saving.",
       );
     } catch (err) {
@@ -121,15 +122,19 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
   return (
     <form action={action} className="grid gap-4 lg:grid-cols-3">
       <section className="card space-y-3 p-4 lg:col-span-1">
-        <h2 className="font-semibold">1. Scanned document</h2>
-        <input ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="block w-full text-sm" />
-        <p className="text-xs text-slate-500">PDF, PNG, JPG or WEBP, up to 10 MB. The file is stored with the record.</p>
-        <label className="flex items-start gap-2 text-xs text-slate-600">
-          <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="mt-0.5" />
+        <h2 className="font-semibold">1. Scanned copy (optional)</h2>
+        <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-800">
+          <strong>No scan?</strong> That is fine. Just fill in the form and press Save.
+        </p>
+        <label htmlFor="file" className="label">Choose the scanned file</label>
+        <input id="file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" />
+        <p className="text-sm text-slate-600">A PDF or a photo, up to 10 MB. The file is kept with the record.</p>
+        <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700">
+          <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="checkbox mt-0.5" />
           <span>Sensitive document: do not send it to the AI. Fill the form by hand.</span>
         </label>
         <button type="button" onClick={readWithAi} className="btn-secondary w-full" disabled={aiState === "reading" || noAi}>
-          {aiState === "reading" ? "Reading…" : "Fill the form from this document (AI)"}
+          {aiState === "reading" ? "Reading…" : "Fill in the form for me from this file"}
         </button>
         {aiMsg && (
           <p className={`rounded-lg p-2 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{aiMsg}</p>
@@ -145,109 +150,119 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
       </section>
 
       <section className="card grid gap-3 p-4 md:grid-cols-2 lg:col-span-2">
-        <h2 className="font-semibold md:col-span-2">2. Record details</h2>
+        <h2 className="font-semibold md:col-span-2">2. About the document</h2>
+        <p className="text-sm text-slate-600 md:col-span-2">Boxes marked <span className="font-semibold text-red-700">*</span> must be filled in. The rest are optional.</p>
         <div>
-          <label className="label">Direction</label>
-          <select name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => set("direction", e.target.value as Fields["direction"])}>
+          <label className="label" htmlFor="f-direction">Received or sent out?</label>
+          <select id="f-direction" name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => set("direction", e.target.value as Fields["direction"])}>
             {props.canIncoming && <option value="incoming">Incoming (received by the City)</option>}
             <option value="outgoing">Outgoing (sent by the City)</option>
           </select>
         </div>
         <div>
-          <label className="label">Document type</label>
-          <select name="document_type_id" required className={`input ${hl("document_type_id")}`} value={f.document_type_id} onChange={(e) => set("document_type_id", e.target.value)}>
+          <label className="label" htmlFor="f-document_type_id">Kind of document <Req /></label>
+          <select id="f-document_type_id" name="document_type_id" required className={`input ${hl("document_type_id")}`} value={f.document_type_id} onChange={(e) => set("document_type_id", e.target.value)}>
             <option value="">Choose…</option>
             {props.types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
         <div className="md:col-span-2">
-          <label className="label">Subject</label>
-          <input name="subject" required className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />
+          <label className="label" htmlFor="f-subject">Subject (what it is about) <Req /></label>
+          <input id="f-subject" name="subject" required className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />
         </div>
         <div className="md:col-span-2">
-          <label className="label">Description</label>
-          <textarea name="description" rows={2} className={`input ${hl("description")}`} value={f.description} onChange={(e) => set("description", e.target.value)} />
+          <label className="label" htmlFor="f-description">Short description</label>
+          <textarea id="f-description" name="description" rows={2} className={`input ${hl("description")}`} value={f.description} onChange={(e) => set("description", e.target.value)} />
         </div>
         {incoming ? (
           <>
             <div>
-              <label className="label">Sender name</label>
-              <input name="sender_name" className={`input ${hl("sender_name")}`} value={f.sender_name} onChange={(e) => set("sender_name", e.target.value)} />
+              <label className="label" htmlFor="f-sender_name">Name of sender</label>
+              <input id="f-sender_name" name="sender_name" className={`input ${hl("sender_name")}`} value={f.sender_name} onChange={(e) => set("sender_name", e.target.value)} />
             </div>
             <div>
-              <label className="label">Sender organization</label>
-              <input name="sender_org" className={`input ${hl("sender_org")}`} value={f.sender_org} onChange={(e) => set("sender_org", e.target.value)} />
+              <label className="label" htmlFor="f-sender_org">Sender&apos;s office, barangay or company</label>
+              <input id="f-sender_org" name="sender_org" className={`input ${hl("sender_org")}`} value={f.sender_org} onChange={(e) => set("sender_org", e.target.value)} />
             </div>
           </>
         ) : (
           <>
             <div>
-              <label className="label">Recipient name</label>
-              <input name="recipient_name" className={`input ${hl("recipient_name")}`} value={f.recipient_name} onChange={(e) => set("recipient_name", e.target.value)} />
+              <label className="label" htmlFor="f-recipient_name">Name of recipient</label>
+              <input id="f-recipient_name" name="recipient_name" className={`input ${hl("recipient_name")}`} value={f.recipient_name} onChange={(e) => set("recipient_name", e.target.value)} />
             </div>
             <div>
-              <label className="label">Recipient organization</label>
-              <input name="recipient_org" className={`input ${hl("recipient_org")}`} value={f.recipient_org} onChange={(e) => set("recipient_org", e.target.value)} />
+              <label className="label" htmlFor="f-recipient_org">Recipient&apos;s office, barangay or company</label>
+              <input id="f-recipient_org" name="recipient_org" className={`input ${hl("recipient_org")}`} value={f.recipient_org} onChange={(e) => set("recipient_org", e.target.value)} />
             </div>
           </>
         )}
         <div>
-          <label className="label">Date on document</label>
-          <input name="document_date" type="date" className={`input ${hl("document_date")}`} value={f.document_date} onChange={(e) => set("document_date", e.target.value)} />
+          <label className="label" htmlFor="f-document_date">Date written on the document</label>
+          <input id="f-document_date" name="document_date" type="date" className={`input ${hl("document_date")}`} value={f.document_date} onChange={(e) => set("document_date", e.target.value)} />
         </div>
         <div>
-          <label className="label">Mode</label>
-          <select name="mode" className="input" value={f.mode} onChange={(e) => set("mode", e.target.value)}>
-            <option value="walk-in">Walk-in</option>
+          <label className="label" htmlFor="f-mode">How it arrived</label>
+          <select id="f-mode" name="mode" className="input" value={f.mode} onChange={(e) => set("mode", e.target.value)}>
+            <option value="walk-in">Hand-carried (walk-in)</option>
             <option value="courier">Courier</option>
             <option value="mail">Mail</option>
             <option value="email">Email</option>
-            <option value="internal">Internal</option>
+            <option value="internal">From another City office</option>
           </select>
         </div>
 
-        <h2 className="mt-2 font-semibold md:col-span-2">3. Classification and routing</h2>
+        <h2 className="mt-2 font-semibold md:col-span-2">3. Filing and where it goes next</h2>
         <div>
-          <label className="label">Category</label>
-          <input name="category" className={`input ${hl("category")}`} value={f.category} onChange={(e) => set("category", e.target.value)} />
+          <label className="label" htmlFor="f-category">Subject area (optional)</label>
+          <input id="f-category" name="category" className={`input ${hl("category")}`} value={f.category} onChange={(e) => set("category", e.target.value)} />
         </div>
         <div>
-          <label className="label">Keywords (comma separated)</label>
-          <input name="keywords" className={`input ${hl("keywords")}`} value={f.keywords} onChange={(e) => set("keywords", e.target.value)} />
+          <label className="label" htmlFor="f-keywords">Search words (optional)</label>
+          <input id="f-keywords" name="keywords" className={`input ${hl("keywords")}`} value={f.keywords} onChange={(e) => set("keywords", e.target.value)} />
         </div>
         <div>
-          <label className="label">Priority</label>
-          <select name="priority" className={`input ${hl("priority")}`} value={f.priority} onChange={(e) => set("priority", e.target.value as Fields["priority"])}>
+          <label className="label" htmlFor="f-priority">Priority</label>
+          <select id="f-priority" name="priority" className={`input ${hl("priority")}`} value={f.priority} onChange={(e) => set("priority", e.target.value as Fields["priority"])}>
             <option value="low">Low</option>
             <option value="normal">Normal</option>
             <option value="urgent">Urgent</option>
           </select>
         </div>
         <div>
-          <label className="label">Confidentiality</label>
-          <select name="confidentiality" className={`input ${hl("confidentiality")}`} value={f.confidentiality} onChange={(e) => set("confidentiality", e.target.value as Fields["confidentiality"])}>
-            <option value="public">Public</option>
-            <option value="internal">Internal</option>
-            <option value="confidential">Confidential</option>
+          <label className="label" htmlFor="f-confidentiality">Who may see it</label>
+          <select id="f-confidentiality" name="confidentiality" className={`input ${hl("confidentiality")}`} value={f.confidentiality} onChange={(e) => set("confidentiality", e.target.value as Fields["confidentiality"])}>
+            <option value="public">Public: anyone in the City offices</option>
+            <option value="internal">Internal: City staff involved with it</option>
+            <option value="confidential">Confidential: records desk and handling offices only</option>
           </select>
         </div>
         <div>
-          <label className="label">Forward to office (optional)</label>
-          <select name="forward_to" className={`input ${hl("forward_to")}`} value={f.forward_to} onChange={(e) => set("forward_to", e.target.value)}>
+          <label className="label" htmlFor="f-forward_to">Send to office (optional)</label>
+          <select id="f-forward_to" name="forward_to" className={`input ${hl("forward_to")}`} value={f.forward_to} onChange={(e) => set("forward_to", e.target.value)}>
             <option value="">Keep in my office</option>
-            {props.offices.filter((o) => o.id !== props.myOfficeId).map((o) => <option key={o.id} value={o.id}>{o.code} · {o.name}</option>)}
+            {props.offices.filter((o) => o.id !== props.myOfficeId).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="label">Action due date (optional)</label>
-          <input name="due_date" type="date" className="input" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} />
+          <label className="label" htmlFor="f-due_date">Must be acted on by (optional)</label>
+          <input id="f-due_date" name="due_date" type="date" className="input" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} />
         </div>
 
-        <div className="flex items-center justify-end gap-3 md:col-span-2">
-          {state?.error && <p className="text-sm text-red-700">{state.error}</p>}
-          <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : "Save and issue tracking number"}</button>
+        <div className="sticky bottom-0 -mx-4 -mb-4 flex flex-wrap items-center justify-end gap-3 rounded-b-xl border-t border-slate-200 bg-white/95 px-4 py-3 md:col-span-2">
+          {state?.error && <p className="mr-auto text-sm text-red-700" role="alert">{state.error}</p>}
+          <Link href="/records" className="btn-secondary">Cancel (nothing is saved)</Link>
+          <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : "Save and get tracking number"}</button>
         </div>
       </section>
     </form>
+  );
+}
+
+function Req() {
+  return (
+    <span className="font-semibold text-red-700" aria-label="required">
+      *
+    </span>
   );
 }

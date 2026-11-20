@@ -45,3 +45,13 @@ body {
     background: white;
   }
 }
+
+/* File picker that looks like a button, so it is clear it can be clicked. */
+@utility file-input {
+  @apply block w-full text-sm text-slate-800 file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-slate-300 file:bg-white file:px-3.5 file:py-2 file:font-medium file:text-slate-800 hover:file:bg-slate-50;
+}
+
+/* Larger tick boxes that are easy to see and click. */
+@utility checkbox {
+  @apply h-6 w-6 shrink-0 cursor-pointer accent-brand-700;
+}

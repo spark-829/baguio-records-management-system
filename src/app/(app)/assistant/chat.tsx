@@ -10,6 +10,8 @@ const EXAMPLES = [
   "Which records are overdue?",
   "Where is the drainage voucher now and what is missing?",
   "What did Engineering do about the Session Road request?",
+  "Nasaan na po yung voucher para sa drainage?",
+  "What is waiting in my office?",
 ];
 
 /** Renders the assistant's text with [label](/records/...) links made clickable. Other markdown stays plain. */
@@ -80,7 +82,7 @@ export function Chat() {
           <div key={i} className={`flex ${t.role === "user" ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${t.role === "user" ? "bg-brand-700 text-white" : "bg-slate-100"}`}>
               {t.role === "assistant" && t.demo && (
-                <span className="badge mb-1 bg-amber-100 text-amber-900">Demo mode: sample AI output</span>
+                <span className="badge mb-1 bg-amber-100 text-amber-900">Practice answer</span>
               )}
               {t.role === "assistant" ? <Rich text={t.content} /> : t.content}
             </div>
@@ -97,7 +99,8 @@ export function Chat() {
         }}
         className="flex gap-2 border-t border-slate-200 p-3"
       >
-        <input className="input flex-1" value={text} onChange={(e) => setText(e.target.value)} placeholder="Ask about any record, person or office…" />
+        <label htmlFor="ask" className="sr-only">Your question</label>
+        <input id="ask" className="input flex-1" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your question, e.g. Where is the drainage voucher?" />
         <button className="btn-primary" disabled={busy}>Send</button>
       </form>
     </div>

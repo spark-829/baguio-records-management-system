@@ -19,8 +19,8 @@ export async function POST(req: Request) {
     const demo = isAiDemo();
     const f = demo
       ? (() => {
-          const d = demoFilters(query, offices ?? [], (types ?? []).map((t) => t.name));
-          return { ...d, explanation: `${DEMO_LABEL}. Filters: ${d.explanation}` };
+          const d = demoFilters(query, offices ?? [], (types ?? []).map((t) => t.name), ctx.me.office?.code);
+          return { ...d, explanation: `${DEMO_LABEL}. Looking for: ${d.explanation}` };
         })()
       : await toFilters(query, offices ?? [], (types ?? []).map((t) => t.name));
     const params = filtersToParams({

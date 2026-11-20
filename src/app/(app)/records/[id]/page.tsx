@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProfile, getSettings, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { CONF_LABEL, PRIORITY_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
+import { CONF_HELP, CONF_LABEL, PRIORITY_LABEL, dueText, fmtDate, fmtDateTime, officeName } from "@/lib/labels";
 import { allowedActions, isOverdue } from "@/lib/workflow";
 import type { Direction, Status, Priority, Confidentiality } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -47,8 +47,8 @@ type Route = {
   action_taken: string | null;
   remarks: string | null;
   created_at: string;
-  from_office: { code: string } | null;
-  to_office: { code: string } | null;
+  from_office: { id: string; code: string; name: string } | null;
+  to_office: { id: string; code: string; name: string } | null;
   actor: { full_name: string } | null;
 };
 
@@ -73,7 +73,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const [{ data: routes }, { data: files }, { data: offices }] = await Promise.all([
     supabase
       .from("rms_routes")
-      .select("id, status, action_taken, remarks, created_at, from_office:rms_offices!rms_routes_from_office_id_fkey(code), to_office:rms_offices!rms_routes_to_office_id_fkey(code), actor:rms_profiles(full_name)")
+      .select("id, status, action_taken, remarks, created_at, from_office:rms_offices!rms_routes_from_office_id_fkey(id, code, name), to_office:rms_offices!rms_routes_to_office_id_fkey(id, code, name), actor:rms_profiles(full_name)")
       .eq("record_id", id)
       .order("created_at", { ascending: false }),
     supabase.from("rms_attachments").select("id, file_name, mime_type, size_bytes, version, uploaded_at").eq("record_id", id).order("uploaded_at"),
@@ -88,20 +88,27 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     currentOfficeId: rec.current_office_id,
   });
   const incoming = rec.direction === "incoming";
+  const history = (routes ?? []) as unknown as Route[];
+  const latest = history[0];
+  // The step that brought the record to the office holding it now: who sent it, and any instruction they left.
+  const arrival = history.find((r) => r.status === "forwarded" && r.to_office?.id === rec.current_office_id && r.from_office?.id !== rec.current_office_id);
+  const instruction = arrival?.remarks;
+  const open = !["completed", "released", "archived"].includes(rec.status);
+  const due = open ? dueText(rec.due_date) : "";
 
   const facts: [string, React.ReactNode][] = [
-    ["Direction", incoming ? "Incoming" : "Outgoing"],
+    ["Received or sent out", incoming ? "Received by the City" : "Sent out by the City"],
     ["Document type", rec.doc_type?.name],
     [incoming ? "From" : "To", [incoming ? rec.sender_name : rec.recipient_name, incoming ? rec.sender_org : rec.recipient_org].filter(Boolean).join(", ") || "—"],
     ["Date on document", fmtDate(rec.document_date)],
-    ["Mode", rec.mode ? rec.mode[0].toUpperCase() + rec.mode.slice(1) : "—"],
-    ["Category", rec.category ?? "—"],
-    ["Keywords", rec.keywords.length ? rec.keywords.join(", ") : "—"],
+    ["How it arrived", rec.mode ? rec.mode[0].toUpperCase() + rec.mode.slice(1) : "—"],
+    ["Subject area", rec.category ?? "—"],
+    ["Search words", rec.keywords.length ? rec.keywords.join(", ") : "—"],
     ["Priority", PRIORITY_LABEL[rec.priority]],
-    ["Confidentiality", CONF_LABEL[rec.confidentiality]],
-    ["Originating office", rec.origin_office ? `${rec.origin_office.code} · ${rec.origin_office.name}` : "—"],
-    ["Registered", `${fmtDateTime(rec.created_at)} by ${rec.creator?.full_name ?? "—"}`],
-    ["Due date", fmtDate(rec.due_date)],
+    ["Who may see it", `${CONF_LABEL[rec.confidentiality]}: ${CONF_HELP[rec.confidentiality].toLowerCase()}`],
+    ["Started by office", officeName(rec.origin_office)],
+    ["Logged in", `${fmtDateTime(rec.created_at)} by ${rec.creator?.full_name ?? "—"}`],
+    ["Due date", rec.due_date ? `${fmtDate(rec.due_date)}${due ? ` (${due})` : ""}` : "—"],
   ];
 
   return (
@@ -137,10 +144,46 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           </div>
         </div>
         <div className="flex gap-2">
-          <Link href={`/records/${rec.id}/slip`} className="btn-secondary">Routing slip (QR)</Link>
+          <Link href={`/records/${rec.id}/slip`} className="btn-secondary">Print routing slip</Link>
           <Link href="/records" className="btn-secondary">Back to records</Link>
         </div>
       </div>
+
+      {!deleted && (
+        <section className="card border-l-4 border-l-brand-700 p-4" aria-label="Where this record is now">
+          <dl className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <dt className="text-sm text-slate-600">Now with</dt>
+              <dd className="text-lg font-semibold">{officeName(rec.current_office)}</dd>
+              {latest && (
+                <dd className="text-sm text-slate-700">
+                  Last handled by {latest.actor?.full_name ?? "—"} on {fmtDate(latest.created_at)}
+                </dd>
+              )}
+            </div>
+            <div>
+              <dt className="text-sm text-slate-600">What needs to be done</dt>
+              <dd className="font-medium">
+                {!open
+                  ? "Nothing. This record is finished."
+                  : instruction
+                    ? `“${instruction}”`
+                    : rec.status === "forwarded"
+                      ? `${officeName(rec.current_office)} should mark it as received when the paper arrives.`
+                      : "Act on the request, then add a note or send it on."}
+              </dd>
+              {arrival && open && <dd className="text-sm text-slate-700">Sent by {officeName(arrival.from_office)}</dd>}
+            </div>
+            <div>
+              <dt className="text-sm text-slate-600">Due</dt>
+              <dd className={`text-lg font-semibold ${due.endsWith("late") ? "text-red-700" : ""}`}>
+                {rec.due_date ? fmtDate(rec.due_date) : "No due date"}
+              </dd>
+              {due && <dd className={`text-sm font-medium ${due.endsWith("late") ? "text-red-700" : "text-slate-700"}`}>{due[0].toUpperCase() + due.slice(1)}</dd>}
+            </div>
+          </dl>
+        </section>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
@@ -168,7 +211,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           <section className="card p-4">
             <h2 className="mb-3 font-semibold">History, actions and remarks</h2>
             <ol className="relative ml-2 border-l-2 border-slate-200">
-              {((routes ?? []) as unknown as Route[]).map((r, i, all) => (
+              {history.map((r, i, all) => (
                 <li key={r.id} className="mb-4 ml-4">
                   <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-brand-600" />
                   <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -179,11 +222,11 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                     )}
                     <span className="font-medium">{r.action_taken}</span>
                     {r.status === "forwarded" && r.from_office && r.to_office && r.from_office.code !== r.to_office.code && (
-                      <span className="text-slate-500">{r.from_office.code} → {r.to_office.code}</span>
+                      <span className="text-slate-700">from {r.from_office.name} to {r.to_office.name}</span>
                     )}
                   </div>
                   {r.remarks && <p className="mt-1 text-sm text-slate-700">“{r.remarks}”</p>}
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-sm text-slate-600">
                     {fmtDateTime(r.created_at)} · {r.actor?.full_name ?? "—"}
                   </p>
                 </li>
@@ -195,8 +238,15 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         <div className="space-y-4">
           <section className="card p-4">
             <h2 className="mb-2 font-semibold">Take action</h2>
+            {actions.length > 0 && <p className="mb-2 text-sm text-slate-600">Nothing is saved until you press Save and then confirm.</p>}
             {actions.length ? (
-              <ActionForm recordId={rec.id} actions={actions} offices={(offices ?? []).filter((o) => o.id !== rec.current_office_id)} />
+              <ActionForm
+                recordId={rec.id}
+                trackingNo={rec.tracking_no}
+                actions={actions}
+                offices={(offices ?? []).filter((o) => o.id !== rec.current_office_id)}
+                returnTo={arrival?.from_office ?? null}
+              />
             ) : (
               <p className="text-sm text-slate-500">
                 {deleted

@@ -9,7 +9,7 @@ import type { SearchFilters } from "./types";
  * and still runs through the signed-in user's session, so access rules and audit logging are unchanged.
  * Adding the key switches to real Claude Haiku with no code changes.
  */
-export const DEMO_LABEL = "Demo mode: sample AI output";
+export const DEMO_LABEL = "Practice version";
 
 export function isAiDemo() {
   return process.env.AI_DEMO_MODE === "1" || !process.env.ANTHROPIC_API_KEY;
@@ -116,14 +116,17 @@ export function demoIntake(fileName: string, docTypes: string[], offices: { code
 const STOP = new Set(
   ("a an and any are about all also at be by can could did do does document documents file files find for from give have how i in is it " +
     "its me my now of on or record records show tell that the their them there these this to was we were what when where which who whom why " +
-    "with you your please list made sent missing still need needs status today week month last days day ago this past since kailan saan sino ano mga ng sa").split(" "),
+    "with you your please list made sent missing still need needs status today week month last days day ago this past since " +
+    // Filipino / Taglish filler words, and words that mean "a document" without naming a type
+    "kailan saan sino ano mga ng sa nasaan nasan na po yung iyong ang ba ko dito para may hawak sulat tungkol dokumento papeles " +
+    "letter letters paper papers waiting pending desk sign signature").split(" "),
 );
 
 const STATUS_WORDS: [RegExp, SearchFilters["status"]][] = [
   [/\barchived\b/, "archived"],
   [/\bcompleted?\b|\bdone\b|\bfinished\b/, "completed"],
-  [/\breleased\b/, "released"],
-  [/\bunder action\b|\bbeing acted\b/, "under_action"],
+  [/\breleased\b|\bsent out\b/, "released"],
+  [/\bunder action\b|\bbeing acted\b|\bbeing worked on\b/, "under_action"],
   [/\bforwarded\b/, "forwarded"],
 ];
 
@@ -131,7 +134,7 @@ export interface DemoFilters extends SearchFilters {
   explanation: string;
 }
 
-export function demoFilters(query: string, offices: { code: string; name: string }[], docTypes: string[]): DemoFilters {
+export function demoFilters(query: string, offices: { code: string; name: string }[], docTypes: string[], myOfficeCode?: string | null): DemoFilters {
   const lower = query.toLowerCase();
   const f: DemoFilters = { explanation: "" };
   const used = new Set<string>();
@@ -167,8 +170,16 @@ export function demoFilters(query: string, offices: { code: string; name: string
     }
   }
 
+  // "my office", "on my desk", "opisina ko": the signed-in person's own office
+  const mine = /\b(?:my office|my desk|on my desk|for me|opisina ko|sa amin)\b/.test(lower) && myOfficeCode;
+  if (mine) {
+    f.office = myOfficeCode;
+    notes.push("your office");
+    ["office", "opisina", "amin"].forEach((w) => used.add(w));
+  }
+
   // Office by code (CEO) or by a distinctive word of its name (engineering, treasury...)
-  for (const o of offices) {
+  for (const o of mine ? [] : offices) {
     const words = o.name.toLowerCase().replace(/'s\b/g, "").split(/\W+/).filter((w) => w.length > 4 && !["office", "management"].includes(w));
     const alias = o.code === "CTO" ? ["treasury"] : o.code === "CMO" ? ["mayor"] : [];
     const hit = new RegExp(`\\b${o.code}\\b`).test(query) ? o.code.toLowerCase() : [...words, ...alias].find((w) => new RegExp(`\\b${w}`).test(lower));
@@ -185,7 +196,6 @@ export function demoFilters(query: string, offices: { code: string; name: string
   const TYPE_WORDS: [RegExp, string][] = [
     [/\bvouchers?\b/, "voucher"],
     [/\bmemos?\b|\bmemorand/, "memorandum"],
-    [/\bletters?\b/, "letter"],
     [/\bordinances?\b/, "ordinance"],
     [/\bresolutions?\b/, "resolution"],
     [/\bendorsements?\b/, "endorsement"],
@@ -221,9 +231,13 @@ export function demoFilters(query: string, offices: { code: string; name: string
   } else if (/\btoday\b/.test(lower)) {
     f.from = iso(today);
     notes.push("today");
-  } else if (/\b(this|past|last) week\b/.test(lower)) {
+  } else if (/\b(this|past) week\b/.test(lower)) {
     f.from = iso(new Date(today.getTime() - 7 * 864e5));
     notes.push("last 7 days");
+  } else if (/\blast week\b|\bnoong isang linggo\b/.test(lower)) {
+    // People say "last week" loosely, so look back two weeks rather than miss the record.
+    f.from = iso(new Date(today.getTime() - 14 * 864e5));
+    notes.push("last 2 weeks");
   } else if (/\bthis month\b/.test(lower)) {
     f.from = iso(today).slice(0, 8) + "01";
     notes.push("this month");
@@ -246,13 +260,18 @@ export function demoFilters(query: string, offices: { code: string; name: string
 
 /* --------------------------------- summaries --------------------------------- */
 
+/** "2026-11-24" -> "Nov 24, 2026", the same date style as the rest of the app. */
+function niceDate(iso: string) {
+  return new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeZone: "Asia/Manila" }).format(new Date(`${iso.slice(0, 10)}T12:00:00+08:00`));
+}
+
 const STATUS_TEXT: Record<string, string> = {
   registered: "registered and waiting to be routed",
   forwarded: "forwarded and waiting to be received",
   received: "received",
-  under_action: "being acted on",
-  completed: "completed",
-  released: "released",
+  under_action: "being worked on",
+  completed: "done",
+  released: "sent out",
   archived: "archived",
 };
 
@@ -278,7 +297,7 @@ export function demoSummary(
   const last = [...routes].reverse().find((r) => r.action_taken || r.remarks);
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date());
   const open = !["completed", "released", "archived"].includes(rec.status);
-  const due = rec.due_date && open ? (rec.due_date < today ? ` It is overdue since ${rec.due_date}.` : ` It is due on ${rec.due_date}.`) : "";
+  const due = rec.due_date && open ? (rec.due_date < today ? ` It is overdue since ${niceDate(rec.due_date)}.` : ` It is due on ${niceDate(rec.due_date)}.`) : "";
   return (
     `${rec.direction === "incoming" ? "Incoming" : "Outgoing"} ${party ? `${rec.direction === "incoming" ? "from" : "to"} ${party} ` : ""}about ${rec.subject.charAt(0).toLowerCase()}${rec.subject.slice(1)}. ` +
     `It is ${STATUS_TEXT[rec.status] ?? rec.status}${office ? ` at the ${office}` : ""}.${due}` +
@@ -293,12 +312,14 @@ export async function demoChat(
   supabase: SupabaseClient,
   question: string,
   excludeConfidential: boolean,
+  myOfficeCode?: string | null,
 ): Promise<{ answer: string; records: { id: string; tracking_no: string }[] }> {
   const [{ data: offices }, { data: types }] = await Promise.all([
     supabase.from("rms_offices").select("code, name").eq("is_active", true),
     supabase.from("rms_document_types").select("name").eq("is_active", true),
   ]);
-  const f = demoFilters(question, offices ?? [], (types ?? []).map((t) => t.name));
+  const f = demoFilters(question, offices ?? [], (types ?? []).map((t) => t.name), myOfficeCode);
+  const officeName = new Map((offices ?? []).map((o) => [o.code, o.name]));
   const { explanation, ...filters } = f;
   let rows = await searchRecords(supabase, filters, 10, excludeConfidential);
   let relaxed = false;
@@ -310,14 +331,14 @@ export async function demoChat(
   const head = `I searched the records you are allowed to see (${explanation}${relaxed ? `, ignoring the topic words` : ""}).`;
   if (rows.length === 0) {
     return {
-      answer: `${head} Nothing matched. Try a person's name, an office or a tracking number.${excludeConfidential ? " Confidential records are kept out of the assistant." : ""}`,
+      answer: `${head} Nothing matched. Try a person's name, an office, a topic like "drainage", or a tracking number like IN-2026-0001.${excludeConfidential ? " Confidential records are kept out of the assistant." : ""}`,
       records,
     };
   }
   const line = (r: (typeof rows)[number]) =>
-    `- [${r.tracking_no}](/records/${r.id}) ${r.subject}: ${STATUS_TEXT[r.status] ?? r.status} at ${r.current_office}` +
+    `- [${r.tracking_no}](/records/${r.id}) ${r.subject}: ${STATUS_TEXT[r.status] ?? r.status} at the ${officeName.get(r.current_office) ?? r.current_office}` +
     (r.direction === "incoming" && r.sender ? `, from ${r.sender}` : r.recipient ? `, to ${r.recipient}` : "") +
-    (r.created_by_name ? `, registered by ${r.created_by_name.split(" (")[0]}` : "");
+    (r.created_by_name ? `, logged by ${r.created_by_name.split(" (")[0]}` : "");
 
   if (rows.length === 1) {
     const r = rows[0];
@@ -331,7 +352,7 @@ export async function demoChat(
       answer:
         `${head} I found one record:\n${line(r)}` +
         (last ? `\nLatest step: ${last.action_taken ?? last.status}${last.remarks ? ` (“${last.remarks}”)` : ""}.` : "") +
-        (r.due_date ? `\nDue date: ${r.due_date}.` : ""),
+        (r.due_date ? `\nDue date: ${niceDate(r.due_date)}.` : ""),
       records,
     };
   }
