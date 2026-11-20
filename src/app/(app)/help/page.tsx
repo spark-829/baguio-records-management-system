@@ -65,6 +65,7 @@ export default async function HelpPage() {
       <Topic id="late" title="See what is late">
         <li>Click <Btn>Dashboard</Btn>.</li>
         <li>Click the red <em>Overdue</em> box. It lists every late document you are allowed to see.</li>
+        <li>Further down, <em>Due in the next 7 days</em> lists what will be late soon, the nearest date first.</li>
       </Topic>
 
       <Topic id="ask" title="Ask the assistant">
