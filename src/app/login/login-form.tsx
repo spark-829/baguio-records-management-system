@@ -9,7 +9,7 @@ export function LoginForm() {
     <form action={action} className="mt-4 space-y-4">
       <div>
         <label className="label" htmlFor="email">Email</label>
-        <input className="input" id="email" name="email" type="email" autoComplete="username" defaultValue="records@rms-demo.test" required />
+        <input key={state?.email ?? "default"} className="input" id="email" name="email" type="email" autoComplete="username" defaultValue={state?.email ?? "records@rms-demo.test"} required />
       </div>
       <div>
         <label className="label" htmlFor="password">Password</label>
@@ -30,7 +30,7 @@ export function LoginForm() {
         </div>
       </details>
       <label className="flex items-start gap-2 text-sm">
-        <input type="checkbox" name="privacy" className="mt-0.5" required />
+        <input key={state?.email ?? "default"} type="checkbox" name="privacy" className="mt-0.5" defaultChecked={Boolean(state?.email)} required />
         <span>I have read the privacy notice and will use records for official work only.</span>
       </label>
       {state?.error && <p className="text-sm text-red-700" role="alert">{state.error}</p>}

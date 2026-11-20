@@ -21,9 +21,10 @@ export async function watermark(bytes: Uint8Array, mimeType: string, text: strin
   const font = await pdf.embedFont(StandardFonts.HelveticaBold);
   for (const page of pdf.getPages()) {
     const { width, height } = page.getSize();
-    const size = Math.max(10, Math.min(width, height) / 28);
+    // Diagonal stamp sized to fit inside the page (rotated 30 degrees)
+    const size = Math.max(8, Math.min(Math.min(width, height) / 28, (0.85 * width) / (font.widthOfTextAtSize(text, 1) * Math.cos(Math.PI / 6))));
     // Footer line, always readable
-    page.drawText(text, { x: 24, y: 14, size: Math.max(8, size * 0.6), font, color: rgb(0.6, 0.1, 0.1), opacity: 0.85 });
+    page.drawText(text, { x: 24, y: 14, size: Math.min(9, Math.max(6, size * 0.6)), font, color: rgb(0.6, 0.1, 0.1), opacity: 0.85 });
     // Large diagonal stamp across the page
     const w = font.widthOfTextAtSize(text, size);
     page.drawText(text, {
