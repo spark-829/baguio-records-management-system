@@ -16,14 +16,14 @@ export default async function HelpPage() {
 
       <nav aria-label="Help topics" className="card p-4">
         <ul className="grid gap-2 sm:grid-cols-2">
-          {central && <li><a className="text-brand-700 underline" href="#log">Log a letter that just arrived</a></li>}
-          <li><a className="text-brand-700 underline" href="#find">Find a document</a></li>
-          <li><a className="text-brand-700 underline" href="#where">See where a document is now</a></li>
-          {me.role !== "viewer" && <li><a className="text-brand-700 underline" href="#act">Add a note or send it to another office</a></li>}
-          <li><a className="text-brand-700 underline" href="#late">See what is late</a></li>
-          <li><a className="text-brand-700 underline" href="#ask">Ask the assistant</a></li>
-          <li><a className="text-brand-700 underline" href="#bigger">Make the words bigger</a></li>
-          <li><a className="text-brand-700 underline" href="#safe">Signing out and keeping records safe</a></li>
+          {central && <li><a className="inline-block py-2 text-brand-700 underline" href="#log">Log a letter that just arrived</a></li>}
+          <li><a className="inline-block py-2 text-brand-700 underline" href="#find">Find a document</a></li>
+          <li><a className="inline-block py-2 text-brand-700 underline" href="#where">See where a document is now</a></li>
+          {me.role !== "viewer" && <li><a className="inline-block py-2 text-brand-700 underline" href="#act">Add a note or send it to another office</a></li>}
+          <li><a className="inline-block py-2 text-brand-700 underline" href="#late">See what is late</a></li>
+          <li><a className="inline-block py-2 text-brand-700 underline" href="#ask">Ask the assistant</a></li>
+          <li><a className="inline-block py-2 text-brand-700 underline" href="#bigger">Make the words bigger</a></li>
+          <li><a className="inline-block py-2 text-brand-700 underline" href="#safe">Signing out and keeping records safe</a></li>
         </ul>
       </nav>
 
@@ -109,5 +109,5 @@ function Topic({ id, title, children }: { id: string; title: string; children: R
 }
 
 function Btn({ children }: { children: React.ReactNode }) {
-  return <strong className="whitespace-nowrap rounded border border-slate-300 bg-white px-1.5 py-0.5 font-semibold">{children}</strong>;
+  return <strong className="rounded border border-slate-300 bg-white px-1.5 py-0.5 font-semibold">{children}</strong>;
 }

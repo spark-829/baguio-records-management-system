@@ -25,7 +25,7 @@ function Bars({ title, data }: { title: string; data: { label: string; n: number
       <h2 className="mb-3 font-semibold">{title}</h2>
       <ul className="space-y-2">
         {data.map((d) => (
-          <li key={d.label} className="grid grid-cols-[9rem_1fr_2.5rem] items-center gap-2 text-sm">
+          <li key={d.label} className="grid grid-cols-[minmax(7rem,14rem)_1fr_2.5rem] items-center gap-2 text-sm">
             <span className="truncate text-slate-600">{d.label}</span>
             <span className="h-3 rounded bg-slate-100">
               <span className="block h-3 rounded bg-brand-600" style={{ width: `${(d.n / max) * 100}%` }} />
@@ -60,7 +60,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const { data } = await query.limit(5000);
   const rows = (data ?? []) as unknown as Row[];
 
-  const months = tally(rows, (r) => r.created_at.slice(0, 7)).sort((a, b) => a.label.localeCompare(b.label));
+  const months = tally(rows, (r) => r.created_at.slice(0, 7))
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .map((m) => ({ ...m, label: new Intl.DateTimeFormat("en-PH", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${m.label}-15T00:00:00Z`)) }));
   const overdue = rows.filter((r) => isOverdue(r.due_date, r.status));
 
   return (
@@ -73,8 +75,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           </p>
         </div>
         <form className="no-print flex flex-wrap items-end gap-2" method="get">
-          <div><label className="label">From</label><input type="date" name="from" defaultValue={from} className="input" /></div>
-          <div><label className="label">To</label><input type="date" name="to" defaultValue={to} className="input" /></div>
+          <div><label className="label" htmlFor="rep-from">From</label><input id="rep-from" type="date" name="from" defaultValue={from} className="input" /></div>
+          <div><label className="label" htmlFor="rep-to">To</label><input id="rep-to" type="date" name="to" defaultValue={to} className="input" /></div>
           <button className="btn-secondary">Apply</button>
           <a className="btn-secondary" href={`/api/reports/csv?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`}>Download list (Excel)</a>
           <PrintButton label="Print report" />
@@ -101,7 +103,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
       <div className="grid gap-4 md:grid-cols-2">
         <Bars title="By status" data={tally(rows, (r) => STATUS_LABEL[r.status])} />
-        <Bars title="By current office" data={tally(rows, (r) => r.current_office?.code ?? "—")} />
+        <Bars title="By current office" data={tally(rows, (r) => r.current_office?.name ?? "—")} />
         <Bars title="By document type" data={tally(rows, (r) => r.doc_type?.name ?? "—")} />
         <Bars title="Registered per month" data={months} />
       </div>
@@ -114,7 +116,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           </thead>
           <tbody className="divide-y divide-slate-100">
             {overdue.map((r) => (
-              <tr key={r.tracking_no}><td className="py-1 font-mono text-xs">{r.tracking_no}</td><td>{r.subject}</td><td>{r.current_office?.code}</td><td>{fmtDate(r.due_date)}</td></tr>
+              <tr key={r.tracking_no}><td className="py-1 font-mono text-xs">{r.tracking_no}</td><td>{r.subject}</td><td>{r.current_office?.name}</td><td>{fmtDate(r.due_date)}</td></tr>
             ))}
             {overdue.length === 0 && <tr><td colSpan={4} className="py-2 text-slate-500">None.</td></tr>}
           </tbody>

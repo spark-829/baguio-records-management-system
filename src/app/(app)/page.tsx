@@ -35,18 +35,18 @@ export default async function Dashboard() {
   const inbox = rows.filter(
     (r) => r.current_office_id === me.office_id && ["registered", "forwarded", "received", "under_action"].includes(r.status),
   );
-  const monthStart = new Date();
-  monthStart.setDate(1);
+  // First day of this month in Manila time, whatever the server's clock zone is
+  const monthFrom = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date()).slice(0, 8) + "01";
+  const monthStart = new Date(`${monthFrom}T00:00:00+08:00`);
   const thisMonth = rows.filter((r) => new Date(r.created_at) >= monthStart);
 
   const counts = (Object.keys(STATUS_LABEL) as Status[]).map((s) => ({ s, n: rows.filter((r) => r.status === s).length }));
 
-  const monthFrom = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(monthStart);
   const stats = [
-    { label: "Open records", value: open.length, href: "/records", hint: "See all records" },
-    { label: "Overdue", value: overdue.length, alert: overdue.length > 0, href: "/records?overdue=1", hint: "See the late ones" },
+    { label: "Open records", value: open.length, href: "/records?open=1", hint: "See the open ones" },
+    { label: isCentral(me) ? "Overdue" : "Overdue (all you can see)", value: overdue.length, alert: overdue.length > 0, href: "/records?overdue=1", hint: "See the late ones" },
     ...(me.office
-      ? [{ label: "In my office", value: inbox.length, href: `/records?office=${encodeURIComponent(me.office.code)}`, hint: "See my office's records" }]
+      ? [{ label: "In my office", value: inbox.length, href: `/records?office=${encodeURIComponent(me.office.code)}&open=1`, hint: "See my office's open records" }]
       : []),
     { label: "Logged this month", value: thisMonth.length, href: `/records?from=${monthFrom}`, hint: "See this month's records" },
   ];
@@ -130,7 +130,7 @@ function RecordList({ rows, empty, showDue = false }: { rows: Row[]; empty: stri
               <span className={`text-sm font-medium ${isOverdue(r.due_date, r.status) ? "text-red-700" : "text-slate-700"}`}>{dueText(r.due_date)}</span>
             )}
             {!showDue && <span className="text-sm text-slate-600">{r.current_office?.name}</span>}
-            <span className="text-sm text-slate-600">{fmtDate(r.created_at)}</span>
+            <span className="text-sm text-slate-600">Logged {fmtDate(r.created_at)}</span>
           </Link>
         </li>
       ))}

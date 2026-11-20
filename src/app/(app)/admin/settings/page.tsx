@@ -15,9 +15,9 @@ export default async function SettingsPage() {
       <form action={saveSettings} className="card space-y-5 p-4">
         <fieldset className="grid gap-3 sm:grid-cols-3">
           <legend className="mb-2 font-semibold">Sign-in</legend>
-          <div><label className="label">Lock after failed tries</label><input type="number" name="lockout_threshold" min={3} max={10} defaultValue={s.lockoutThreshold} className="input" /></div>
-          <div><label className="label">Lock for (minutes)</label><input type="number" name="lockout_minutes" min={5} max={1440} defaultValue={s.lockoutMinutes} className="input" /></div>
-          <div><label className="label">Sign out when idle (minutes)</label><input type="number" name="idle_timeout_minutes" min={5} max={240} defaultValue={s.idleTimeoutMinutes} className="input" /></div>
+          <div><label className="label" htmlFor="set-lockout_threshold">Lock after failed tries</label><input id="set-lockout_threshold" type="number" name="lockout_threshold" min={3} max={10} defaultValue={s.lockoutThreshold} className="input" /></div>
+          <div><label className="label" htmlFor="set-lockout_minutes">Lock for (minutes)</label><input id="set-lockout_minutes" type="number" name="lockout_minutes" min={5} max={1440} defaultValue={s.lockoutMinutes} className="input" /></div>
+          <div><label className="label" htmlFor="set-idle_timeout_minutes">Sign out when idle (minutes)</label><input id="set-idle_timeout_minutes" type="number" name="idle_timeout_minutes" min={5} max={240} defaultValue={s.idleTimeoutMinutes} className="input" /></div>
         </fieldset>
         <fieldset className="space-y-3">
           <legend className="mb-2 font-semibold">Files and AI</legend>

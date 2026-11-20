@@ -1,7 +1,11 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { fmtDateTime } from "@/lib/labels";
+import { ROLE_LABEL, STATUS_LABEL, fmtDateTime } from "@/lib/labels";
+import type { Role, Status } from "@/lib/types";
+
+const st = (s: unknown) => STATUS_LABEL[s as Status] ?? String(s ?? "");
 
 const TABLE_LABEL: Record<string, string> = {
   rms_records: "Record",
@@ -10,10 +14,10 @@ const TABLE_LABEL: Record<string, string> = {
   rms_profiles: "User",
   rms_offices: "Office",
   rms_document_types: "Document type",
-  ai_intake: "AI intake suggestion",
+  ai_intake: "Form filled from a scan",
   ai_chat: "AI assistant question",
   ai_summary: "AI summary",
-  export_csv: "CSV export",
+  export_csv: "List downloaded (Excel)",
   download: "File download",
   rms_settings: "Security setting",
 };
@@ -25,14 +29,14 @@ function describe(table: string, action: string, data: Record<string, unknown> |
       if (action === "UPDATE" && old && data && !old.deleted_at && data.deleted_at) return `${d.tracking_no}: moved to bin (“${data.delete_reason}”)`;
       if (action === "UPDATE" && old && data && old.deleted_at && !data.deleted_at) return `${d.tracking_no}: restored from bin`;
       return action === "UPDATE" && old && data && old.status !== data.status
-        ? `${d.tracking_no}: status ${old.status} → ${data.status}`
+        ? `${d.tracking_no}: ${st(old.status)} → ${st(data.status)}`
         : `${d.tracking_no ?? ""} ${d.subject ?? ""}`;
     case "rms_routes":
-      return `${d.status}: ${d.action_taken ?? ""}${d.remarks ? ` (“${d.remarks}”)` : ""}`;
+      return `${st(d.status)}: ${d.action_taken ?? ""}${d.remarks ? ` (“${d.remarks}”)` : ""}`;
     case "rms_attachments":
       return String(d.file_name ?? "");
     case "rms_profiles":
-      return `${d.full_name} · ${d.role}${d.is_active === false ? " · deactivated" : ""}`;
+      return `${d.full_name} · ${ROLE_LABEL[d.role as Role] ?? d.role}${d.is_active === false ? " · deactivated" : ""}`;
     case "ai_chat":
       return `“${d.question}” → ${(d.records as string[] | undefined)?.join(", ") || "no records"}`;
     case "ai_intake":
@@ -50,12 +54,13 @@ function describe(table: string, action: string, data: Record<string, unknown> |
   }
 }
 
-export default async function AuditPage({ searchParams }: { searchParams: Promise<{ t?: string }> }) {
+export default async function AuditPage({ searchParams }: { searchParams: Promise<{ t?: string; more?: string }> }) {
   const me = await getProfile();
   if (me.role !== "admin") redirect("/");
-  const { t } = await searchParams;
+  const { t, more } = await searchParams;
+  const limit = more ? 500 : 50;
   const supabase = await createClient();
-  let q = supabase.from("rms_audit_log").select("id, table_name, row_id, action, old_data, new_data, actor_id, created_at, ip").order("created_at", { ascending: false }).limit(200);
+  let q = supabase.from("rms_audit_log").select("id, table_name, row_id, action, old_data, new_data, actor_id, created_at, ip").order("created_at", { ascending: false }).limit(limit);
   if (t) q = q.eq("table_name", t);
   const [{ data: rows }, { data: people }, chain] = await Promise.all([
     q,
@@ -69,10 +74,11 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Audit log</h1>
-          <p className="text-sm text-slate-600">Every change, download and AI suggestion, written by the database. Nobody can edit or delete entries.</p>
+          <p className="text-sm text-slate-600">Every change, download and assistant use, recorded automatically. Nobody can edit or delete entries.</p>
         </div>
         <form method="get" className="flex gap-2">
-          <select name="t" defaultValue={t ?? ""} className="input">
+          <label htmlFor="audit-t" className="sr-only">Show</label>
+          <select id="audit-t" name="t" defaultValue={t ?? ""} className="input">
             <option value="">All entries</option>
             {Object.entries(TABLE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
@@ -83,17 +89,17 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         <p className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-900">Could not check the log&apos;s integrity: {chain.error.message}</p>
       ) : chain.data === null ? (
         <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          Integrity check passed. Each entry carries a fingerprint (SHA-256) of the one before it, and the whole chain matches, so no entry has been altered or removed.
+          Integrity check passed. Each entry is sealed with a digital fingerprint of the one before it, and every seal still matches, so no entry has been changed or removed.
         </p>
       ) : (
         <p className="rounded-lg border border-l-4 border-red-300 border-l-red-700 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
           Integrity check FAILED at entry #{chain.data}. The log was changed outside the system from that point on.
         </p>
       )}
-      <section className="card overflow-x-auto">
+      <section className="card overflow-x-auto" tabIndex={0} aria-label="Audit entries (scroll sideways for more columns)">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-            <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Who</th><th className="px-3 py-2">What</th><th className="px-3 py-2">Change</th><th className="px-3 py-2">Details</th><th className="px-3 py-2">IP</th></tr>
+          <thead className="bg-slate-50 text-left text-sm text-slate-700">
+            <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Who</th><th className="px-3 py-2">What</th><th className="px-3 py-2">Change</th><th className="px-3 py-2">Details</th><th className="px-3 py-2">Computer (IP address)</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {(rows ?? []).map((r) => (
@@ -109,6 +115,13 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           </tbody>
         </table>
       </section>
+      {(rows ?? []).length >= limit && !more && (
+        <p>
+          <Link className="btn-secondary" href={`/admin/audit?${new URLSearchParams({ ...(t ? { t } : {}), more: "1" })}`}>
+            Show older entries
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

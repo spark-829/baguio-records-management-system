@@ -2,24 +2,54 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
-export function NavLinks({ links }: { links: { href: string; label: string }[] }) {
+function isActive(path: string, href: string) {
+  if (href === "/") return path === "/";
+  if (href === "/records") return path.startsWith("/records") && !path.startsWith("/records/new");
+  return path === href || path.startsWith(href + "/");
+}
+
+/** Main menu. On wide screens every link shows; on phones it folds into one "Menu" button so pages start near the top. */
+type NavLink = { href: string; label: string };
+
+export function NavLinks({ links, phoneOnly = [] }: { links: NavLink[]; phoneOnly?: NavLink[] }) {
   const path = usePathname();
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [path]);
+  const current = [...links, ...phoneOnly].find((l) => isActive(path, l.href));
+
+  const items = [...links.map((l) => ({ ...l, phone: false })), ...phoneOnly.map((l) => ({ ...l, phone: true }))].map((l) => {
+    const active = isActive(path, l.href);
+    return (
+      <Link
+        key={l.href}
+        href={l.href}
+        aria-current={active ? "page" : undefined}
+        className={`${l.phone ? "md:hidden" : "md:inline-flex"} flex min-h-12 items-center border-l-4 px-3 font-semibold md:border-b-4 md:border-l-0 ${active ? "border-brand-700 bg-brand-50 text-brand-900" : "border-transparent text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-900"}`}
+      >
+        {l.label}
+      </Link>
+    );
+  });
+
   return (
-    <nav aria-label="Main" className="flex flex-wrap gap-x-1 text-base">
-      {links.map((l) => {
-        const active = l.href === "/" ? path === "/" : path === l.href || (path.startsWith(l.href + "/") && l.href !== "/records") || (l.href === "/records" && path.startsWith("/records") && !path.startsWith("/records/new"));
-        return (
-          <Link
-            key={l.href}
-            href={l.href}
-            aria-current={active ? "page" : undefined}
-            className={`inline-flex min-h-12 items-center border-b-4 px-3 font-semibold ${active ? "border-brand-700 bg-brand-50 text-brand-900" : "border-transparent text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-900"}`}
-          >
-            {l.label}
-          </Link>
-        );
-      })}
+    <nav aria-label="Main" className="text-base">
+      <div className="flex items-center justify-between md:hidden">
+        <span className="py-3 font-semibold text-brand-900">{current?.label ?? "Menu"}</span>
+        <button
+          type="button"
+          className="btn-secondary my-1"
+          aria-expanded={open}
+          aria-controls="main-menu"
+          onClick={() => setOpen((o) => !o)}
+        >
+          {open ? "Close menu" : "Menu"}
+        </button>
+      </div>
+      <div id="main-menu" className={`${open ? "flex" : "hidden"} flex-col pb-2 md:flex md:flex-row md:flex-wrap md:gap-x-1 md:pb-0`}>
+        {items}
+      </div>
     </nav>
   );
 }

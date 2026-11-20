@@ -42,14 +42,14 @@ export default async function UsersPage() {
                   <td colSpan={4} className="px-3 py-2">
                     <form action={updateUser} className="flex flex-wrap items-center gap-2">
                       <input type="hidden" name="id" value={u.id} />
-                      <select name="role" defaultValue={u.role} className="input w-44">
+                      <select name="role" aria-label={`Role of ${u.full_name}`} defaultValue={u.role} className="input w-44">
                         {(Object.keys(ROLE_LABEL) as Role[]).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
                       </select>
-                      <select name="office_id" defaultValue={u.office_id ?? ""} className="input w-28">
-                        {(offices ?? []).map((o) => <option key={o.id} value={o.id}>{o.code}</option>)}
+                      <select name="office_id" aria-label={`Office of ${u.full_name}`} defaultValue={u.office_id ?? ""} className="input w-56">
+                        {(offices ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
                       </select>
-                      <label className="flex items-center gap-1"><input type="checkbox" name="is_active" defaultChecked={u.is_active} /> Active</label>
-                      <button className="btn-secondary px-2 py-1 text-xs">Save</button>
+                      <label className="flex min-h-11 items-center gap-1"><input type="checkbox" name="is_active" className="checkbox" defaultChecked={u.is_active} aria-label={`${u.full_name} can sign in`} /> Active</label>
+                      <button className="btn-secondary px-3 py-2 text-sm" aria-label={`Save changes for ${u.full_name}`}>Save</button>
                     </form>
                   </td>
                 </tr>
