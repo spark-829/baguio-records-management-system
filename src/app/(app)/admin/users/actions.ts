@@ -11,7 +11,7 @@ const NewUser = z.object({
   email: z.email("Enter a valid email"),
   full_name: z.string().trim().min(3, "Enter the full name").max(120),
   password: z.string().min(8, "Password must be at least 8 characters"),
-  role: z.enum(["admin", "records_officer", "dept_head", "staff"]),
+  role: z.enum(["admin", "records_officer", "dept_head", "staff", "viewer"]),
   office_id: z.uuid("Choose an office"),
 });
 
@@ -42,7 +42,16 @@ export async function updateUser(form: FormData) {
   const office_id = String(form.get("office_id"));
   const is_active = form.get("is_active") === "on";
   if (id === me.id && (!is_active || role !== "admin")) return; // never lock yourself out
+  if (!["admin", "records_officer", "dept_head", "staff", "viewer"].includes(role)) return;
   const supabase = await createClient();
   await supabase.from("rms_profiles").update({ role, office_id, is_active }).eq("id", id);
+  revalidatePath("/admin/users");
+}
+
+export async function unlockUser(form: FormData) {
+  const me = await getProfile();
+  if (me.role !== "admin") return;
+  const supabase = await createClient();
+  await supabase.rpc("rms_admin_unlock", { p_user_id: String(form.get("id")) });
   revalidatePath("/admin/users");
 }

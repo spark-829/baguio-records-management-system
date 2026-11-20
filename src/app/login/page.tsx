@@ -6,7 +6,14 @@ const DEMO = [
   { email: "engineering.head@rms-demo.test", role: "Department Head, Engineering" },
   { email: "engineering.staff@rms-demo.test", role: "Staff, Engineering" },
   { email: "treasury.staff@rms-demo.test", role: "Staff, Treasury" },
+  { email: "viewer@rms-demo.test", role: "Viewer, Planning (read-only)" },
 ];
+
+const NOTICES: Record<string, string> = {
+  "no-access": "This account has no active RMS profile. Ask an administrator for access.",
+  locked: "This account is locked. Try again later or ask an administrator to unlock it.",
+  idle: "You were signed out after a period of inactivity.",
+};
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
@@ -37,10 +44,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <div className="card p-6">
           <h2 className="text-lg font-semibold">Sign in</h2>
-          {error === "no-access" && (
-            <p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">
-              This account has no active RMS profile. Ask an administrator for access.
-            </p>
+          {error && NOTICES[error] && (
+            <p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">{NOTICES[error]}</p>
           )}
           <LoginForm />
         </div>

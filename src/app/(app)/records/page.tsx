@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { filtersFromParams, filtersToParams, searchRecords } from "@/lib/search";
-import { STATUS_LABEL, fmtDate } from "@/lib/labels";
+import { STATUS_LABEL, fmtDate, partyLabel } from "@/lib/labels";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -122,7 +122,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
                   </div>
                 </td>
                 <td className="px-4 py-2 text-slate-600">{r.document_type}</td>
-                <td className="px-4 py-2 text-slate-600">{r.direction === "incoming" ? r.sender : r.recipient}</td>
+                <td className="px-4 py-2 text-slate-600">{r.direction === "incoming" ? partyLabel(r.sender_name, r.sender_org) : partyLabel(r.recipient_name, r.recipient_org)}</td>
                 <td className="px-4 py-2"><StatusBadge status={r.status} /></td>
                 <td className="px-4 py-2 text-slate-600">{r.current_office}</td>
                 <td className="whitespace-nowrap px-4 py-2 text-slate-600">{fmtDate(r.created_at)}</td>

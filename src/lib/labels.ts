@@ -15,7 +15,25 @@ export const ROLE_LABEL: Record<Role, string> = {
   records_officer: "Records Officer",
   dept_head: "Department Head",
   staff: "Department Staff",
+  viewer: "Viewer (read-only)",
 };
+
+const NAME_PARTICLES = new Set(["de", "del", "dela", "della", "delos", "de los", "san", "sta", "sto", "y", "jr", "jr.", "sr", "sr.", "ii", "iii"]);
+
+/** Masks a person's name for lists (Data Privacy Act): "Juan dela Cruz" -> "J*** dela C***". Full name shows only on the record page. */
+export function maskName(name: string | null | undefined) {
+  if (!name) return "";
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((w) => (NAME_PARTICLES.has(w.toLowerCase()) || w.length <= 1 ? w : `${w[0]}***`))
+    .join(" ");
+}
+
+/** "Name, Organization" for lists, with the person's name masked. */
+export function partyLabel(name: string | null | undefined, org: string | null | undefined) {
+  return [maskName(name), org ?? ""].filter(Boolean).join(", ") || "—";
+}
 
 export const PRIORITY_LABEL: Record<Priority, string> = { low: "Low", normal: "Normal", urgent: "Urgent" };
 

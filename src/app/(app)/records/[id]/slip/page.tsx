@@ -10,7 +10,7 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
   const supabase = await createClient();
   const { data: rec } = await supabase
     .from("rms_records")
-    .select("id, tracking_no, direction, subject, priority, confidentiality, sender_name, sender_org, recipient_name, recipient_org, document_date, due_date, created_at, doc_type:rms_document_types(name), origin:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles(full_name)")
+    .select("id, tracking_no, direction, subject, priority, confidentiality, sender_name, sender_org, recipient_name, recipient_org, document_date, due_date, created_at, doc_type:rms_document_types(name), origin:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name)")
     .eq("id", id)
     .maybeSingle();
   if (!rec) notFound();

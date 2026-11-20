@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { ROLE_LABEL, fmtDate } from "@/lib/labels";
+import { ROLE_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import type { Role } from "@/lib/types";
-import { updateUser } from "./actions";
+import { unlockUser, updateUser } from "./actions";
 import { NewUserForm } from "./new-user-form";
 
 export default async function UsersPage() {
@@ -11,7 +11,7 @@ export default async function UsersPage() {
   if (me.role !== "admin") redirect("/");
   const supabase = await createClient();
   const [{ data: users }, { data: offices }] = await Promise.all([
-    supabase.from("rms_profiles").select("id, full_name, role, office_id, is_active, created_at").order("full_name"),
+    supabase.from("rms_profiles").select("id, full_name, role, office_id, is_active, created_at, locked_until, last_login_at").order("full_name"),
     supabase.from("rms_offices").select("id, code, name").order("code"),
   ]);
   return (
@@ -28,7 +28,16 @@ export default async function UsersPage() {
                 <tr key={u.id}>
                   <td className="px-3 py-2">
                     <div className="font-medium">{u.full_name}</div>
-                    <div className="text-xs text-slate-500">since {fmtDate(u.created_at)}</div>
+                    <div className="text-xs text-slate-500">
+                      since {fmtDate(u.created_at)} · last sign-in {u.last_login_at ? fmtDateTime(u.last_login_at) : "never"}
+                    </div>
+                    {u.locked_until && new Date(u.locked_until) > new Date() && (
+                      <form action={unlockUser} className="mt-1 flex items-center gap-2">
+                        <input type="hidden" name="id" value={u.id} />
+                        <span className="badge bg-red-100 text-red-800">Locked until {fmtDateTime(u.locked_until)}</span>
+                        <button className="text-xs text-brand-700 hover:underline">Unlock</button>
+                      </form>
+                    )}
                   </td>
                   <td colSpan={4} className="px-3 py-2">
                     <form action={updateUser} className="flex flex-wrap items-center gap-2">

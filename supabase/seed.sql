@@ -30,7 +30,8 @@ begin
       ('records@rms-demo.test',    'Jose Reyes (Records Officer)',  'records_officer'::public.rms_role, 'CMO'),
       ('engineering.head@rms-demo.test', 'Ana Dizon (Engineering Head)', 'dept_head'::public.rms_role, 'CEO'),
       ('engineering.staff@rms-demo.test','Carlo Bautista (Engineering Staff)', 'staff'::public.rms_role, 'CEO'),
-      ('treasury.staff@rms-demo.test',   'Liza Mendoza (Treasury Staff)', 'staff'::public.rms_role, 'CTO')
+      ('treasury.staff@rms-demo.test',   'Liza Mendoza (Treasury Staff)', 'staff'::public.rms_role, 'CTO'),
+      ('viewer@rms-demo.test',           'Paolo Garcia (Planning, read-only)', 'viewer'::public.rms_role, 'CPDO')
     ) as t(email, full_name, role, office_code)
   loop
     select id into v_id from auth.users where email = u.email;

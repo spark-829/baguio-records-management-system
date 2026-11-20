@@ -1,13 +1,23 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+
+/** The caller's IP and browser, passed to the database so audit and access logs can record them. */
+export async function requestMeta() {
+  const h = await headers();
+  const ip = h.get("cf-connecting-ip") ?? h.get("x-real-ip") ?? h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "";
+  const ua = (h.get("user-agent") ?? "").slice(0, 300);
+  return { ip, ua };
+}
 
 /** Supabase client bound to the signed-in user's session, so row-level security applies. */
 export async function createClient() {
   const cookieStore = await cookies();
+  const { ip, ua } = await requestMeta();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      global: { headers: { "x-rms-client-ip": ip, "x-rms-user-agent": ua } },
       cookies: {
         getAll() {
           return cookieStore.getAll();

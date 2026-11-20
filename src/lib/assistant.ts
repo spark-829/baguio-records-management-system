@@ -16,7 +16,7 @@ export interface ChatTurn {
  * Records assistant. Every tool call runs through the signed-in user's Supabase client,
  * so the assistant can only see records that this user is allowed to see.
  */
-export async function askAssistant(supabase: SupabaseClient, me: Profile, history: ChatTurn[]) {
+export async function askAssistant(supabase: SupabaseClient, me: Profile, history: ChatTurn[], excludeConfidential = true) {
   const usedRecords = new Map<string, string>();
 
   const searchTool = betaZodTool({
@@ -36,7 +36,7 @@ export async function askAssistant(supabase: SupabaseClient, me: Profile, histor
       overdue: z.boolean().optional(),
     }),
     run: async (input) => {
-      const rows = await searchRecords(supabase, input, 20);
+      const rows = await searchRecords(supabase, input, 20, excludeConfidential);
       rows.forEach((r) => usedRecords.set(r.id, r.tracking_no));
       if (rows.length === 0) return "No records found (or none this user is allowed to see).";
       return JSON.stringify(
@@ -71,8 +71,11 @@ export async function askAssistant(supabase: SupabaseClient, me: Profile, histor
           "id, tracking_no, direction, subject, description, category, keywords, priority, confidentiality, sender_name, sender_org, recipient_name, recipient_org, document_date, status, due_date, created_at, ai_summary, content_text, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name)",
         )
         .eq("tracking_no", tracking_no.trim().toUpperCase())
+        .is("deleted_at", null)
         .maybeSingle();
       if (!rec) return "Not found, or this user is not allowed to see it.";
+      if (excludeConfidential && rec.confidentiality === "confidential")
+        return "This record is Confidential. By office policy its contents are kept out of the assistant; the user can open it directly in the Records page if they have access.";
       usedRecords.set(rec.id, rec.tracking_no);
       const [{ data: routes }, { data: files }] = await Promise.all([
         supabase
@@ -106,7 +109,9 @@ export async function askAssistant(supabase: SupabaseClient, me: Profile, histor
       "Answer only from what the tools return; never guess a record, a name or a date. " +
       "If nothing is found, say so plainly; the user may not have access to some records. " +
       "Whenever you mention a record, link it as a markdown link with its tracking number as the text and its `link` as the URL, " +
-      "for example [IN-2026-0001](/records/<id>). Keep answers short: a sentence or two, then a list of records if useful.",
+      "for example [IN-2026-0001](/records/<id>). " +
+      (excludeConfidential ? "Confidential records are hidden from you by policy; if asked, say so and suggest the Records page. " : "") +
+      "Keep answers short: a sentence or two, then a list of records if useful.",
     tools: [searchTool, getTool],
     messages,
   });

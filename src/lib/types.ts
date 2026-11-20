@@ -1,4 +1,4 @@
-export type Role = "admin" | "records_officer" | "dept_head" | "staff";
+export type Role = "admin" | "records_officer" | "dept_head" | "staff" | "viewer";
 export type Direction = "incoming" | "outgoing";
 export type Status =
   | "registered"
@@ -17,6 +17,7 @@ export interface Profile {
   role: Role;
   office_id: string | null;
   is_active: boolean;
+  locked_until?: string | null;
   office?: { code: string; name: string } | null;
 }
 
@@ -51,6 +52,10 @@ export interface SearchRow {
   due_date: string | null;
   ai_summary: string | null;
   rank: number;
+  sender_name: string | null;
+  sender_org: string | null;
+  recipient_name: string | null;
+  recipient_org: string | null;
 }
 
 export interface SearchFilters {

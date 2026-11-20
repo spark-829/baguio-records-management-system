@@ -1,5 +1,6 @@
 import { apiContext } from "@/lib/api";
 import { filtersFromParams, searchRecords } from "@/lib/search";
+import { partyLabel } from "@/lib/labels";
 
 function cell(v: unknown) {
   const s = v === null || v === undefined ? "" : String(v);
@@ -15,7 +16,7 @@ export async function GET(req: Request) {
   const rows = await searchRecords(ctx.supabase, filtersFromParams(sp), 200);
   const header = ["Tracking no.", "Direction", "Subject", "Type", "Status", "Priority", "Current office", "Origin office", "From", "To", "Registered by", "Registered at", "Due date"];
   const lines = rows.map((r) =>
-    [r.tracking_no, r.direction, r.subject, r.document_type, r.status, r.priority, r.current_office, r.origin_office, r.sender, r.recipient, r.created_by_name, r.created_at, r.due_date]
+    [r.tracking_no, r.direction, r.subject, r.document_type, r.status, r.priority, r.current_office, r.origin_office, partyLabel(r.sender_name, r.sender_org), partyLabel(r.recipient_name, r.recipient_org), r.created_by_name, r.created_at, r.due_date]
       .map(cell)
       .join(","),
   );

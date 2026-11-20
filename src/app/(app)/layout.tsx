@@ -1,21 +1,25 @@
 import Link from "next/link";
-import { getProfile } from "@/lib/session";
+import { getProfile, getSettings } from "@/lib/session";
+import { IdleLogout } from "@/components/idle-logout";
 import { ROLE_LABEL } from "@/lib/labels";
 import { signOut } from "../login/actions";
 import { NavLinks } from "@/components/nav-links";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const me = await getProfile();
+  const [me, settings] = await Promise.all([getProfile(), getSettings()]);
   const links = [
     { href: "/", label: "Dashboard" },
     { href: "/records", label: "Records" },
-    { href: "/records/new", label: "Register" },
+    ...(me.role !== "viewer" ? [{ href: "/records/new", label: "Register" }] : []),
     { href: "/assistant", label: "Assistant" },
     ...(me.role !== "staff" ? [{ href: "/reports", label: "Reports" }] : []),
     ...(me.role === "admin"
       ? [
           { href: "/admin/users", label: "Users" },
           { href: "/admin/audit", label: "Audit log" },
+          { href: "/admin/access", label: "Access history" },
+          { href: "/admin/bin", label: "Bin" },
+          { href: "/admin/settings", label: "Settings" },
         ]
       : []),
   ];
@@ -35,6 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 {me.office ? ` · ${me.office.code}` : ""}
               </div>
             </div>
+            <Link href="/security" className="rounded-lg border border-white/30 px-2.5 py-1 text-xs hover:bg-white/10">Security</Link>
             <form action={signOut}>
               <button className="rounded-lg border border-white/30 px-2.5 py-1 text-xs hover:bg-white/10">Sign out</button>
             </form>
@@ -42,6 +47,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-4 py-6">{children}</main>
+      <IdleLogout minutes={settings.idleTimeoutMinutes} />
     </div>
   );
 }

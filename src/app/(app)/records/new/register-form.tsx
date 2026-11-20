@@ -64,6 +64,8 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     });
   };
 
+  const [noAi, setNoAi] = useState(false);
+
   async function readWithAi() {
     const file = fileRef.current?.files?.[0];
     if (!file) {
@@ -118,7 +120,11 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         <h2 className="font-semibold">1. Scanned document</h2>
         <input ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="block w-full text-sm" />
         <p className="text-xs text-slate-500">PDF, PNG, JPG or WEBP, up to 10 MB. The file is stored with the record.</p>
-        <button type="button" onClick={readWithAi} className="btn-secondary w-full" disabled={aiState === "reading"}>
+        <label className="flex items-start gap-2 text-xs text-slate-600">
+          <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="mt-0.5" />
+          <span>Sensitive document: do not send it to the AI. Fill the form by hand.</span>
+        </label>
+        <button type="button" onClick={readWithAi} className="btn-secondary w-full" disabled={aiState === "reading" || noAi}>
           {aiState === "reading" ? "Reading…" : "Fill the form from this document (AI)"}
         </button>
         {aiMsg && (

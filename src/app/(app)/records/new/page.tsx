@@ -1,9 +1,11 @@
+import { redirect } from "next/navigation";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { RegisterForm } from "./register-form";
 
 export default async function NewRecordPage() {
   const me = await getProfile();
+  if (me.role === "viewer") redirect("/records");
   const supabase = await createClient();
   const [{ data: types }, { data: offices }] = await Promise.all([
     supabase.from("rms_document_types").select("id, name").eq("is_active", true).order("name"),
