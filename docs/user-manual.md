@@ -43,6 +43,9 @@ Press **Save**. The system asks you to confirm before anything is saved. Every a
 ## Reports (department heads, records desk, admin)
 Choose a date range to see counts by status, office, type and month, and the overdue list. Use **Download list (Excel)** or **Print report**.
 
+- **Office workload**: for each office, how many documents are not yet received, being worked on and late, the longest time one has stayed there, and the average time to finish in the last 90 days. Offices with late documents come first.
+- **Retention schedule** (records desk and admin): every finished record with its keep-until date, based on its kind of document and counted from the day it was finished. Records within 90 days of that date, or past it, are flagged for review. Nothing is deleted from this page.
+
 ## Administration
 - **Users**: create accounts, set role and office, deactivate people who leave. You cannot deactivate yourself.
 - **Audit log**: every change, download and AI suggestion, with who, when and IP. A green bar confirms the log has not been altered.

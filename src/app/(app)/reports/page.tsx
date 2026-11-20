@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -79,6 +80,10 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           <PrintButton label="Print report" />
         </form>
       </div>
+      <nav aria-label="More reports" className="no-print flex flex-wrap gap-2">
+        <Link href="/reports/offices" className="btn-secondary">Office workload</Link>
+        {isCentral(me) && <Link href="/reports/retention" className="btn-secondary">Retention schedule</Link>}
+      </nav>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
