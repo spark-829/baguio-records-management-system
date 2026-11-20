@@ -57,3 +57,23 @@ describe("isOverdue", () => {
     expect(isOverdue("2026-11-19", "received", lateNightUtc)).toBe(true);
   });
 });
+
+import { maskName, partyLabel } from "../src/lib/labels";
+
+describe("privacy masking", () => {
+  it("masks each part of a person's name but keeps particles", () => {
+    expect(maskName("Juan dela Cruz")).toBe("J*** dela C***");
+    expect(maskName("Maria Santos Jr.")).toBe("M*** S*** Jr.");
+  });
+  it("shows the organization unmasked", () => {
+    expect(partyLabel("Juan dela Cruz", "Barangay Irisan")).toBe("J*** dela C***, Barangay Irisan");
+    expect(partyLabel(null, "DPWH")).toBe("DPWH");
+    expect(partyLabel(null, null)).toBe("—");
+  });
+});
+
+describe("viewer role", () => {
+  it("has no actions even on records in its office", () => {
+    expect(allowedActions({ status: "received", direction: "incoming", role: "viewer", userOfficeId: "a", currentOfficeId: "a" })).toEqual([]);
+  });
+});

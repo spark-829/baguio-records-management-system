@@ -18,7 +18,9 @@ A working demo of a city government Records Management System: register incoming
 | Basic reports | **Reports**: counts by status, office, type and month; overdue list; CSV export; print to PDF |
 | Extra: routing slip | Printable slip with a QR code that opens the record |
 | Extra: AI assistant | Scan-to-prefill, plain-language search, record summaries, records chat |
-| Extra: audit log | Database triggers log every change and every AI suggestion; append-only |
+| Extra: audit log | Database triggers log every change, download and AI suggestion with IP; hash-chained so tampering is detected |
+| Extra: security | Access history, account lockout, idle sign-out, optional two-step sign-in, Public/Internal/Confidential levels, Viewer role, deleted-records bin, "Viewed by" stamped downloads |
+| Extra: Data Privacy Act | Privacy notice at sign-in, masked names in lists, "who accessed this person's records" report, Confidential kept out of AI |
 
 ## Demo accounts
 
@@ -31,6 +33,7 @@ All use the password `Demo@2026`.
 | engineering.head@rms-demo.test | Department Head | City Engineering Office |
 | engineering.staff@rms-demo.test | Department Staff | City Engineering Office |
 | treasury.staff@rms-demo.test | Department Staff | City Treasurer's Office |
+| viewer@rms-demo.test | Viewer (read-only) | City Planning and Development Office |
 
 Sign in as Treasury staff and as the Records Officer to see the access rules at work: the same search, and the same assistant question, return different records.
 
@@ -39,7 +42,8 @@ Sign in as Treasury staff and as the Records Officer to see the access rules at 
 - **Next.js 15 (TypeScript, App Router)** on **Cloudflare Workers** via OpenNext.
 - **Supabase**: PostgreSQL, Auth and Storage. All tables are prefixed `rms_`.
 - **Access control in the database.** Row-level security on every table, keyed on the user's role and office. The app talks to the database as the signed-in user, never with a service key, so a bug in a screen cannot leak another office's records.
-- **Audit trail in the database.** Triggers write every insert, update and delete to `rms_audit_log` with old and new values; no role can edit or delete it.
+- **Audit trail in the database.** Triggers write every insert, update, delete and download to `rms_audit_log` with old and new values, actor and IP. Each entry carries a SHA-256 fingerprint of the one before, so any edit outside the app breaks the chain and the Audit log page flags it.
+- **Sign-in protection in the database.** Lockout after 5 failed attempts, locked or deactivated users lose access even with an open session, and admins with two-step sign-in get no admin rights until they enter the code.
 - **Claude Haiku 5.5** (`claude-haiku-5-5`) for AI features, called from the server only. The assistant's search tools run as the signed-in user, so it obeys the same access rules. A person always confirms AI-filled fields before saving. For fully on-premise use, the same calls can point to a locally hosted open-weight model.
 
 ```

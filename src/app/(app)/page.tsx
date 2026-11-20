@@ -25,6 +25,7 @@ export default async function Dashboard() {
   const { data } = await supabase
     .from("rms_records")
     .select("id, tracking_no, subject, status, priority, direction, due_date, created_at, current_office_id, current_office:rms_offices!rms_records_current_office_id_fkey(code)")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(500);
   const rows = (data ?? []) as unknown as Row[];

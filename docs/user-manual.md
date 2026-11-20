@@ -1,7 +1,13 @@
 # User manual
 
 ## Signing in
-Open the system and sign in with the email and password from your administrator. Your name, role and office show at the top right. Sign out when you leave the desk.
+Open the system, read the privacy notice, tick the box and sign in with the email and password from your administrator. Your name, role and office show at the top right. Sign out when you leave the desk.
+
+- After 5 wrong passwords the account locks for 15 minutes. An administrator can unlock it sooner on the Users page.
+- After 15 minutes without activity you are signed out automatically. A warning appears a minute before.
+- **Security** (top right) lets you turn on two-step sign-in with an authenticator app. Administrators should turn it on.
+- Every sign-in, record you open and file you download is logged.
+- In lists, people's names are shortened (for example "J*** dela C***"). The full name shows when you open the record.
 
 ## Dashboard
 Shows open and overdue records, what is waiting in your office, counts by status, and the latest registrations. Click any record to open it.
@@ -35,4 +41,13 @@ Choose a date range to see counts by status, office, type and month, and the ove
 
 ## Administration
 - **Users**: create accounts, set role and office, deactivate people who leave. You cannot deactivate yourself.
-- **Audit log**: every change and AI suggestion, with who and when. Entries cannot be edited or deleted.
+- **Audit log**: every change, download and AI suggestion, with who, when and IP. A green bar confirms the log has not been altered.
+- **Access history**: sign-ins, failed attempts, records opened and files downloaded. Filter by user, tracking number or event. At the bottom, **Who accessed this person's records?** answers Data Privacy Act requests.
+- **Bin**: records deleted by the records desk, with the reason. **Restore** puts one back.
+- **Settings**: lockout, idle sign-out, download stamping, and whether Confidential records are kept out of AI.
+
+## Deleting a record (records desk, admin)
+Open the record and click **Delete this record…** at the bottom right, give a reason and confirm. The record disappears for everyone except administrators, who can restore it from the **Bin**.
+
+## Downloaded files
+Files open stamped "Viewed by your name, date and time". Do not share downloaded copies outside the office.

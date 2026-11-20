@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { aiError, apiContext } from "@/lib/api";
+import { aiError, aiExcludesConfidential, apiContext } from "@/lib/api";
 import { askAssistant, type ChatTurn } from "@/lib/assistant";
 
 export async function POST(req: Request) {
@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Ask a question" }, { status: 400 });
   }
   try {
-    const result = await askAssistant(ctx.supabase, ctx.me, history);
+    const result = await askAssistant(ctx.supabase, ctx.me, history, await aiExcludesConfidential(ctx.supabase));
     await ctx.supabase.rpc("rms_log_event", {
       p_table: "ai_chat",
       p_row_id: ctx.me.id,

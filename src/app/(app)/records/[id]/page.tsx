@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProfile } from "@/lib/session";
+import { getProfile, getSettings, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { CONF_LABEL, PRIORITY_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import { allowedActions, isOverdue } from "@/lib/workflow";
 import type { Direction, Status, Priority, Confidentiality } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
-import { ActionForm, AttachForm } from "./forms";
+import { ActionForm, AttachForm, DeleteForm } from "./forms";
+import { restoreRecord } from "./actions";
 import { SummaryBox } from "./summary-box";
 
 type Rec = {
@@ -31,6 +32,9 @@ type Rec = {
   ai_summary: string | null;
   content_text: string | null;
   current_office_id: string;
+  deleted_at: string | null;
+  delete_reason: string | null;
+  deleter: { full_name: string } | null;
   doc_type: { name: string } | null;
   current_office: { code: string; name: string } | null;
   origin_office: { code: string; name: string } | null;
@@ -51,17 +55,20 @@ type Route = {
 export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string }> }) {
   const { id } = await params;
   const { new: isNew } = await searchParams;
-  const me = await getProfile();
+  const [me, settings] = await Promise.all([getProfile(), getSettings()]);
   const supabase = await createClient();
   const { data } = await supabase
     .from("rms_records")
     .select(
-      "*, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name), origin_office:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles(full_name)",
+      "*, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name), origin_office:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), deleter:rms_profiles!rms_records_deleted_by_fkey(full_name)",
     )
     .eq("id", id)
     .maybeSingle();
   if (!data) notFound();
   const rec = data as unknown as Rec;
+  // Access history: every opened record is logged with who, when and from which IP.
+  await supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: rec.id });
+  const deleted = Boolean(rec.deleted_at);
 
   const [{ data: routes }, { data: files }, { data: offices }] = await Promise.all([
     supabase
@@ -73,7 +80,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     supabase.from("rms_offices").select("id, code, name").eq("is_active", true).order("code"),
   ]);
 
-  const actions = allowedActions({
+  const actions = deleted ? [] : allowedActions({
     status: rec.status,
     direction: rec.direction,
     role: me.role,
@@ -99,6 +106,17 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
 
   return (
     <div className="space-y-4">
+      {deleted && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+          <span>
+            In the deleted-records bin since {fmtDateTime(rec.deleted_at)} by {rec.deleter?.full_name ?? "—"}. Reason: “{rec.delete_reason}”
+          </span>
+          <form action={restoreRecord}>
+            <input type="hidden" name="record_id" value={rec.id} />
+            <button className="btn-secondary">Restore record</button>
+          </form>
+        </div>
+      )}
       {isNew && (
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
           Saved. Tracking number <strong>{rec.tracking_no}</strong> issued. Print the routing slip to attach to the paper copy.
@@ -126,7 +144,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
-          <SummaryBox recordId={rec.id} initial={rec.ai_summary} />
+          <SummaryBox recordId={rec.id} initial={rec.ai_summary} aiBlocked={rec.confidentiality === "confidential" && settings.aiExcludeConfidential} />
 
           <section className="card p-4">
             <h2 className="mb-3 font-semibold">Details</h2>
@@ -181,7 +199,13 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               <ActionForm recordId={rec.id} actions={actions} offices={(offices ?? []).filter((o) => o.id !== rec.current_office_id)} />
             ) : (
               <p className="text-sm text-slate-500">
-                {rec.status === "archived" ? "This record is archived and read-only." : "Only the office holding this record, or the records desk, can act on it."}
+                {deleted
+                  ? "Deleted records are read-only until restored."
+                  : me.role === "viewer"
+                    ? "Your account is read-only."
+                    : rec.status === "archived"
+                      ? "This record is archived and read-only."
+                      : "Only the office holding this record, or the records desk, can act on it."}
               </p>
             )}
           </section>
@@ -201,8 +225,17 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               ))}
               {(files ?? []).length === 0 && <li className="text-slate-500">No files attached.</li>}
             </ul>
-            {rec.status !== "archived" && <AttachForm recordId={rec.id} />}
+            {rec.status !== "archived" && !deleted && me.role !== "viewer" && <AttachForm recordId={rec.id} />}
+            <p className="mt-2 text-xs text-slate-500">
+              Files open through a link that expires in 60 seconds{settings.watermarkDownloads ? " and are stamped with your name and the date" : ""}. Each download is logged.
+            </p>
           </section>
+
+          {isCentral(me) && !deleted && (
+            <section className="card p-4">
+              <DeleteForm recordId={rec.id} />
+            </section>
+          )}
         </div>
       </div>
     </div>

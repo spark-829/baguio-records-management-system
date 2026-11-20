@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function SummaryBox({ recordId, initial }: { recordId: string; initial: string | null }) {
+export function SummaryBox({ recordId, initial, aiBlocked = false }: { recordId: string; initial: string | null; aiBlocked?: boolean }) {
   const [summary, setSummary] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,6 +25,13 @@ export function SummaryBox({ recordId, initial }: { recordId: string; initial: s
       setBusy(false);
     }
   }
+
+  if (aiBlocked)
+    return (
+      <section className="card p-4 text-sm text-slate-600">
+        <span className="badge bg-slate-100 text-slate-700">AI off</span> Confidential record: kept out of AI features by office policy.
+      </section>
+    );
 
   return (
     <section className="card border-brand-100 bg-brand-50/50 p-4">

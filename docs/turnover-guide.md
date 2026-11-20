@@ -22,7 +22,11 @@ The app has no service-role key. If AI is not configured, everything else still 
 ## Routine tasks
 - **Add an office or document type:** insert a row in `rms_offices` / `rms_document_types` (admin role in the app, or SQL editor).
 - **New user:** Users page (admin).
-- **Someone leaves:** untick **Active** on the Users page. Their history stays.
+- **Someone leaves:** untick **Active** on the Users page. Their history stays and their access stops at once, even on an open session.
+- **Locked account:** Users page shows "Locked until"; click **Unlock**.
+- **Admin lost their authenticator phone:** in Supabase, Authentication > Users, remove the user's MFA factor, then have them set it up again on the Security page.
+- **Data Privacy Act request:** Access history > "Who accessed this person's records?". Export by printing the page.
+- **Audit integrity alert (red bar on Audit log):** someone changed the log directly in the database. Note the entry number, compare with the latest backup and report to the DPO.
 - **Backups:** Supabase daily backups; download a CSV export monthly for paper filing if required.
 - **Change the database:** add a new file in `supabase/migrations/`, apply it, then run `supabase/tests/access_rules.sql` to confirm access rules still hold.
 
@@ -39,3 +43,5 @@ Then run `supabase/tests/access_rules.sql`. It rolls back and changes nothing.
 - Overdue is based on a single due date per record, not per office step.
 - Files are limited to 10 MB PDF and image scans.
 - Retention years are recorded per document type but no automatic disposal runs.
+- WEBP images are logged on download but not stamped (PDF, PNG and JPG are).
+- The IP address comes from the Cloudflare edge (`cf-connecting-ip`); behind another proxy it may show the proxy's address.

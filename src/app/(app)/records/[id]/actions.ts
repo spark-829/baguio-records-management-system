@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { ACTIONS, allowedActions, nextStatus, type ActionKind } from "@/lib/workflow";
@@ -78,4 +79,29 @@ export async function addAttachment(_prev: ActState, form: FormData): Promise<Ac
   if (error) return { error: error.message };
   revalidatePath(`/records/${recordId}`);
   return { ok: "File attached." };
+}
+
+/** Moves a record to the deleted-records bin (records desk or admin). An admin can restore it. */
+export async function deleteRecord(_prev: ActState, form: FormData): Promise<ActState> {
+  const me = await getProfile();
+  if (me.role !== "admin" && me.role !== "records_officer") return { error: "Only the records desk or an admin can delete records." };
+  const recordId = String(form.get("record_id") ?? "");
+  const reason = String(form.get("reason") ?? "").trim();
+  if (reason.length < 5) return { error: "Give a short reason for deleting." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("rms_delete_record", { p_record_id: recordId, p_reason: reason });
+  if (error) return { error: error.message };
+  revalidatePath("/records");
+  redirect(me.role === "admin" ? "/admin/bin?deleted=1" : "/records?deleted=1");
+}
+
+export async function restoreRecord(form: FormData) {
+  const me = await getProfile();
+  if (me.role !== "admin") return;
+  const recordId = String(form.get("record_id") ?? "");
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("rms_restore_record", { p_record_id: recordId });
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/bin");
+  revalidatePath(`/records/${recordId}`);
 }

@@ -8,6 +8,7 @@ export async function POST(req: Request) {
   const ctx = await apiContext();
   if ("error" in ctx) return ctx.error;
   const { supabase } = ctx;
+  if (ctx.me.role === "viewer") return NextResponse.json({ error: "Viewers cannot register records" }, { status: 403 });
 
   const form = await req.formData();
   const file = form.get("file");

@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SearchFilters, SearchRow } from "./types";
 
 /** Runs the records search as the calling user (row-level security applies inside the database). */
-export async function searchRecords(supabase: SupabaseClient, f: SearchFilters, limit = 50) {
+export async function searchRecords(supabase: SupabaseClient, f: SearchFilters, limit = 50, excludeConfidential = false) {
   const { data, error } = await supabase.rpc("rms_search_records", {
     p_q: f.q || null,
     p_person: f.person || null,
@@ -14,6 +14,7 @@ export async function searchRecords(supabase: SupabaseClient, f: SearchFilters, 
     p_to: f.to || null,
     p_overdue: f.overdue ?? false,
     p_limit: limit,
+    p_exclude_confidential: excludeConfidential,
   });
   if (error) throw new Error(error.message);
   return (data ?? []) as SearchRow[];

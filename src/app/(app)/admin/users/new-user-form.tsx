@@ -17,6 +17,7 @@ export function NewUserForm({ offices }: { offices: { id: string; code: string; 
           <option value="dept_head">Department Head</option>
           <option value="records_officer">Records Officer</option>
           <option value="admin">Administrator</option>
+          <option value="viewer">Viewer (read-only)</option>
         </select>
       </div>
       <div>

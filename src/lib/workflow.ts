@@ -39,6 +39,7 @@ export function allowedActions(opts: {
   currentOfficeId: string;
 }): ActionKind[] {
   const { status, direction, role, userOfficeId, currentOfficeId } = opts;
+  if (role === "viewer") return [];
   const central = role === "admin" || role === "records_officer";
   const holdsIt = userOfficeId !== null && userOfficeId === currentOfficeId;
   if (!central && !holdsIt) return [];

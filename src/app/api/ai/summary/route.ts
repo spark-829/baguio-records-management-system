@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { summarize } from "@/lib/ai";
-import { aiError, apiContext } from "@/lib/api";
+import { aiError, aiExcludesConfidential, apiContext } from "@/lib/api";
 
 export async function POST(req: Request) {
   const ctx = await apiContext();
@@ -11,10 +11,12 @@ export async function POST(req: Request) {
 
   const { data: rec } = await supabase
     .from("rms_records")
-    .select("tracking_no, direction, subject, description, sender_name, sender_org, recipient_name, recipient_org, status, due_date, content_text, current_office:rms_offices!rms_records_current_office_id_fkey(name)")
+    .select("tracking_no, confidentiality, direction, subject, description, sender_name, sender_org, recipient_name, recipient_org, status, due_date, content_text, current_office:rms_offices!rms_records_current_office_id_fkey(name)")
     .eq("id", recordId)
     .maybeSingle();
   if (!rec) return NextResponse.json({ error: "Record not found" }, { status: 404 });
+  if (rec.confidentiality === "confidential" && (await aiExcludesConfidential(supabase)))
+    return NextResponse.json({ error: "Confidential records are kept out of AI features by office policy." }, { status: 403 });
   const { data: routes } = await supabase
     .from("rms_routes")
     .select("status, action_taken, remarks, created_at, to_office:rms_offices!rms_routes_to_office_id_fkey(code)")
@@ -23,7 +25,7 @@ export async function POST(req: Request) {
 
   try {
     const summary = await summarize(
-      { ...rec, content_text: rec.content_text ? String(rec.content_text).slice(0, 8000) : null },
+      { ...rec, confidentiality: undefined, content_text: rec.content_text ? String(rec.content_text).slice(0, 8000) : null },
       (routes ?? []).map((r) => `${r.created_at} ${r.status} ${r.action_taken ?? ""} ${r.remarks ?? ""}`).join("\n"),
     );
     const { error } = await supabase.from("rms_records").update({ ai_summary: summary }).eq("id", recordId);
