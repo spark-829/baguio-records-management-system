@@ -25,6 +25,7 @@ select pg_temp.as_user('treasury.staff@rms-demo.test');
 select pg_temp.expect('treasury sees no confidential', (select count(*) from rms_records where confidentiality = 'confidential'), 0);
 select pg_temp.expect('treasury sees no engineering-only record', (select count(*) from rms_records where tracking_no = 'OUT-2026-0001'), 0);
 select pg_temp.expect('treasury cannot read audit log', (select count(*) from rms_audit_log), 0);
+select pg_temp.expect('search function respects access', (select count(*) from rms_search_records(null)), 1);
 reset role;
 
 -- Engineering staff cannot register incoming records
