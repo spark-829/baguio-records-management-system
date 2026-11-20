@@ -120,11 +120,11 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
 
   return (
     <form action={action} className="grid gap-4 lg:grid-cols-3">
-      <section className="card space-y-3 p-4 lg:col-span-1">
-        <h2 className="font-semibold">1. Scanned document</h2>
+      <section className="card space-y-4 p-5 lg:col-span-1">
+        <h2 className="text-lg font-bold">1. Scanned document</h2>
         <input ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="block w-full text-sm" />
         <p className="text-xs text-slate-500">PDF, PNG, JPG or WEBP, up to 10 MB. The file is stored with the record.</p>
-        <label className="flex items-start gap-2 text-xs text-slate-600">
+        <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-700">
           <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="mt-0.5" />
           <span>Sensitive document: do not send it to the AI. Fill the form by hand.</span>
         </label>
@@ -132,7 +132,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           {aiState === "reading" ? "Reading…" : "Fill the form from this document (AI)"}
         </button>
         {aiMsg && (
-          <p className={`rounded-lg p-2 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{aiMsg}</p>
+          <p role="status" className={`rounded-lg p-3 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{aiMsg}</p>
         )}
         {f.content_text && (
           <details className="text-sm">
@@ -144,8 +144,8 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         <input type="hidden" name="ai_summary" value={f.ai_summary} />
       </section>
 
-      <section className="card grid gap-3 p-4 md:grid-cols-2 lg:col-span-2">
-        <h2 className="font-semibold md:col-span-2">2. Record details</h2>
+      <section className="card grid gap-4 p-5 md:grid-cols-2 lg:col-span-2">
+        <h2 className="text-lg font-bold md:col-span-2">2. Record details</h2>
         <div>
           <label className="label">Direction</label>
           <select name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => set("direction", e.target.value as Fields["direction"])}>
@@ -206,7 +206,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           </select>
         </div>
 
-        <h2 className="mt-2 font-semibold md:col-span-2">3. Classification and routing</h2>
+        <h2 className="mt-4 border-t border-slate-200 pt-4 text-lg font-bold md:col-span-2">3. Classification and routing</h2>
         <div>
           <label className="label">Category</label>
           <input name="category" className={`input ${hl("category")}`} value={f.category} onChange={(e) => set("category", e.target.value)} />

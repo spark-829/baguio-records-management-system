@@ -1,40 +1,192 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens: "City of Pines" palette.
+ * Inspired by the colour conventions of Baguio City Government web pages
+ * (deep pine green, warm gold accents, white/off-white content areas).
+ * Original design for a demo system — no official seals, logos or emblems.
+ *
+ * Contrast (WCAG 2.1):
+ *   white on brand-700 #1b5136  ............ 9.2:1
+ *   white on brand-800 #143d29  ............ 12.1:1
+ *   brand-100 #dcebdf on brand-800 ......... 9.8:1
+ *   brand-700 on white (links) ............. 9.2:1
+ *   ink #1a1f1c on page #f5f4ee ............ 15.2:1
+ *   slate-500 (remapped) on white/page ..... 7.6:1 / 6.9:1
+ *   placeholder #5f6b7a on white ........... 5.4:1
+ *   input border #8a948f on white .......... 3.1:1 (non-text, >= 3:1)
+ *   gold-800 #6b4c0e on gold-100 #f8edcf ... 6.8:1
+ */
 @theme {
-  --color-brand-50: #eef6f8;
-  --color-brand-100: #d5e9ee;
-  --color-brand-600: #0f6b80;
-  --color-brand-700: #0b5566;
-  --color-brand-800: #0a4352;
-  --color-brand-900: #08323d;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Pine green, primary (replaces the old teal "brand" scale) */
+  --color-brand-50: #eff6f0;
+  --color-brand-100: #dcebdf;
+  --color-brand-200: #b9d6c0;
+  --color-brand-600: #22663f;
+  --color-brand-700: #1b5136;
+  --color-brand-800: #143d29;
+  --color-brand-900: #0e2a1c;
+
+  /* Gold accent (decorative stripes, highlights; dark gold for text) */
+  --color-gold-100: #f8edcf;
+  --color-gold-300: #e6c66f;
+  --color-gold-500: #c8962e;
+  --color-gold-800: #6b4c0e;
+
+  /* Neutrals: no light-grey body text. slate-400/500 are darkened so
+     existing secondary text classes meet AA on white and on the page tint. */
+  --color-slate-400: #5f6b7a;
+  --color-slate-500: #4a5565;
+  --color-slate-600: #3c4655;
+
+  --color-page: #f5f4ee;
+  --color-ink: #1a1f1c;
+
+  --font-sans: "Segoe UI", "Noto Sans", Roboto, "Helvetica Neue", Arial, system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Senior-friendly type scale: everything one step larger than default */
+  --text-xs: 0.9375rem; /* 15px, smallest text anywhere */
+  --text-xs--line-height: 1.45;
+  --text-sm: 1.0625rem; /* 17px */
+  --text-sm--line-height: 1.55;
+  --text-base: 1.125rem; /* 18px, body */
+  --text-base--line-height: 1.6;
+  --text-lg: 1.3125rem;
+  --text-lg--line-height: 1.45;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.875rem;
+  --text-2xl--line-height: 1.3;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 1.2;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: #f6f8f9;
-  color: #0f172a;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    color: var(--color-brand-900);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Clear, consistent keyboard focus everywhere */
+:focus-visible {
+  outline: 3px solid var(--color-brand-700);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+.on-dark :focus-visible {
+  outline-color: var(--color-gold-300);
+}
+.on-dark .card :focus-visible {
+  outline-color: var(--color-brand-700);
+}
+
+::placeholder {
+  color: #5f6b7a;
+  opacity: 1;
+}
+
+/* Bigger tick boxes and radio buttons */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  accent-color: var(--color-brand-700);
+  cursor: pointer;
+}
+
+/* File pickers get a real button */
+input[type="file"] {
+  font-size: var(--text-sm);
+}
+input[type="file"]::file-selector-button {
+  min-height: 44px;
+  margin-right: 0.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #8a948f;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--color-brand-800);
+  font-weight: 600;
+  cursor: pointer;
+}
+input[type="file"]::file-selector-button:hover {
+  background: var(--color-brand-50);
+}
+
+/* Expandable sections: make the summary line an obvious, big target */
+summary {
+  min-height: 44px;
+  display: list-item;
+  padding-block: 0.5rem;
+  cursor: pointer;
+}
+
+/* Text links inside content are underlined so they look clickable */
+main a.text-brand-700,
+main button.text-brand-700 {
+  text-decoration-line: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  font-weight: 600;
+}
+
+/* Tables: readable headers and roomier rows */
+main table th {
+  padding-block: 0.75rem;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-brand-900);
+}
+main table thead {
+  background: var(--color-brand-50);
+  border-bottom: 2px solid var(--color-brand-200);
+}
+main table td {
+  padding-block: 0.75rem;
+}
+main table tbody tr:hover {
+  background: #f7faf7;
 }
 
 @utility card {
-  @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  @apply rounded-xl border border-slate-300 bg-white shadow-sm;
 }
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition disabled:opacity-50;
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-base leading-tight font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
 }
 @utility btn-primary {
-  @apply btn bg-brand-700 text-white hover:bg-brand-800;
+  @apply btn border-2 border-brand-700 bg-brand-700 text-white shadow-sm hover:border-brand-800 hover:bg-brand-800;
 }
 @utility btn-secondary {
-  @apply btn border border-slate-300 bg-white text-slate-800 hover:bg-slate-50;
+  @apply btn border-2 border-brand-700 bg-white text-brand-800 hover:bg-brand-50;
 }
 @utility input {
-  @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-brand-600 focus:ring-2 focus:ring-brand-100;
+  @apply min-h-11 w-full rounded-lg border-2 border-[#8a948f] bg-white px-3 py-2 text-base text-ink outline-none focus:border-brand-700 focus:ring-4 focus:ring-brand-200;
 }
 @utility label {
-  @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600;
+  @apply mb-1.5 block text-sm font-semibold text-slate-800;
 }
 @utility badge {
-  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+  @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs leading-snug font-semibold whitespace-nowrap ring-1 ring-current/25 ring-inset;
 }
 
 @media print {
@@ -43,5 +195,6 @@ body {
   }
   body {
     background: white;
+    font-size: 12pt;
   }
 }

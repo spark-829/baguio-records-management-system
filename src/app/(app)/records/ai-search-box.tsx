@@ -32,7 +32,7 @@ export function AiSearchBox() {
 
   return (
     <form onSubmit={run} className="card flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
-      <span className="badge bg-brand-100 text-brand-900">AI search</span>
+      <span className="badge self-start bg-brand-100 text-brand-900 sm:self-auto">AI search</span>
       <input
         className="input flex-1"
         value={text}

@@ -33,10 +33,10 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       </div>
 
       <AiSearchBox />
-      {aiNote && <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-900">Assistant applied: {aiNote}</p>}
+      {aiNote && <p className="rounded-lg border border-l-4 border-brand-200 border-l-brand-700 bg-brand-50 px-4 py-3 text-sm text-brand-900">Assistant applied: {aiNote}</p>}
 
-      <form className="card grid gap-3 p-4 md:grid-cols-4" method="get">
-        <div className="md:col-span-2">
+      <form className="card grid gap-4 p-5 md:grid-cols-2 lg:grid-cols-4" method="get">
+        <div>
           <label className="label" htmlFor="q">Keywords or tracking no.</label>
           <input className="input" id="q" name="q" defaultValue={f.q} placeholder="e.g. drainage, IN-2026-0001" />
         </div>
@@ -73,7 +73,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             {(types.data ?? []).map((t) => <option key={t.name} value={t.name}>{t.name}</option>)}
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3 md:col-span-2">
           <div>
             <label className="label" htmlFor="from">From</label>
             <input className="input" id="from" name="from" type="date" defaultValue={f.from} />
@@ -83,8 +83,8 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             <input className="input" id="to" name="to" type="date" defaultValue={f.to} />
           </div>
         </div>
-        <div className="flex items-end justify-between gap-2 md:col-span-4">
-          <label className="flex items-center gap-2 text-sm">
+        <div className="flex flex-wrap items-end justify-between gap-3 md:col-span-2 lg:col-span-4">
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
             <input type="checkbox" name="overdue" value="1" defaultChecked={f.overdue} /> Overdue only
           </label>
           <div className="flex gap-2">

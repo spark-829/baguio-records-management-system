@@ -26,7 +26,7 @@ export default async function BinPage({ searchParams }: { searchParams: Promise<
           Deleted records are hidden from everyone else but never erased. Restoring puts a record back exactly as it was. Both are logged.
         </p>
       </div>
-      {deleted && <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">Record moved to the bin.</p>}
+      {deleted && <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">Record moved to the bin.</p>}
       <section className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">

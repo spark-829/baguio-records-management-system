@@ -107,7 +107,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   return (
     <div className="space-y-4">
       {deleted && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-l-4 border-red-300 border-l-red-700 bg-red-50 px-4 py-3 text-sm text-red-900">
           <span>
             In the deleted-records bin since {fmtDateTime(rec.deleted_at)} by {rec.deleter?.full_name ?? "—"}. Reason: “{rec.delete_reason}”
           </span>
@@ -118,7 +118,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         </div>
       )}
       {isNew && (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+        <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           Saved. Tracking number <strong>{rec.tracking_no}</strong> issued. Print the routing slip to attach to the paper copy.
         </p>
       )}
