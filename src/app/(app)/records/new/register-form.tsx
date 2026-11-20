@@ -43,7 +43,8 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     sender_org: "",
     recipient_name: "",
     recipient_org: "",
-    mode: props.canIncoming ? "walk-in" : "courier",
+    // Offices other than the records desk mostly send memos to other City offices
+    mode: props.canIncoming ? "walk-in" : "internal",
     document_date: "",
     due_date: "",
     forward_to: "",
@@ -156,8 +157,11 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           <label className="label" htmlFor="f-direction">Received or sent out?</label>
           <select id="f-direction" name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => set("direction", e.target.value as Fields["direction"])}>
             {props.canIncoming && <option value="incoming">Incoming (received by the City)</option>}
-            <option value="outgoing">Outgoing (sent by the City)</option>
+            <option value="outgoing">Outgoing (sent by the City or your office)</option>
           </select>
+          {!props.canIncoming && (
+            <p className="mt-1 text-sm text-slate-600">Letters that arrive from outside are logged by the Records Section. Memos to another City office are logged here as outgoing.</p>
+          )}
         </div>
         <div>
           <label className="label" htmlFor="f-document_type_id">Kind of document <Req /></label>
@@ -202,13 +206,13 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           <input id="f-document_date" name="document_date" type="date" className={`input ${hl("document_date")}`} value={f.document_date} onChange={(e) => set("document_date", e.target.value)} />
         </div>
         <div>
-          <label className="label" htmlFor="f-mode">How it arrived</label>
+          <label className="label" htmlFor="f-mode">{incoming ? "How it arrived" : "How it will be sent"}</label>
           <select id="f-mode" name="mode" className="input" value={f.mode} onChange={(e) => set("mode", e.target.value)}>
             <option value="walk-in">Hand-carried (walk-in)</option>
             <option value="courier">Courier</option>
             <option value="mail">Mail</option>
             <option value="email">Email</option>
-            <option value="internal">From another City office</option>
+            <option value="internal">{incoming ? "From another City office" : "To another City office"}</option>
           </select>
         </div>
 

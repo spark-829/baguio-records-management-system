@@ -17,10 +17,13 @@ export default async function HelpPage() {
       <nav aria-label="Help topics" className="card p-4">
         <ul className="grid gap-2 sm:grid-cols-2">
           {central && <li><a className="inline-block py-2 text-brand-700 underline" href="#log">Log a letter that just arrived</a></li>}
+          {!central && me.role !== "viewer" && <li><a className="inline-block py-2 text-brand-700 underline" href="#memo">Log a memo or letter your office sends</a></li>}
           <li><a className="inline-block py-2 text-brand-700 underline" href="#find">Find a document</a></li>
           <li><a className="inline-block py-2 text-brand-700 underline" href="#where">See where a document is now</a></li>
           {me.role !== "viewer" && <li><a className="inline-block py-2 text-brand-700 underline" href="#act">Add a note or send it to another office</a></li>}
           <li><a className="inline-block py-2 text-brand-700 underline" href="#late">See what is late</a></li>
+          {me.role !== "viewer" && <li><a className="inline-block py-2 text-brand-700 underline" href="#slip">Print a routing slip</a></li>}
+          {me.role !== "staff" && <li><a className="inline-block py-2 text-brand-700 underline" href="#reports">Reports and totals</a></li>}
           <li><a className="inline-block py-2 text-brand-700 underline" href="#ask">Ask the assistant</a></li>
           <li><a className="inline-block py-2 text-brand-700 underline" href="#bigger">Make the words bigger</a></li>
           <li><a className="inline-block py-2 text-brand-700 underline" href="#safe">Signing out and keeping records safe</a></li>
@@ -36,6 +39,16 @@ export default async function HelpPage() {
           <li>Press <Btn>Save and get tracking number</Btn>.</li>
           <li>Press <Btn>Print routing slip</Btn> and staple it to the paper.</li>
           <li>Changed your mind? Press <Btn>Cancel</Btn>. Nothing is saved.</li>
+        </Topic>
+      )}
+
+      {!central && me.role !== "viewer" && (
+        <Topic id="memo" title="Log a memo or letter your office sends">
+          <li>Click <Btn>Register</Btn> at the top.</li>
+          <li>It is already set to <em>Outgoing</em>. Letters that arrive from outside are logged by the Records Section, not here.</li>
+          <li>Fill in the boxes marked with a red <span className="font-semibold text-red-700">*</span>.</li>
+          <li>Choose the office under <em>Send to office</em> if it goes to another City office.</li>
+          <li>Press <Btn>Save and get tracking number</Btn>, then write the tracking number on the paper.</li>
         </Topic>
       )}
 
@@ -67,6 +80,24 @@ export default async function HelpPage() {
         <li>Click the red <em>Overdue</em> box. It lists every late document you are allowed to see.</li>
         <li>Further down, <em>Due in the next 7 days</em> lists what will be late soon, the nearest date first.</li>
       </Topic>
+
+      {me.role !== "viewer" && (
+        <Topic id="slip" title="Print a routing slip">
+          <li>Open the document.</li>
+          <li>Press <Btn>Print routing slip</Btn> near the top.</li>
+          <li>Press <Btn>Print</Btn>. The slip fits on one page and already lists the steps done so far.</li>
+          <li>Staple it to the paper. Each office writes its action and signs in the next empty row.</li>
+        </Topic>
+      )}
+
+      {me.role !== "staff" && (
+        <Topic id="reports" title="Reports and totals">
+          <li>Click <Btn>Reports</Btn> at the top.</li>
+          <li>To see one period only, choose the <em>From</em> and <em>To</em> dates, then press <Btn>Apply</Btn>.</li>
+          <li>Press <Btn>Print report</Btn> for a paper copy, or <Btn>Download list (Excel)</Btn> to open it in Excel.</li>
+          {me.role !== "viewer" && <li><em>Office workload</em> shows which offices have the most waiting and late documents.</li>}
+        </Topic>
+      )}
 
       <Topic id="ask" title="Ask the assistant">
         <li>Click <Btn>Assistant</Btn>.</li>

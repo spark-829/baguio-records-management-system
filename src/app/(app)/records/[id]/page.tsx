@@ -167,7 +167,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               <dd className="text-lg font-semibold">{officeName(rec.current_office)}</dd>
               {latest && (
                 <dd className="text-sm text-slate-700">
-                  Last handled by {latest.actor?.full_name ?? "—"} on {fmtDate(latest.created_at)}
+                  Last update by {latest.actor?.full_name ?? "—"} on {fmtDate(latest.created_at)}
                 </dd>
               )}
             </div>
@@ -265,7 +265,8 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           </section>
         </div>
 
-        <div className="space-y-4">
+        {/* On narrow screens (phones, zoomed-in laptops) the action panel comes right after "Now with", not below the history */}
+        <div className="order-first space-y-4 lg:order-none">
           <section className="card p-4">
             <h2 className="mb-2 font-semibold">Take action</h2>
             {actions.length > 0 && <p className="mb-2 text-sm text-slate-600">Nothing is saved until you press Save and then confirm.</p>}

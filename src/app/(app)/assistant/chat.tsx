@@ -24,7 +24,7 @@ function Rich({ text }: { text: string }) {
         return m ? (
           <Link key={i} href={m[2]} className="font-mono text-brand-700 underline">{m[1]}</Link>
         ) : (
-          <span key={i}>{p.replace(/\*\*/g, "")}</span>
+          <span key={i}>{p.replace(/\*\*([^*\n]+)\*\*/g, "$1")}</span>
         );
       })}
     </p>

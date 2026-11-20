@@ -123,12 +123,12 @@ const STOP = new Set(
     "letter letters paper papers waiting pending desk sign signature " +
     // Words that only say "where" or "which", not what the record is about
     "office offices opisina galing many much number count ilan logged registered still yet not paid unpaid open " +
-    "nandito andito dumating natanggap pa hindi").split(" "),
+    "nandito andito dumating natanggap pa hindi should first work akin unahin uunahin gawin gagawin priority prioritize").split(" "),
 );
 
 const STATUS_WORDS: [RegExp, SearchFilters["status"]][] = [
   [/\barchived\b/, "archived"],
-  [/\bcompleted?\b|\bdone\b|\bfinished\b/, "completed"],
+  [/\bcompleted?\b|\bdone\b|\bfinish(?:ed)?\b|\bnatapos\b|\btapos na\b/, "completed"],
   [/\breleased\b|\bsent out\b/, "released"],
   [/\bunder action\b|\bbeing acted\b|\bbeing worked on\b/, "under_action"],
   [/\bforwarded\b/, "forwarded"],
@@ -192,10 +192,15 @@ export function demoFilters(query: string, offices: { code: string; name: string
   }
 
   // "my office", "on my desk", "opisina ko": the signed-in person's own office
-  const mine = /\b(?:my office|my desk|on my desk|for me|opisina ko|sa amin)\b/.test(lower) && myOfficeCode;
+  // "What should I work on first?": open records in my office now, soonest due first (sorted by the chat)
+  const workList = /\bwork on\b|\bto do\b|\buunahin\b|\bgagawin\b|\bpriorit/.test(lower);
+  const mine = (/\b(?:my office|my desk|on my desk|for me|opisina ko|sa amin|sa akin)\b/.test(lower) || workList) && myOfficeCode;
   if (mine) {
     f.office = myOfficeCode;
-    notes.push("your office");
+    // Only what is physically there now, not records the office sent away
+    f.here = true;
+    if (workList) f.open = true;
+    notes.push(workList ? "open records in your office now" : "in your office now");
     ["office", "opisina", "amin"].forEach((w) => used.add(w));
   }
 
@@ -237,7 +242,9 @@ export function demoFilters(query: string, offices: { code: string; name: string
 
   // A capitalised name after from/by/of/for, e.g. "made by Juan dela Cruz", "from the Punong Barangay"
   const person = query.match(/\b(?:from|by|of|for|ni|kay|galing(?: sa)?|mula sa)\s+(?:the\s+)?((?:[A-Z][\w.'-]*)(?:\s+(?:dela|de|del|delos|de los|[A-Z][\w.'-]*))*)/);
-  if (person && !/^(City|Baguio|The)$/.test(person[1])) {
+  // "galing Treasury" names an office, not a person: the office filter above already covers it
+  const officeWord = person && (f.office && used.has(person[1].toLowerCase()) || /^(treasury|mayor|engineering|budget|legal|planning|hrmo|personnel)$/i.test(person[1]));
+  if (person && !officeWord && !/^(City|Baguio|The)$/.test(person[1])) {
     f.person = person[1].trim();
     notes.push(`person "${f.person}"`);
     f.person.toLowerCase().split(/\s+/).forEach((w) => used.add(w));
@@ -249,7 +256,7 @@ export function demoFilters(query: string, offices: { code: string; name: string
   if (days) {
     f.from = iso(new Date(today.getTime() - Number(days[1]) * 864e5));
     notes.push(`last ${days[1]} days`);
-  } else if (/\btoday\b/.test(lower)) {
+  } else if (/\btoday\b/.test(lower) && !workList) {
     f.from = iso(today);
     notes.push("today");
   } else if (/\b(this|past) week\b/.test(lower)) {
@@ -340,6 +347,25 @@ export async function demoChat(
     supabase.from("rms_offices").select("code, name").eq("is_active", true),
     supabase.from("rms_document_types").select("name").eq("is_active", true),
   ]);
+  // "Summarize IN-2026-0001" / "Pakisummarize" / "ibuod": answer with the record's summary, not a list
+  const asked = question.match(/\b(IN|OUT)-\d{4}-\d{4}\b/i);
+  if (asked && /summar|buod|explain|ipaliwanag|tell me about/i.test(question)) {
+    const tn = asked[0].toUpperCase();
+    const { data: rec } = await supabase
+      .from("rms_records")
+      .select("id, tracking_no, direction, subject, sender_name, sender_org, recipient_name, recipient_org, status, due_date, confidentiality, current_office:rms_offices!rms_records_current_office_id_fkey(name)")
+      .eq("tracking_no", tn)
+      .is("deleted_at", null)
+      .maybeSingle();
+    if (!rec || (excludeConfidential && rec.confidentiality === "confidential")) {
+      return { answer: `I could not find ${tn} among the records you may see${excludeConfidential ? " (confidential records are kept out of the assistant)" : ""}.`, records: [] };
+    }
+    const { data: steps } = await supabase.from("rms_routes").select("status, action_taken, remarks").eq("record_id", rec.id).order("created_at");
+    return {
+      answer: `Summary of [${rec.tracking_no}](/records/${rec.id}):\n${demoSummary({ ...rec, sender_name: null, recipient_name: null, sender_org: rec.sender_name || rec.sender_org ? partyLabel(rec.sender_name, rec.sender_org) : null, recipient_org: rec.recipient_name || rec.recipient_org ? partyLabel(rec.recipient_name, rec.recipient_org) : null }, steps ?? [])}`,
+      records: [{ id: rec.id, tracking_no: rec.tracking_no }],
+    };
+  }
   const f = demoFilters(question, offices ?? [], (types ?? []).map((t) => t.name), myOfficeCode);
   const officeName = new Map((offices ?? []).map((o) => [o.code, o.name]));
   const { explanation, ...filters } = f;
@@ -355,6 +381,10 @@ export async function demoChat(
   // "waiting", "pending", "on my desk": only records still being handled
   if (/\b(?:waiting|pending|on my desk|to sign|naghihintay)\b/i.test(question)) {
     rows = rows.filter((r) => !["completed", "released", "archived"].includes(r.status));
+  }
+  // Work list: soonest due first, then urgent ones
+  if (filters.open && filters.here) {
+    rows = [...rows].sort((a, b) => (a.due_date ?? "9999").localeCompare(b.due_date ?? "9999") || Number(b.priority === "urgent") - Number(a.priority === "urgent"));
   }
   const records = rows.map((r) => ({ id: r.id, tracking_no: r.tracking_no }));
   const head = `I searched the records you are allowed to see (${explanation}${relaxed ? `, ignoring the topic words` : ""}).`;

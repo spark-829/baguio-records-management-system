@@ -65,7 +65,7 @@ export default async function Dashboard() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/records/new" className="btn-primary">Register a record</Link>
+          {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">Register a record</Link>}
           <Link href="/assistant" className="btn-secondary">Ask the assistant</Link>
         </div>
       </div>
