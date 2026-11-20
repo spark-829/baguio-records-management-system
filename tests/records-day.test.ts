@@ -63,3 +63,28 @@ describe("incoming letters are never 'sent out'", () => {
     expect(a).not.toContain("release");
   });
 });
+
+describe("questions the department head tried", () => {
+  const OFF = [...OFFICES, { code: "CTO", name: "City Treasurer's Office" }];
+  it("urgent letters waiting for me: my office now, open, urgent", () => {
+    const f = demoFilters("Show urgent letters waiting for me", OFF, TYPES, "CEO");
+    expect(f).toMatchObject({ office: "CEO", here: true, priority: "urgent", open: true });
+    expect(f.q).toBeUndefined();
+  });
+  it("galing Treasury is the office, not a person", () => {
+    const f = demoFilters("Nasaan na yung memo galing Treasury tungkol sa business permit fees?", OFF, TYPES);
+    expect(f.office).toBe("CTO");
+    expect(f.person).toBeUndefined();
+    expect(f.docType).toBe("Memorandum");
+  });
+  it("finish counts as done", () => {
+    const f = demoFilters("How many records did my office finish this month?", OFF, TYPES, "CEO");
+    expect(f.status).toBe("completed");
+  });
+  it("what should I work on first today", () => {
+    const f = demoFilters("What should I work on first today?", OFF, TYPES, "CEO");
+    expect(f).toMatchObject({ office: "CEO", here: true, open: true });
+    expect(f.from).toBeUndefined();
+    expect(f.q).toBeUndefined();
+  });
+});

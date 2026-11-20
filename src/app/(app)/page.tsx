@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { STATUS_LABEL, dueText, fmtDate } from "@/lib/labels";
+import { STATUS_LABEL, daysFromToday, dueText, fmtDate } from "@/lib/labels";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -32,6 +32,10 @@ export default async function Dashboard() {
 
   const open = rows.filter((r) => !["completed", "released", "archived"].includes(r.status));
   const overdue = open.filter((r) => isOverdue(r.due_date, r.status));
+  // Due within the next 7 days (not yet late), soonest first: what to work on this week
+  const dueSoon = open
+    .filter((r) => r.due_date && !isOverdue(r.due_date, r.status) && daysFromToday(r.due_date) <= 7)
+    .sort((a, b) => a.due_date!.localeCompare(b.due_date!));
   const inbox = rows.filter(
     (r) => r.current_office_id === me.office_id && ["registered", "forwarded", "received", "under_action"].includes(r.status),
   );
@@ -61,7 +65,7 @@ export default async function Dashboard() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/records/new" className="btn-primary">Register a record</Link>
+          {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">Register a record</Link>}
           <Link href="/assistant" className="btn-secondary">Ask the assistant</Link>
         </div>
       </div>
@@ -100,6 +104,13 @@ export default async function Dashboard() {
         <section className="card border-red-200">
           <h2 className="border-b border-red-100 px-4 py-3 text-lg font-bold text-red-800">Overdue</h2>
           <RecordList rows={overdue} empty="" showDue />
+        </section>
+      )}
+
+      {dueSoon.length > 0 && (
+        <section className="card border-amber-200">
+          <h2 className="border-b border-amber-100 px-4 py-3 text-lg font-bold text-amber-900">Due in the next 7 days</h2>
+          <RecordList rows={dueSoon} empty="" showDue />
         </section>
       )}
 

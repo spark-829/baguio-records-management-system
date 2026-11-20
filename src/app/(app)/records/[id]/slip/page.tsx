@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { CONF_LABEL, PRIORITY_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import { PrintButton } from "./print-button";
 
+const shortStamp = (iso: string) =>
+  new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "Asia/Manila" }).format(new Date(iso));
+
 export default async function SlipPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -52,14 +55,15 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
             <p className="mt-1 text-[10px]">Scan to open the record</p>
           </div>
         </div>
-        <dl className="grid grid-cols-3 gap-y-2 py-4 text-sm">
+        <dl className="grid grid-cols-3 gap-y-1 py-3 text-sm">
           <dt className="font-semibold">Subject</dt><dd className="col-span-2">{r.subject}</dd>
           <dt className="font-semibold">{r.direction === "incoming" ? "From" : "To"}</dt><dd className="col-span-2">{party.filter(Boolean).join(", ") || "—"}</dd>
           <dt className="font-semibold">Date on document</dt><dd className="col-span-2">{fmtDate(r.document_date)}</dd>
           <dt className="font-semibold">Registered</dt><dd className="col-span-2">{fmtDateTime(r.created_at)} · {r.origin?.name} · {r.creator?.full_name}</dd>
           <dt className="font-semibold">Action due</dt><dd className="col-span-2">{fmtDate(r.due_date)}</dd>
         </dl>
-        <table className="w-full border-collapse text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[34rem] border-collapse text-xs">
           <thead>
             <tr>
               {[["Date / time", "w-[16%]"], ["From", "w-[13%]"], ["To", "w-[13%]"], ["Action taken / remarks", ""], ["Signature", "w-[17%]"]].map(([h, w]) => (
@@ -69,21 +73,22 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
           </thead>
           <tbody>
             {done.map((d, i) => (
-              <tr key={`d${i}`} className="h-10 align-top text-xs">
-                <td className="border border-slate-900 px-1">{fmtDateTime(d.created_at)}</td>
+              <tr key={`d${i}`} className="align-top text-xs leading-snug">
+                <td className="border border-slate-900 px-1 whitespace-nowrap">{shortStamp(d.created_at)}</td>
                 <td className="border border-slate-900 px-1">{d.from_office?.code}</td>
                 <td className="border border-slate-900 px-1">{d.to_office?.code}</td>
                 <td className="border border-slate-900 px-1">{[d.action_taken, d.remarks].filter(Boolean).join(" · ")}</td>
                 <td className="border border-slate-900 px-1 text-slate-500">(in system)</td>
               </tr>
             ))}
-            {Array.from({ length: Math.max(8, 12 - done.length) }).map((_, i) => (
-              <tr key={i} className="h-10">
+            {Array.from({ length: Math.max(3, 9 - done.length) }).map((_, i) => (
+              <tr key={i} className="h-9">
                 {Array.from({ length: 5 }).map((__, j) => <td key={j} className="border border-slate-900" />)}
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

@@ -20,6 +20,19 @@ export const ACTIONS: Record<ActionKind, ActionDef> = {
   archive: { kind: "archive", label: "File away (archive)", to: "archived" },
 };
 
+/** What the history says when no "what was done" text was typed: what happened, not the button's name. */
+export function doneText(kind: ActionKind, toOfficeName?: string | null): string {
+  switch (kind) {
+    case "forward": return toOfficeName ? `Sent to ${toOfficeName}` : "Sent to another office";
+    case "receive": return "Received";
+    case "act": return "Work started";
+    case "remark": return "Note added";
+    case "complete": return "Done";
+    case "release": return "Sent out";
+    case "archive": return "Filed away (archived)";
+  }
+}
+
 const BY_STATUS: Record<Status, ActionKind[]> = {
   registered: ["forward", "act", "remark", "complete", "release", "archive"],
   forwarded: ["receive", "remark"],
