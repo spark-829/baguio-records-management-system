@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { toFilters } from "@/lib/ai";
+import { DEMO_LABEL, demoFilters, isAiDemo } from "@/lib/ai-demo";
 import { aiError, apiContext } from "@/lib/api";
 import { filtersToParams } from "@/lib/search";
 
@@ -15,7 +16,13 @@ export async function POST(req: Request) {
     supabase.from("rms_offices").select("code, name").eq("is_active", true),
   ]);
   try {
-    const f = await toFilters(query, offices ?? [], (types ?? []).map((t) => t.name));
+    const demo = isAiDemo();
+    const f = demo
+      ? (() => {
+          const d = demoFilters(query, offices ?? [], (types ?? []).map((t) => t.name));
+          return { ...d, explanation: `${DEMO_LABEL}. Filters: ${d.explanation}` };
+        })()
+      : await toFilters(query, offices ?? [], (types ?? []).map((t) => t.name));
     const params = filtersToParams({
       q: f.q ?? undefined,
       person: f.person ?? undefined,
@@ -27,7 +34,7 @@ export async function POST(req: Request) {
       to: f.to ?? undefined,
       overdue: f.overdue,
     });
-    return NextResponse.json({ params: params.toString(), explanation: f.explanation });
+    return NextResponse.json({ params: params.toString(), explanation: f.explanation, demo });
   } catch (err) {
     return aiError(err);
   }

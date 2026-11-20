@@ -83,3 +83,13 @@ npm run deploy
 ```
 
 The Supabase URL and publishable key are public values set in `wrangler.jsonc`.
+
+### AI demo mode
+
+Without `ANTHROPIC_API_KEY` the app runs its AI features in **demo mode**, labeled "Demo mode: sample AI output" on screen:
+
+- **Scan-to-prefill** fills the form from one of three prepared sample letters (the uploaded file is not read).
+- **Plain-language search** and the **records assistant** use a rule-based parser (names after "by/from", offices, document types, overdue, dates) and then run the normal search under the signed-in user's access rights, so the answers are live records.
+- **Summaries** are built from the record's fields and latest action.
+
+Audit logging and access control are the same in both modes (`model: "demo"` in the audit log). Add the secret to switch to Claude Haiku with no code change; set `AI_DEMO_MODE=1` to force demo mode even with a key.
