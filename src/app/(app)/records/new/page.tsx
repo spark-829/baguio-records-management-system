@@ -1,0 +1,23 @@
+import { getProfile, isCentral } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
+import { RegisterForm } from "./register-form";
+
+export default async function NewRecordPage() {
+  const me = await getProfile();
+  const supabase = await createClient();
+  const [{ data: types }, { data: offices }] = await Promise.all([
+    supabase.from("rms_document_types").select("id, name").eq("is_active", true).order("name"),
+    supabase.from("rms_offices").select("id, code, name").eq("is_active", true).order("code"),
+  ]);
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold">Register a record</h1>
+        <p className="text-sm text-slate-600">
+          Upload the scanned document and the assistant fills in the form. Check every field before saving. A tracking number is issued when you save.
+        </p>
+      </div>
+      <RegisterForm types={types ?? []} offices={offices ?? []} canIncoming={isCentral(me)} myOfficeId={me.office_id} />
+    </div>
+  );
+}
