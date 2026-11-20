@@ -327,6 +327,10 @@ export async function demoChat(
     rows = await searchRecords(supabase, { ...filters, q: undefined }, 10, excludeConfidential);
     relaxed = rows.length > 0;
   }
+  // "waiting", "pending", "on my desk": only records still being handled
+  if (/\b(?:waiting|pending|on my desk|to sign|naghihintay)\b/i.test(question)) {
+    rows = rows.filter((r) => !["completed", "released", "archived"].includes(r.status));
+  }
   const records = rows.map((r) => ({ id: r.id, tracking_no: r.tracking_no }));
   const head = `I searched the records you are allowed to see (${explanation}${relaxed ? `, ignoring the topic words` : ""}).`;
   if (rows.length === 0) {
