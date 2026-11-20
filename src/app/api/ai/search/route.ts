@@ -33,6 +33,8 @@ export async function POST(req: Request) {
       from: f.from ?? undefined,
       to: f.to ?? undefined,
       overdue: f.overdue,
+      open: "open" in f ? Boolean(f.open) : undefined,
+      priority: "priority" in f ? (f.priority as "urgent" | undefined) : undefined,
     });
     return NextResponse.json({ params: params.toString(), explanation: f.explanation, demo });
   } catch (err) {

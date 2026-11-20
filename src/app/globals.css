@@ -191,7 +191,13 @@ main table tbody tr:hover {
   @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs leading-snug font-semibold whitespace-nowrap ring-1 ring-current/25 ring-inset;
 }
 
+.print-only {
+  display: none;
+}
 @media print {
+  .print-only {
+    display: block !important;
+  }
   .no-print {
     display: none !important;
   }

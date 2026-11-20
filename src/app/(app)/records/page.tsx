@@ -11,10 +11,10 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const f = filtersFromParams(sp);
   // "Open only" comes from the dashboard boxes: hide finished records
-  const onlyOpen = sp.open === "1";
+  const onlyOpen = Boolean(f.open);
   const supabase = await createClient();
   const [rows, offices, types] = await Promise.all([
-    searchRecords(supabase, f, 100).then((rs) => (onlyOpen ? rs.filter((r) => !["completed", "released", "archived"].includes(r.status)) : rs)),
+    searchRecords(supabase, f, 100),
     supabase.from("rms_offices").select("code, name").eq("is_active", true).order("code"),
     supabase.from("rms_document_types").select("name").eq("is_active", true).order("name"),
   ]);
@@ -32,7 +32,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             {onlyOpen && (
               <>
                 {" · "}
-                <Link href={`/records?${filtersToParams(f).toString()}`}>Show finished ones too</Link>
+                <Link href={`/records?${filtersToParams({ ...f, open: false }).toString()}`}>Show finished ones too</Link>
               </>
             )}
           </p>
@@ -55,7 +55,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           <button className="btn-primary flex-1">Search</button>
           <Link href="/records" className="btn-secondary">Clear</Link>
         </div>
-        <details className="md:col-span-4" open={Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue)}>
+        <details className="md:col-span-4" open={Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here)}>
           <summary className="cursor-pointer py-1 font-medium text-brand-700">More ways to narrow the list</summary>
           <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div>
@@ -101,10 +101,21 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             <input className="input" id="to" name="to" type="date" defaultValue={f.to} />
           </div>
         </div>
-        <div className="flex items-end md:col-span-2 lg:col-span-4">
+        <div className="flex flex-wrap items-end gap-x-6 md:col-span-2 lg:col-span-4">
           <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
             <input type="checkbox" className="checkbox" name="overdue" value="1" defaultChecked={f.overdue} /> Show only late (overdue) records
           </label>
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
+            <input type="checkbox" className="checkbox" name="open" value="1" defaultChecked={f.open} /> Only ones still being handled
+          </label>
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
+            <input type="checkbox" className="checkbox" name="priority" value="urgent" defaultChecked={f.priority === "urgent"} /> Only urgent ones
+          </label>
+          {f.here && f.office && (
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
+              <input type="checkbox" className="checkbox" name="here" value="1" defaultChecked /> Only ones that are in this office now
+            </label>
+          )}
         </div>
           </div>
         </details>

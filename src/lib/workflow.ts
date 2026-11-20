@@ -44,7 +44,8 @@ export function allowedActions(opts: {
   const holdsIt = userOfficeId !== null && userOfficeId === currentOfficeId;
   if (!central && !holdsIt) return [];
   let actions = BY_STATUS[status];
-  if (direction === "incoming" && status === "registered") actions = actions.filter((a) => a !== "release");
+  // Only outgoing letters are "sent out"; an incoming letter is answered with a new outgoing record.
+  if (direction === "incoming") actions = actions.filter((a) => a !== "release");
   if (!central) actions = actions.filter((a) => a !== "archive");
   return actions;
 }

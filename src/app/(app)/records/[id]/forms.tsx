@@ -47,7 +47,7 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
   const summary =
     kind === "forward"
       ? `Send ${trackingNo} to ${officeLabel ?? "the office you chose"}?`
-      : `${ACTIONS[kind].label} for ${trackingNo}?`;
+      : `${ACTIONS[kind].label.replace(/\s*\(.*\)$/, "")}: ${trackingNo}?`;
 
   if (!open)
     return (
@@ -108,7 +108,7 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
         <input id="act-taken" name="action_taken" className="input" placeholder="e.g. Site inspected, voucher signed" />
       </div>
       <div>
-        <label className="label" htmlFor="act-remarks">Note for the next office (optional)</label>
+        <label className="label" htmlFor="act-remarks">{kind === "forward" ? "Note for the next office (optional)" : "Note (optional)"}</label>
         <textarea id="act-remarks" name="remarks" rows={3} className="input" placeholder="e.g. Please inspect within 3 working days" />
       </div>
       {state?.error && <p className="text-sm text-red-700" role="alert">{state.error}</p>}

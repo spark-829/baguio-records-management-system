@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
@@ -14,6 +15,13 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
     .eq("id", id)
     .maybeSingle();
   if (!rec) notFound();
+  // Steps already done are printed on the slip, so the paper matches the system.
+  const { data: steps } = await supabase
+    .from("rms_routes")
+    .select("created_at, action_taken, remarks, from_office:rms_offices!rms_routes_from_office_id_fkey(code), to_office:rms_offices!rms_routes_to_office_id_fkey(code)")
+    .eq("record_id", id)
+    .order("created_at");
+  const done = (steps ?? []) as unknown as { created_at: string; action_taken: string | null; remarks: string | null; from_office: { code: string } | null; to_office: { code: string } | null }[];
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const qr = await QRCode.toString(`${origin}/records/${rec.id}`, { type: "svg", margin: 0, width: 132 });
@@ -27,7 +35,10 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="no-print mb-4 flex justify-end"><PrintButton /></div>
+      <div className="no-print mb-4 flex justify-between gap-2">
+        <Link href={`/records/${id}`} className="btn-secondary">Back to record</Link>
+        <PrintButton />
+      </div>
       <div className="border-2 border-slate-900 bg-white p-6 text-slate-900">
         <div className="flex items-start justify-between gap-6 border-b-2 border-slate-900 pb-4">
           <div>
@@ -51,13 +62,22 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>
-              {["Date / time", "From", "To", "Action taken / remarks", "Signature"].map((h) => (
-                <th key={h} className="border border-slate-900 px-2 py-1 text-left">{h}</th>
+              {[["Date / time", "w-[16%]"], ["From", "w-[13%]"], ["To", "w-[13%]"], ["Action taken / remarks", ""], ["Signature", "w-[17%]"]].map(([h, w]) => (
+                <th key={h} className={`border border-slate-900 px-2 py-1 text-left ${w}`}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {Array.from({ length: 6 }).map((_, i) => (
+            {done.map((d, i) => (
+              <tr key={`d${i}`} className="h-10 align-top text-xs">
+                <td className="border border-slate-900 px-1">{fmtDateTime(d.created_at)}</td>
+                <td className="border border-slate-900 px-1">{d.from_office?.code}</td>
+                <td className="border border-slate-900 px-1">{d.to_office?.code}</td>
+                <td className="border border-slate-900 px-1">{[d.action_taken, d.remarks].filter(Boolean).join(" · ")}</td>
+                <td className="border border-slate-900 px-1 text-slate-500">(in system)</td>
+              </tr>
+            ))}
+            {Array.from({ length: Math.max(8, 12 - done.length) }).map((_, i) => (
               <tr key={i} className="h-10">
                 {Array.from({ length: 5 }).map((__, j) => <td key={j} className="border border-slate-900" />)}
               </tr>
