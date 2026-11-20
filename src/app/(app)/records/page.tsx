@@ -10,6 +10,8 @@ import { AiSearchBox } from "./ai-search-box";
 export default async function RecordsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const f = filtersFromParams(sp);
+  // "Open only" comes from the dashboard boxes: hide finished records
+  const onlyOpen = Boolean(f.open);
   const supabase = await createClient();
   const [rows, offices, types] = await Promise.all([
     searchRecords(supabase, f, 100),
@@ -25,7 +27,15 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Records</h1>
-          <p className="text-sm text-slate-600">{rows.length} record{rows.length === 1 ? "" : "s"} found</p>
+          <p className="text-sm text-slate-600">
+            {rows.length} {onlyOpen ? "open " : ""}record{rows.length === 1 ? "" : "s"} found
+            {onlyOpen && (
+              <>
+                {" · "}
+                <Link href={`/records?${filtersToParams({ ...f, open: false }).toString()}`}>Show finished ones too</Link>
+              </>
+            )}
+          </p>
         </div>
         <div className="flex gap-2">
           <a href={exportHref} className="btn-secondary" title="Opens in Excel">Download list (Excel)</a>
@@ -45,7 +55,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           <button className="btn-primary flex-1">Search</button>
           <Link href="/records" className="btn-secondary">Clear</Link>
         </div>
-        <details className="md:col-span-4" open={Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue)}>
+        <details className="md:col-span-4" open={Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here)}>
           <summary className="cursor-pointer py-1 font-medium text-brand-700">More ways to narrow the list</summary>
           <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div>
@@ -91,10 +101,21 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             <input className="input" id="to" name="to" type="date" defaultValue={f.to} />
           </div>
         </div>
-        <div className="flex items-end md:col-span-2 lg:col-span-4">
+        <div className="flex flex-wrap items-end gap-x-6 md:col-span-2 lg:col-span-4">
           <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
             <input type="checkbox" className="checkbox" name="overdue" value="1" defaultChecked={f.overdue} /> Show only late (overdue) records
           </label>
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
+            <input type="checkbox" className="checkbox" name="open" value="1" defaultChecked={f.open} /> Only ones still being handled
+          </label>
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
+            <input type="checkbox" className="checkbox" name="priority" value="urgent" defaultChecked={f.priority === "urgent"} /> Only urgent ones
+          </label>
+          {f.here && f.office && (
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
+              <input type="checkbox" className="checkbox" name="here" value="1" defaultChecked /> Only ones that are in this office now
+            </label>
+          )}
         </div>
           </div>
         </details>
@@ -104,13 +125,35 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         For privacy, people&apos;s names are shortened in this list (for example “J*** dela C***”). Open a record to see the full name.
       </p>
 
-      <div className="card overflow-x-auto">
+      {/* Phones: one card per record, the whole card is a link */}
+      <ul className="space-y-3 md:hidden">
+        {rows.map((r) => (
+          <li key={r.id}>
+            <Link href={`/records/${r.id}`} className="card block p-4 no-underline hover:border-brand-600">
+              <span className="font-mono text-sm text-slate-600">{r.tracking_no}</span>
+              <span className="mt-1 block font-semibold text-ink">{r.subject}</span>
+              <span className="mt-2 flex flex-wrap items-center gap-1.5">
+                <StatusBadge status={r.status} />
+                <PriorityBadge priority={r.priority} />
+                <ConfBadge level={r.confidentiality} />
+                {isOverdue(r.due_date, r.status) && <OverdueBadge />}
+              </span>
+              <span className="mt-2 block text-sm text-slate-700">
+                Now with {officeNames.get(r.current_office) ?? r.current_office} · logged {fmtDate(r.created_at)}
+              </span>
+            </Link>
+          </li>
+        ))}
+        {rows.length === 0 && <li className="card p-6 text-center text-slate-600">No records match. Try fewer filters.</li>}
+      </ul>
+
+      <div className="card hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
             <tr>
               <th className="px-4 py-2">Tracking no.</th>
               <th className="px-4 py-2">Subject</th>
-              <th className="px-4 py-2">Type</th>
+              <th className="hidden px-4 py-2 lg:table-cell">Type</th>
               <th className="px-4 py-2">From / To</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Office</th>
@@ -131,7 +174,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
                     {isOverdue(r.due_date, r.status) && <OverdueBadge />}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-slate-600">{r.document_type}</td>
+                <td className="hidden px-4 py-2 text-slate-600 lg:table-cell">{r.document_type}</td>
                 <td className="px-4 py-2 text-slate-600">{r.direction === "incoming" ? partyLabel(r.sender_name, r.sender_org) : partyLabel(r.recipient_name, r.recipient_org)}</td>
                 <td className="px-4 py-2"><StatusBadge status={r.status} /></td>
                 <td className="px-4 py-2 text-slate-600">{officeNames.get(r.current_office) ?? r.current_office}</td>

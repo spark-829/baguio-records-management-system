@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +8,7 @@ import type { Status } from "@/lib/types";
 import { PrintButton } from "../records/[id]/slip/print-button";
 
 type Row = {
+  id: string;
   status: Status;
   direction: "incoming" | "outgoing";
   created_at: string;
@@ -24,8 +26,8 @@ function Bars({ title, data }: { title: string; data: { label: string; n: number
       <h2 className="mb-3 font-semibold">{title}</h2>
       <ul className="space-y-2">
         {data.map((d) => (
-          <li key={d.label} className="grid grid-cols-[9rem_1fr_2.5rem] items-center gap-2 text-sm">
-            <span className="truncate text-slate-600">{d.label}</span>
+          <li key={d.label} className="grid grid-cols-[minmax(7rem,14rem)_1fr_2.5rem] items-center gap-2 text-sm">
+            <span className="text-slate-700">{d.label}</span>
             <span className="h-3 rounded bg-slate-100">
               <span className="block h-3 rounded bg-brand-600" style={{ width: `${(d.n / max) * 100}%` }} />
             </span>
@@ -51,7 +53,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const supabase = await createClient();
   let query = supabase
     .from("rms_records")
-    .select("status, direction, created_at, due_date, tracking_no, subject, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
+    .select("id, status, direction, created_at, due_date, tracking_no, subject, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
     .is("deleted_at", null)
     .order("created_at");
   if (from) query = query.gte("created_at", from);
@@ -59,26 +61,35 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const { data } = await query.limit(5000);
   const rows = (data ?? []) as unknown as Row[];
 
-  const months = tally(rows, (r) => r.created_at.slice(0, 7)).sort((a, b) => a.label.localeCompare(b.label));
-  const overdue = rows.filter((r) => isOverdue(r.due_date, r.status));
+  const months = tally(rows, (r) => r.created_at.slice(0, 7))
+    .sort((a, b) => a.label.localeCompare(b.label))
+    .map((m) => ({ ...m, label: new Intl.DateTimeFormat("en-PH", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${m.label}-15T00:00:00Z`)) }));
+  const overdue = rows.filter((r) => isOverdue(r.due_date, r.status)).sort((a, b) => (a.due_date ?? "").localeCompare(b.due_date ?? ""));
+  const printedAt = new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Manila" }).format(new Date());
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
+          <p className="print-only text-xs font-semibold uppercase tracking-widest">City Government of Baguio · Records Management System (demo)</p>
           <h1 className="text-2xl font-bold">Reports</h1>
           <p className="text-sm text-slate-600">
             {isCentral(me) ? "All offices" : me.office?.name} · {from || to ? `${fmtDate(from)} to ${fmtDate(to)}` : "all dates"} · {rows.length} records
           </p>
+          <p className="print-only text-sm">Prepared by {me.full_name} on {printedAt}</p>
         </div>
         <form className="no-print flex flex-wrap items-end gap-2" method="get">
-          <div><label className="label">From</label><input type="date" name="from" defaultValue={from} className="input" /></div>
-          <div><label className="label">To</label><input type="date" name="to" defaultValue={to} className="input" /></div>
+          <div><label className="label" htmlFor="rep-from">From</label><input id="rep-from" type="date" name="from" defaultValue={from} className="input" /></div>
+          <div><label className="label" htmlFor="rep-to">To</label><input id="rep-to" type="date" name="to" defaultValue={to} className="input" /></div>
           <button className="btn-secondary">Apply</button>
           <a className="btn-secondary" href={`/api/reports/csv?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`}>Download list (Excel)</a>
           <PrintButton label="Print report" />
         </form>
       </div>
+      <nav aria-label="More reports" className="no-print flex flex-wrap gap-2">
+        <Link href="/reports/offices" className="btn-secondary">Office workload</Link>
+        {isCentral(me) && <Link href="/reports/retention" className="btn-secondary">Retention schedule</Link>}
+      </nav>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
@@ -96,7 +107,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
       <div className="grid gap-4 md:grid-cols-2">
         <Bars title="By status" data={tally(rows, (r) => STATUS_LABEL[r.status])} />
-        <Bars title="By current office" data={tally(rows, (r) => r.current_office?.code ?? "—")} />
+        <Bars title="By current office" data={tally(rows, (r) => r.current_office?.name ?? "—")} />
         <Bars title="By document type" data={tally(rows, (r) => r.doc_type?.name ?? "—")} />
         <Bars title="Registered per month" data={months} />
       </div>
@@ -105,11 +116,11 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <h2 className="mb-2 font-semibold">Overdue records</h2>
         <table className="w-full text-sm">
           <thead className="text-left text-xs uppercase text-slate-500">
-            <tr><th className="py-1">Tracking no.</th><th>Subject</th><th>Office</th><th>Due</th></tr>
+            <tr><th className="py-1">Tracking no.</th><th>Subject</th><th>Now with</th><th>Was due (oldest first)</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {overdue.map((r) => (
-              <tr key={r.tracking_no}><td className="py-1 font-mono text-xs">{r.tracking_no}</td><td>{r.subject}</td><td>{r.current_office?.code}</td><td>{fmtDate(r.due_date)}</td></tr>
+              <tr key={r.tracking_no}><td className="py-1 font-mono text-xs"><Link href={`/records/${r.id}`}>{r.tracking_no}</Link></td><td>{r.subject}</td><td>{r.current_office?.name}</td><td>{fmtDate(r.due_date)}</td></tr>
             ))}
             {overdue.length === 0 && <tr><td colSpan={4} className="py-2 text-slate-500">None.</td></tr>}
           </tbody>

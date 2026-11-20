@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { ACTIONS, type ActionKind } from "@/lib/workflow";
 import { addAttachment, deleteRecord, recordAction } from "./actions";
 
@@ -13,21 +13,41 @@ type Office = { id: string; code: string; name: string };
 export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }: { recordId: string; trackingNo: string; actions: ActionKind[]; offices: Office[]; returnTo?: Office | null }) {
   const [state, action, pending] = useActionState(recordAction, undefined);
   const canReturn = Boolean(returnTo && actions.includes("forward") && offices.some((o) => o.id === returnTo.id));
+  // "Add a note" comes first when allowed: the safest choice is the default
+  const ordered = [...actions].sort((a, b) => Number(b === "remark") - Number(a === "remark"));
   const choices: { value: string; label: string }[] = [
+    ...ordered.slice(0, 1).map((a) => ({ value: a, label: ACTIONS[a].label })),
     ...(canReturn ? [{ value: "return", label: `Send back to ${returnTo!.name}` }] : []),
-    ...actions.map((a) => ({ value: a, label: ACTIONS[a].label })),
+    ...ordered.slice(1).map((a) => ({ value: a, label: ACTIONS[a].label })),
   ];
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState(choices[0].value);
+  const opener = useRef<HTMLButtonElement>(null);
+  const firstField = useRef<HTMLSelectElement>(null);
+  const confirmBox = useRef<HTMLDivElement>(null);
+  const wasOpen = useRef(false);
+  // Keyboard users: focus moves into the panel when it opens, to the question when confirming, and back when it closes.
+  useEffect(() => {
+    if (open) firstField.current?.focus();
+    else if (wasOpen.current) opener.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
   const [office, setOffice] = useState("");
   const [confirming, setConfirming] = useState(false);
+  useEffect(() => {
+    if (confirming) confirmBox.current?.focus();
+  }, [confirming]);
+  const close = () => {
+    setOpen(false);
+    setConfirming(false);
+  };
   const kind: ActionKind = choice === "return" ? "forward" : (choice as ActionKind);
   const toOffice = choice === "return" ? returnTo!.id : office;
   const officeLabel = offices.find((o) => o.id === toOffice)?.name;
   const summary =
     kind === "forward"
       ? `Send ${trackingNo} to ${officeLabel ?? "the office you chose"}?`
-      : `${ACTIONS[kind].label} for ${trackingNo}?`;
+      : `${ACTIONS[kind].label.replace(/\s*\(.*\)$/, "")}: ${trackingNo}?`;
 
   if (!open)
     return (
@@ -35,7 +55,7 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
         {pending && <p className="text-sm text-slate-700" role="status">Saving…</p>}
         {!pending && state?.ok && <p className="text-sm text-emerald-700" role="status">{state.ok}</p>}
         {!pending && state?.error && <p className="text-sm text-red-700" role="alert">Not saved: {state.error}</p>}
-        <button type="button" className="btn-primary w-full" onClick={() => setOpen(true)}>
+        <button ref={opener} type="button" className="btn-primary w-full" onClick={() => setOpen(true)}>
           Add a note or send to another office
         </button>
       </div>
@@ -48,6 +68,20 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
         setOpen(false);
         return action(fd);
       }}
+      onSubmit={(e) => {
+        // Pressing Enter in a text box must never save straight away: it asks first.
+        if (!confirming) {
+          e.preventDefault();
+          if (!(choice === "forward" && !office)) setConfirming(true);
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          if (confirming) setConfirming(false);
+          else close();
+        }
+      }}
       className="space-y-3"
       key={actions.join()}
     >
@@ -56,7 +90,7 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
       {kind === "forward" && <input type="hidden" name="to_office_id" value={toOffice} />}
       <div>
         <label className="label" htmlFor="act-kind">What do you want to do?</label>
-        <select id="act-kind" className="input" value={choice} onChange={(e) => { setChoice(e.target.value); setConfirming(false); }}>
+        <select ref={firstField} id="act-kind" className="input" value={choice} onChange={(e) => { setChoice(e.target.value); setConfirming(false); }}>
           {choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
         </select>
       </div>
@@ -74,13 +108,13 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
         <input id="act-taken" name="action_taken" className="input" placeholder="e.g. Site inspected, voucher signed" />
       </div>
       <div>
-        <label className="label" htmlFor="act-remarks">Note for the next office (optional)</label>
+        <label className="label" htmlFor="act-remarks">{kind === "forward" ? "Note for the next office (optional)" : "Note (optional)"}</label>
         <textarea id="act-remarks" name="remarks" rows={3} className="input" placeholder="e.g. Please inspect within 3 working days" />
       </div>
       {state?.error && <p className="text-sm text-red-700" role="alert">{state.error}</p>}
       {confirming ? (
-        <div className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3" role="alertdialog" aria-label="Please confirm">
-          <p className="font-medium text-amber-950">{summary}</p>
+        <div ref={confirmBox} tabIndex={-1} className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3" role="alertdialog" aria-label="Please confirm" aria-describedby="act-confirm-q">
+          <p id="act-confirm-q" className="font-medium text-amber-950">{summary}</p>
           <div className="flex gap-2">
             <button className="btn-primary flex-1" disabled={pending}>{pending ? "Saving…" : "Yes, save it"}</button>
             <button type="button" className="btn-secondary flex-1" onClick={() => setConfirming(false)}>No, go back</button>
@@ -88,15 +122,10 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
         </div>
       ) : (
         <div className="flex gap-2">
-          <button
-            type="button"
-            className="btn-primary flex-1"
-            disabled={choice === "forward" && !office}
-            onClick={() => setConfirming(true)}
-          >
+          <button type="submit" className="btn-primary flex-1" disabled={choice === "forward" && !office}>
             Save
           </button>
-          <button type="button" className="btn-secondary flex-1" onClick={() => { setOpen(false); setConfirming(false); }}>
+          <button type="button" className="btn-secondary flex-1" onClick={close}>
             Cancel
           </button>
         </div>

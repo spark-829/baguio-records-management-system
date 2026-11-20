@@ -249,10 +249,10 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           <input id="f-due_date" name="due_date" type="date" className="input" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} />
         </div>
 
-        <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-wrap items-center justify-end gap-3 rounded-b-xl border-t border-slate-200 bg-white/95 px-5 py-3 md:col-span-2">
-          {state?.error && <p className="mr-auto text-sm text-red-700" role="alert">{state.error}</p>}
-          <Link href="/records" className="btn-secondary">Cancel (nothing is saved)</Link>
-          <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : "Save and get tracking number"}</button>
+        <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-xl border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
+          {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{state.error}</p>}
+          <Link href="/records" className="btn-secondary">Cancel<span className="hidden sm:inline">&nbsp;(nothing is saved)</span></Link>
+          <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : <>Save<span className="hidden sm:inline">&nbsp;and get tracking number</span></>}</button>
         </div>
       </section>
     </form>
