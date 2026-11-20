@@ -68,4 +68,9 @@ export interface SearchFilters {
   from?: string;
   to?: string;
   overdue?: boolean;
+  /** Only records that are physically in `office` now (not ones it started) */
+  here?: boolean;
+  /** Only records still being handled */
+  open?: boolean;
+  priority?: Priority;
 }

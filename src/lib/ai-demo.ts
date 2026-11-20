@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { IntakeResult } from "./ai";
 import { searchRecords } from "./search";
+import { STATUS_LABEL, partyLabel } from "./labels";
 import type { SearchFilters } from "./types";
 
 /**
@@ -119,7 +120,10 @@ const STOP = new Set(
     "with you your please list made sent missing still need needs status today week month last days day ago this past since " +
     // Filipino / Taglish filler words, and words that mean "a document" without naming a type
     "kailan saan sino ano mga ng sa nasaan nasan na po yung iyong ang ba ko dito para may hawak sulat tungkol dokumento papeles " +
-    "letter letters paper papers waiting pending desk sign signature").split(" "),
+    "letter letters paper papers waiting pending desk sign signature " +
+    // Words that only say "where" or "which", not what the record is about
+    "office offices opisina galing many much number count ilan logged registered still yet not paid unpaid open " +
+    "nandito andito dumating natanggap pa hindi").split(" "),
 );
 
 const STATUS_WORDS: [RegExp, SearchFilters["status"]][] = [
@@ -129,6 +133,13 @@ const STATUS_WORDS: [RegExp, SearchFilters["status"]][] = [
   [/\bunder action\b|\bbeing acted\b|\bbeing worked on\b/, "under_action"],
   [/\bforwarded\b/, "forwarded"],
 ];
+
+/** Filipino topic words to the English words used in the records ("kalsada" -> road). */
+const TAGALOG: Record<string, string> = {
+  kalsada: "road", daan: "road", tulay: "bridge", tubig: "water", ilaw: "streetlight", basura: "garbage",
+  kanal: "drainage", baha: "flood", permiso: "permit", bayad: "payment", sahod: "salary", reklamo: "complaint",
+  paaralan: "school", eskwela: "school", puno: "tree", palengke: "market", sunog: "fire",
+};
 
 export interface DemoFilters extends SearchFilters {
   explanation: string;
@@ -164,10 +175,20 @@ export function demoFilters(query: string, offices: { code: string; name: string
   for (const [re, status] of STATUS_WORDS) {
     if (re.test(lower)) {
       f.status = status;
-      notes.push(`status ${status!.replace("_", " ")}`);
+      notes.push(`status "${STATUS_LABEL[status!]}"`);
       lower.match(re)![0].split(" ").forEach((w) => used.add(w));
       break;
     }
+  }
+
+  if (/\burgent\b|\brush\b|\bapurahan\b|\bmadalian\b/.test(lower)) {
+    f.priority = "urgent";
+    notes.push("urgent only");
+    ["urgent", "rush", "apurahan", "madalian"].forEach((w) => used.add(w));
+  }
+  if (!f.status && /\bnot (?:yet )?paid\b|\bunpaid\b|\bstill\b|\bpending\b|\bwaiting\b|\bnaghihintay\b|\bhindi pa\b|\bopen\b/.test(lower)) {
+    f.open = true;
+    notes.push("still being handled");
   }
 
   // "my office", "on my desk", "opisina ko": the signed-in person's own office
@@ -185,7 +206,7 @@ export function demoFilters(query: string, offices: { code: string; name: string
     const hit = new RegExp(`\\b${o.code}\\b`).test(query) ? o.code.toLowerCase() : [...words, ...alias].find((w) => new RegExp(`\\b${w}`).test(lower));
     if (hit) {
       f.office = o.code;
-      notes.push(`office ${o.code}`);
+      notes.push(o.name);
       used.add(hit);
       words.forEach((w) => used.add(w));
       break;
@@ -215,7 +236,7 @@ export function demoFilters(query: string, offices: { code: string; name: string
   }
 
   // A capitalised name after from/by/of/for, e.g. "made by Juan dela Cruz", "from the Punong Barangay"
-  const person = query.match(/\b(?:from|by|of|for|ni|kay)\s+(?:the\s+)?((?:[A-Z][\w.'-]*)(?:\s+(?:dela|de|del|delos|de los|[A-Z][\w.'-]*))*)/);
+  const person = query.match(/\b(?:from|by|of|for|ni|kay|galing(?: sa)?|mula sa)\s+(?:the\s+)?((?:[A-Z][\w.'-]*)(?:\s+(?:dela|de|del|delos|de los|[A-Z][\w.'-]*))*)/);
   if (person && !/^(City|Baguio|The)$/.test(person[1])) {
     f.person = person[1].trim();
     notes.push(`person "${f.person}"`);
@@ -249,6 +270,7 @@ export function demoFilters(query: string, offices: { code: string; name: string
   const rest = lower
     .replace(/[^\p{L}\p{N}\s-]/gu, " ")
     .split(/\s+/)
+    .map((w) => TAGALOG[w] ?? w)
     .filter((w) => w.length > 2 && !STOP.has(w) && !used.has(w) && !/^\d+$/.test(w));
   if (rest.length) {
     f.q = rest.slice(0, 5).join(" ");
@@ -321,10 +343,13 @@ export async function demoChat(
   const f = demoFilters(question, offices ?? [], (types ?? []).map((t) => t.name), myOfficeCode);
   const officeName = new Map((offices ?? []).map((o) => [o.code, o.name]));
   const { explanation, ...filters } = f;
-  let rows = await searchRecords(supabase, filters, 10, excludeConfidential);
+  const counting = /\bhow many\b|\bilan\b|\bnumber of\b/i.test(question);
+  const limit = counting ? 200 : 10;
+  let rows = await searchRecords(supabase, filters, limit, excludeConfidential);
   let relaxed = false;
-  if (rows.length === 0 && filters.q && (filters.person || filters.office)) {
-    rows = await searchRecords(supabase, { ...filters, q: undefined }, 10, excludeConfidential);
+  const narrowed = filters.person || filters.office || filters.docType || filters.status || filters.overdue || filters.from || filters.priority || filters.direction;
+  if (rows.length === 0 && filters.q && narrowed) {
+    rows = await searchRecords(supabase, { ...filters, q: undefined }, limit, excludeConfidential);
     relaxed = rows.length > 0;
   }
   // "waiting", "pending", "on my desk": only records still being handled
@@ -341,7 +366,12 @@ export async function demoChat(
   }
   const line = (r: (typeof rows)[number]) =>
     `- [${r.tracking_no}](/records/${r.id}) ${r.subject}: ${STATUS_TEXT[r.status] ?? r.status} at the ${officeName.get(r.current_office) ?? r.current_office}` +
-    (r.direction === "incoming" && r.sender ? `, from ${r.sender}` : r.recipient ? `, to ${r.recipient}` : "") +
+    // Names are shortened here as in every list (Data Privacy Act); the record page shows them in full.
+    (r.direction === "incoming" && (r.sender_name || r.sender_org)
+      ? `, from ${partyLabel(r.sender_name, r.sender_org)}`
+      : r.recipient_name || r.recipient_org
+        ? `, to ${partyLabel(r.recipient_name, r.recipient_org)}`
+        : "") +
     (r.created_by_name ? `, logged by ${r.created_by_name.split(" (")[0]}` : "");
 
   if (rows.length === 1) {
@@ -358,6 +388,14 @@ export async function demoChat(
         (last ? `\nLatest step: ${last.action_taken ?? last.status}${last.remarks ? ` (“${last.remarks}”)` : ""}.` : "") +
         (r.due_date ? `\nDue date: ${niceDate(r.due_date)}.` : ""),
       records,
+    };
+  }
+  if (counting) {
+    const shown = rows.slice(0, 10);
+    return {
+      answer: `${head} There ${rows.length === 1 ? "is 1 record" : `are ${rows.length}${rows.length === 200 ? " or more" : ""} records`}.` +
+        (rows.length > shown.length ? ` Here are the ${shown.length} newest:` : "") + `\n${shown.map(line).join("\n")}`,
+      records: records.slice(0, 10),
     };
   }
   return { answer: `${head} I found ${rows.length} records:\n${rows.map(line).join("\n")}`, records };

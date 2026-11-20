@@ -46,7 +46,7 @@ export default async function Dashboard() {
     { label: "Open records", value: open.length, href: "/records?open=1", hint: "See the open ones" },
     { label: isCentral(me) ? "Overdue" : "Overdue (all you can see)", value: overdue.length, alert: overdue.length > 0, href: "/records?overdue=1", hint: "See the late ones" },
     ...(me.office
-      ? [{ label: "In my office", value: inbox.length, href: `/records?office=${encodeURIComponent(me.office.code)}&open=1`, hint: "See my office's open records" }]
+      ? [{ label: "In my office", value: inbox.length, href: `/records?office=${encodeURIComponent(me.office.code)}&here=1&open=1`, hint: "See my office's open records" }]
       : []),
     { label: "Logged this month", value: thisMonth.length, href: `/records?from=${monthFrom}`, hint: "See this month's records" },
   ];
@@ -57,7 +57,7 @@ export default async function Dashboard() {
         <div>
           <h1 className="text-2xl font-bold">Good day, {me.full_name.split(" (")[0].split(" ")[0]}</h1>
           <p className="text-sm text-slate-600">
-            {isCentral(me) ? "You can see records across all offices." : `Showing records for ${me.office?.name ?? "your office"}.`}
+            {isCentral(me) ? "You can see records across all offices." : `Showing records that ${me.office?.name ?? "your office"} started or now holds.`}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -93,6 +93,9 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   // The step that brought the record to the office holding it now: who sent it, and any instruction they left.
   const arrival = history.find((r) => r.status === "forwarded" && r.to_office?.id === rec.current_office_id && r.from_office?.id !== rec.current_office_id);
   const instruction = arrival?.remarks;
+  // Newer notes written after it arrived (e.g. "Missing delivery receipt") matter more than the forwarding note.
+  const sinceArrival = arrival ? history.slice(0, history.indexOf(arrival)) : history;
+  const latestNote = sinceArrival.find((r) => r.remarks || r.action_taken);
   const open = !["completed", "released", "archived"].includes(rec.status);
   const due = open ? dueText(rec.due_date) : "";
 
@@ -173,6 +176,12 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                       : "Act on the request, then add a note or send it on."}
               </dd>
               {arrival && open && <dd className="text-sm text-slate-700">Sent by {officeName(arrival.from_office)}</dd>}
+              {latestNote && open && latestNote !== arrival && (
+                <dd className="mt-2 rounded-md border-l-4 border-gold-500 bg-amber-50 px-3 py-2 text-sm text-slate-800">
+                  <span className="font-semibold">Latest note:</span> “{latestNote.remarks || latestNote.action_taken}”
+                  <span className="block text-slate-600">{latestNote.actor?.full_name ?? "—"}, {fmtDate(latestNote.created_at)}</span>
+                </dd>
+              )}
             </div>
             <div>
               <dt className="text-sm text-slate-600">Due</dt>
