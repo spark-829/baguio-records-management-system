@@ -121,8 +121,8 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
 
   return (
     <form action={action} className="grid gap-4 lg:grid-cols-3">
-      <section className="card space-y-3 p-4 lg:col-span-1">
-        <h2 className="font-semibold">1. Scanned copy (optional)</h2>
+      <section className="card space-y-4 p-5 lg:col-span-1">
+        <h2 className="text-lg font-bold">1. Scanned copy (optional)</h2>
         <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-800">
           <strong>No scan?</strong> That is fine. Just fill in the form and press Save.
         </p>
@@ -137,7 +137,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           {aiState === "reading" ? "Reading…" : "Fill in the form for me from this file"}
         </button>
         {aiMsg && (
-          <p className={`rounded-lg p-2 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{aiMsg}</p>
+          <p role="status" className={`rounded-lg p-3 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{aiMsg}</p>
         )}
         {f.content_text && (
           <details className="text-sm">
@@ -149,8 +149,8 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         <input type="hidden" name="ai_summary" value={f.ai_summary} />
       </section>
 
-      <section className="card grid gap-3 p-4 md:grid-cols-2 lg:col-span-2">
-        <h2 className="font-semibold md:col-span-2">2. About the document</h2>
+      <section className="card grid gap-4 p-5 md:grid-cols-2 lg:col-span-2">
+        <h2 className="text-lg font-bold md:col-span-2">2. About the document</h2>
         <p className="text-sm text-slate-600 md:col-span-2">Boxes marked <span className="font-semibold text-red-700">*</span> must be filled in. The rest are optional.</p>
         <div>
           <label className="label" htmlFor="f-direction">Received or sent out?</label>
@@ -212,7 +212,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           </select>
         </div>
 
-        <h2 className="mt-2 font-semibold md:col-span-2">3. Filing and where it goes next</h2>
+        <h2 className="mt-4 border-t border-slate-200 pt-4 text-lg font-bold md:col-span-2">3. Filing and where it goes next</h2>
         <div>
           <label className="label" htmlFor="f-category">Subject area (optional)</label>
           <input id="f-category" name="category" className={`input ${hl("category")}`} value={f.category} onChange={(e) => set("category", e.target.value)} />
@@ -249,7 +249,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           <input id="f-due_date" name="due_date" type="date" className="input" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} />
         </div>
 
-        <div className="sticky bottom-0 -mx-4 -mb-4 flex flex-wrap items-center justify-end gap-3 rounded-b-xl border-t border-slate-200 bg-white/95 px-4 py-3 md:col-span-2">
+        <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-wrap items-center justify-end gap-3 rounded-b-xl border-t border-slate-200 bg-white/95 px-5 py-3 md:col-span-2">
           {state?.error && <p className="mr-auto text-sm text-red-700" role="alert">{state.error}</p>}
           <Link href="/records" className="btn-secondary">Cancel (nothing is saved)</Link>
           <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : "Save and get tracking number"}</button>

@@ -32,7 +32,7 @@ export function AiSearchBox() {
 
   return (
     <form onSubmit={run} className="card flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
-      <label htmlFor="ai-q" className="font-medium text-slate-800">Ask in your own words</label>
+      <label htmlFor="ai-q" className="font-semibold text-ink">Ask in your own words</label>
       <input
         id="ai-q"
         className="input flex-1"

@@ -34,9 +34,9 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       </div>
 
       <AiSearchBox />
-      {aiNote && <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-900">Assistant applied: {aiNote}</p>}
+      {aiNote && <p className="rounded-lg border border-l-4 border-brand-200 border-l-brand-700 bg-brand-50 px-4 py-3 text-sm text-brand-900">Assistant applied: {aiNote}</p>}
 
-      <form className="card grid gap-3 p-4 md:grid-cols-4" method="get">
+      <form className="card grid gap-4 p-5 md:grid-cols-4" method="get">
         <div className="md:col-span-3">
           <label className="label" htmlFor="q">Search by word or tracking number</label>
           <input className="input" id="q" name="q" defaultValue={f.q} placeholder="e.g. drainage, IN-2026-0001" />
@@ -47,7 +47,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </div>
         <details className="md:col-span-4" open={Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue)}>
           <summary className="cursor-pointer py-1 font-medium text-brand-700">More ways to narrow the list</summary>
-          <div className="mt-3 grid gap-3 md:grid-cols-4">
+          <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div>
           <label className="label" htmlFor="person">Person or organization</label>
           <input className="input" id="person" name="person" defaultValue={f.person} placeholder="Sender, recipient or staff" />
@@ -81,7 +81,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             {(types.data ?? []).map((t) => <option key={t.name} value={t.name}>{t.name}</option>)}
           </select>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3 md:col-span-2">
           <div>
             <label className="label" htmlFor="from">Logged from</label>
             <input className="input" id="from" name="from" type="date" defaultValue={f.from} />
@@ -91,8 +91,8 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             <input className="input" id="to" name="to" type="date" defaultValue={f.to} />
           </div>
         </div>
-        <div className="flex items-end md:col-span-4">
-          <label className="flex items-center gap-2">
+        <div className="flex items-end md:col-span-2 lg:col-span-4">
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
             <input type="checkbox" className="checkbox" name="overdue" value="1" defaultChecked={f.overdue} /> Show only late (overdue) records
           </label>
         </div>
