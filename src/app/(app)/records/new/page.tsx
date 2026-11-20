@@ -16,7 +16,7 @@ export default async function NewRecordPage() {
       <div>
         <h1 className="text-2xl font-bold">Register a record</h1>
         <p className="text-sm text-slate-600">
-          Upload the scanned document and the assistant fills in the form. Check every field before saving. A tracking number is issued when you save.
+          Fill in the boxes below. If you have a scanned copy, the assistant can fill them in for you. Check every box, then press Save to get a tracking number.
         </p>
       </div>
       <RegisterForm types={types ?? []} offices={offices ?? []} canIncoming={isCentral(me)} myOfficeId={me.office_id} />

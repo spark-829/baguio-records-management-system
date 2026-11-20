@@ -12,6 +12,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { href: "/records", label: "Records" },
     ...(me.role !== "viewer" ? [{ href: "/records/new", label: "Register" }] : []),
     { href: "/assistant", label: "Assistant" },
+    { href: "/help", label: "Help" },
     ...(me.role !== "staff" ? [{ href: "/reports", label: "Reports" }] : []),
     ...(me.role === "admin"
       ? [
@@ -36,12 +37,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <div className="font-medium">{me.full_name}</div>
               <div className="text-xs text-brand-100">
                 {ROLE_LABEL[me.role]}
-                {me.office ? ` · ${me.office.code}` : ""}
+                {me.office ? ` · ${me.office.name}` : ""}
               </div>
             </div>
-            <Link href="/security" className="rounded-lg border border-white/30 px-2.5 py-1 text-xs hover:bg-white/10">Security</Link>
+            <Link href="/security" className="rounded-lg border border-white/30 px-3 py-2 text-sm hover:bg-white/10">My account</Link>
             <form action={signOut}>
-              <button className="rounded-lg border border-white/30 px-2.5 py-1 text-xs hover:bg-white/10">Sign out</button>
+              <button className="rounded-lg border border-white/30 px-3 py-2 text-sm hover:bg-white/10">Sign out</button>
             </form>
           </div>
         </div>

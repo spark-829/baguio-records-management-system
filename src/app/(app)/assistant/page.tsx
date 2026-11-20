@@ -12,8 +12,8 @@ export default function AssistantPage() {
       </div>
       {isAiDemo() && (
         <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          <strong>Demo mode:</strong> this demo runs without an AI key, so answers come from a simple rule-based search, not Claude Haiku.
-          It still searches live records under your own access rights. With a key, the same screen uses Haiku.
+          <strong>Practice version:</strong> answers here are simpler than the full assistant, but they come from the real records
+          you are allowed to see. You can ask in English or Taglish.
         </p>
       )}
       <Chat />

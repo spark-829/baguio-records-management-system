@@ -9,13 +9,13 @@ export function LoginForm() {
     <form action={action} className="mt-4 space-y-4">
       <div>
         <label className="label" htmlFor="email">Email</label>
-        <input key={state?.email ?? "default"} className="input" id="email" name="email" type="email" autoComplete="username" defaultValue={state?.email ?? "records@rms-demo.test"} required />
+        <input key={state?.email ?? "default"} className="input" id="email" name="email" type="email" autoComplete="username" defaultValue={state?.email ?? ""} placeholder="e.g. records@rms-demo.test" required />
       </div>
       <div>
         <label className="label" htmlFor="password">Password</label>
         <input className="input" id="password" name="password" type="password" autoComplete="current-password" required />
       </div>
-      <details className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+      <details open className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800">
         <summary className="cursor-pointer font-medium text-slate-800">Privacy notice (Data Privacy Act of 2012)</summary>
         <div className="mt-2 space-y-1.5">
           <p>
@@ -29,8 +29,17 @@ export function LoginForm() {
           <p>Questions or requests about personal data go to the City&apos;s Data Protection Officer.</p>
         </div>
       </details>
-      <label className="flex items-start gap-2 text-sm">
-        <input key={state?.email ?? "default"} type="checkbox" name="privacy" className="mt-0.5" defaultChecked={Boolean(state?.email)} required />
+      <label className="flex cursor-pointer items-start gap-3">
+        <input
+          key={state?.email ?? "default"}
+          type="checkbox"
+          name="privacy"
+          className="checkbox mt-0.5"
+          defaultChecked={Boolean(state?.email)}
+          required
+          onInvalid={(e) => e.currentTarget.setCustomValidity("Please tick this box to agree before signing in.")}
+          onChange={(e) => e.currentTarget.setCustomValidity("")}
+        />
         <span>I have read the privacy notice and will use records for official work only.</span>
       </label>
       {state?.error && <p className="text-sm text-red-700" role="alert">{state.error}</p>}

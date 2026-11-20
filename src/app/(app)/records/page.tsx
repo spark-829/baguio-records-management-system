@@ -18,6 +18,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   ]);
   const exportHref = `/api/reports/csv?${filtersToParams(f).toString()}`;
   const aiNote = typeof sp.ai === "string" ? sp.ai : undefined;
+  const officeNames = new Map((offices.data ?? []).map((o) => [o.code, o.name]));
 
   return (
     <div className="space-y-4">
@@ -27,7 +28,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           <p className="text-sm text-slate-600">{rows.length} record{rows.length === 1 ? "" : "s"} found</p>
         </div>
         <div className="flex gap-2">
-          <a href={exportHref} className="btn-secondary">Export CSV</a>
+          <a href={exportHref} className="btn-secondary" title="Opens in Excel">Download list (Excel)</a>
           <Link href="/records/new" className="btn-primary">Register a record</Link>
         </div>
       </div>
@@ -36,10 +37,17 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       {aiNote && <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-900">Assistant applied: {aiNote}</p>}
 
       <form className="card grid gap-3 p-4 md:grid-cols-4" method="get">
-        <div className="md:col-span-2">
-          <label className="label" htmlFor="q">Keywords or tracking no.</label>
+        <div className="md:col-span-3">
+          <label className="label" htmlFor="q">Search by word or tracking number</label>
           <input className="input" id="q" name="q" defaultValue={f.q} placeholder="e.g. drainage, IN-2026-0001" />
         </div>
+        <div className="flex items-end gap-2">
+          <button className="btn-primary flex-1">Search</button>
+          <Link href="/records" className="btn-secondary">Clear</Link>
+        </div>
+        <details className="md:col-span-4" open={Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue)}>
+          <summary className="cursor-pointer py-1 font-medium text-brand-700">More ways to narrow the list</summary>
+          <div className="mt-3 grid gap-3 md:grid-cols-4">
         <div>
           <label className="label" htmlFor="person">Person or organization</label>
           <input className="input" id="person" name="person" defaultValue={f.person} placeholder="Sender, recipient or staff" />
@@ -52,18 +60,18 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           </select>
         </div>
         <div>
-          <label className="label" htmlFor="direction">Direction</label>
+          <label className="label" htmlFor="direction">Received or sent out</label>
           <select className="input" id="direction" name="direction" defaultValue={f.direction ?? ""}>
             <option value="">Both</option>
-            <option value="incoming">Incoming</option>
-            <option value="outgoing">Outgoing</option>
+            <option value="incoming">Received by the City</option>
+            <option value="outgoing">Sent out by the City</option>
           </select>
         </div>
         <div>
           <label className="label" htmlFor="office">Office</label>
           <select className="input" id="office" name="office" defaultValue={f.office ?? ""}>
             <option value="">Any</option>
-            {(offices.data ?? []).map((o) => <option key={o.code} value={o.code}>{o.code} · {o.name}</option>)}
+            {(offices.data ?? []).map((o) => <option key={o.code} value={o.code}>{o.name}</option>)}
           </select>
         </div>
         <div>
@@ -75,28 +83,30 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="label" htmlFor="from">From</label>
+            <label className="label" htmlFor="from">Logged from</label>
             <input className="input" id="from" name="from" type="date" defaultValue={f.from} />
           </div>
           <div>
-            <label className="label" htmlFor="to">To</label>
+            <label className="label" htmlFor="to">Up to</label>
             <input className="input" id="to" name="to" type="date" defaultValue={f.to} />
           </div>
         </div>
-        <div className="flex items-end justify-between gap-2 md:col-span-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="overdue" value="1" defaultChecked={f.overdue} /> Overdue only
+        <div className="flex items-end md:col-span-4">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" className="checkbox" name="overdue" value="1" defaultChecked={f.overdue} /> Show only late (overdue) records
           </label>
-          <div className="flex gap-2">
-            <Link href="/records" className="btn-secondary">Clear</Link>
-            <button className="btn-primary">Search</button>
-          </div>
         </div>
+          </div>
+        </details>
       </form>
+
+      <p className="text-sm text-slate-600">
+        For privacy, people&apos;s names are shortened in this list (for example “J*** dela C***”). Open a record to see the full name.
+      </p>
 
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <thead className="bg-slate-50 text-left text-sm text-slate-700">
             <tr>
               <th className="px-4 py-2">Tracking no.</th>
               <th className="px-4 py-2">Subject</th>
@@ -104,13 +114,13 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
               <th className="px-4 py-2">From / To</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Office</th>
-              <th className="px-4 py-2">Registered</th>
+              <th className="px-4 py-2">Logged on</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rows.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
-                <td className="whitespace-nowrap px-4 py-2 font-mono text-xs">
+                <td className="whitespace-nowrap px-4 py-2 font-mono text-sm">
                   <Link href={`/records/${r.id}`} className="text-brand-700 hover:underline">{r.tracking_no}</Link>
                 </td>
                 <td className="px-4 py-2">
@@ -124,7 +134,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
                 <td className="px-4 py-2 text-slate-600">{r.document_type}</td>
                 <td className="px-4 py-2 text-slate-600">{r.direction === "incoming" ? partyLabel(r.sender_name, r.sender_org) : partyLabel(r.recipient_name, r.recipient_org)}</td>
                 <td className="px-4 py-2"><StatusBadge status={r.status} /></td>
-                <td className="px-4 py-2 text-slate-600">{r.current_office}</td>
+                <td className="px-4 py-2 text-slate-600">{officeNames.get(r.current_office) ?? r.current_office}</td>
                 <td className="whitespace-nowrap px-4 py-2 text-slate-600">{fmtDate(r.created_at)}</td>
               </tr>
             ))}

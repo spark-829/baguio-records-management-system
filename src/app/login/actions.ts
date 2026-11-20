@@ -41,5 +41,5 @@ export async function signOut() {
   const supabase = await createClient();
   await supabase.rpc("rms_log_access", { p_event: "logout" });
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect("/login?error=signed-out");
 }

@@ -32,14 +32,15 @@ export function AiSearchBox() {
 
   return (
     <form onSubmit={run} className="card flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
-      <span className="badge bg-brand-100 text-brand-900">AI search</span>
+      <label htmlFor="ai-q" className="font-medium text-slate-800">Ask in your own words</label>
       <input
+        id="ai-q"
         className="input flex-1"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder='Describe what you need, e.g. "urgent road requests from barangays last month"'
+        placeholder='e.g. "urgent road requests from barangays last month"'
       />
-      <button className="btn-primary" disabled={busy}>{busy ? "Thinking…" : "Find"}</button>
+      <button className="btn-primary" disabled={busy}>{busy ? "Looking…" : "Find"}</button>
       {error && <p className="text-sm text-red-700">{error}</p>}
     </form>
   );

@@ -45,7 +45,7 @@ export function SummaryBox({ recordId, initial, aiBlocked = false }: { recordId:
       </div>
       {summary?.startsWith("Demo summary: ") ? (
         <p className="mt-2 text-sm text-slate-700">
-          <span className="badge mr-1 bg-amber-100 text-amber-900">Demo mode: sample AI output</span>
+          <span className="badge mr-1 bg-amber-100 text-amber-900">Practice summary</span>
           {summary.slice("Demo summary: ".length)}
         </p>
       ) : (

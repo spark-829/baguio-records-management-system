@@ -4,40 +4,44 @@
 Open the system, read the privacy notice, tick the box and sign in with the email and password from your administrator. Your name, role and office show at the top right. Sign out when you leave the desk.
 
 - After 5 wrong passwords the account locks for 15 minutes. An administrator can unlock it sooner on the Users page.
-- After 15 minutes without activity you are signed out automatically. A warning appears a minute before.
-- **Security** (top right) lets you turn on two-step sign-in with an authenticator app. Administrators should turn it on.
+- After 15 minutes without activity you are signed out automatically. A large "Are you still there?" message with a countdown appears a minute before. Press **Yes, keep me signed in** to stay.
+- **My account** (top right) lets you turn on two-step sign-in with an authenticator app. Administrators should turn it on.
+- **Help** (top menu) explains each task in short, plain steps.
 - Every sign-in, record you open and file you download is logged.
 - In lists, people's names are shortened (for example "J*** dela C***"). The full name shows when you open the record.
 
 ## Dashboard
-Shows open and overdue records, what is waiting in your office, counts by status, and the latest registrations. Click any record to open it.
+Shows open and overdue records, what is waiting in your office (with how many days are left or how late it is), counts by status, and the latest registrations. Click a number box to see the list behind it, or click any record to open it.
 
 ## Registering a document (records desk)
 1. Click **Register**.
-2. Choose the scanned PDF or photo, then click **Fill the form from this document (AI)**. Fields filled by the assistant are highlighted.
-3. Check every field. Correct anything wrong. The assistant can make mistakes; you are responsible for what is saved.
-4. Choose an office in **Forward to office** if it should go somewhere right away, and set an **Action due date** if there is a deadline.
-5. Click **Save and issue tracking number**. Print the **Routing slip** and attach it to the paper copy. Its QR code opens the record.
+2. No scan? Skip to step 3. With a scan, choose the file, then click **Fill in the form for me from this file**. Boxes filled by the assistant are highlighted.
+3. Fill in or check every box. Boxes marked with a red * are required. The assistant can make mistakes; you are responsible for what is saved.
+4. Choose an office in **Send to office** if it should go somewhere right away, and set **Must be acted on by** if there is a deadline.
+5. Click **Save and get tracking number**, or **Cancel** to leave without saving. Print the routing slip with **Print routing slip** and attach it to the paper copy. Its QR code opens the record.
 
 Without a scan, fill the form by hand. Department staff can register outgoing documents from their own office.
 
 ## Acting on a record
-Open the record. The **Take action** panel lists only the actions allowed for its status and your office:
-- **Mark as received** when a forwarded document arrives.
-- **Start action** when work begins.
-- **Add action / remark** to note what was done without changing the status.
-- **Forward to another office** to pass it on.
-- **Mark completed**, **Release** (sent out of the City), **Archive** (records desk only).
+Open the record. The box at the top shows who has it now, what needs to be done, and how many days are left or how late it is.
 
-Every action appears in **History, actions and remarks** with your name and the time.
+Press **Add a note or send to another office** on the right. The list shows only the actions allowed for the record's status and your office:
+- **Send back to …** returns it to the office that sent it.
+- **Mark as received (the paper is here)** when a forwarded document arrives.
+- **Start working on it** when work begins.
+- **Add a note** to write what was done without changing the status.
+- **Send to another office** to pass it on.
+- **Mark as done**, **Mark as sent out** (sent out of the City), **File away (archive)** (records desk only).
+
+Press **Save**. The system asks you to confirm before anything is saved. Every action appears in **History, actions and remarks** with your name and the time.
 
 ## Finding records
-- **Records** page: type keywords, a tracking number or a person's name, and use the filters. **Export CSV** downloads the results.
-- **AI search** box: describe what you need in plain words; the filters it chose appear on screen.
-- **Assistant**: ask questions such as "What documents came from Juan dela Cruz?" The assistant searches only records you are allowed to see and links each one.
+- **Records** page: type a word or a tracking number and press **Search**. **More ways to narrow the list** opens the other filters (person, status, office, dates, late only). **Download list (Excel)** saves the results.
+- **Ask in your own words** box: describe what you need in plain words; what it looked for appears on screen.
+- **Assistant**: ask questions in English or Taglish, such as "What documents came from Juan dela Cruz?" or "Nasaan na po yung voucher para sa drainage?" The assistant searches only records you are allowed to see and links each one.
 
 ## Reports (department heads, records desk, admin)
-Choose a date range to see counts by status, office, type and month, and the overdue list. Use **Export CSV** or **Print**.
+Choose a date range to see counts by status, office, type and month, and the overdue list. Use **Download list (Excel)** or **Print report**.
 
 ## Administration
 - **Users**: create accounts, set role and office, deactivate people who leave. You cannot deactivate yourself.

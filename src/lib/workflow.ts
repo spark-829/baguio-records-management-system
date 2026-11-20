@@ -11,13 +11,13 @@ export interface ActionDef {
 }
 
 export const ACTIONS: Record<ActionKind, ActionDef> = {
-  forward: { kind: "forward", label: "Forward to another office", to: "forwarded", needsOffice: true },
-  receive: { kind: "receive", label: "Mark as received", to: "received" },
-  act: { kind: "act", label: "Start action", to: "under_action" },
-  remark: { kind: "remark", label: "Add action / remark", to: "same" },
-  complete: { kind: "complete", label: "Mark completed", to: "completed" },
-  release: { kind: "release", label: "Release (sent out)", to: "released" },
-  archive: { kind: "archive", label: "Archive", to: "archived" },
+  forward: { kind: "forward", label: "Send to another office", to: "forwarded", needsOffice: true },
+  receive: { kind: "receive", label: "Mark as received (the paper is here)", to: "received" },
+  act: { kind: "act", label: "Start working on it", to: "under_action" },
+  remark: { kind: "remark", label: "Add a note", to: "same" },
+  complete: { kind: "complete", label: "Mark as done", to: "completed" },
+  release: { kind: "release", label: "Mark as sent out", to: "released" },
+  archive: { kind: "archive", label: "File away (archive)", to: "archived" },
 };
 
 const BY_STATUS: Record<Status, ActionKind[]> = {

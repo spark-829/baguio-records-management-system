@@ -12,7 +12,8 @@ const DEMO = [
 const NOTICES: Record<string, string> = {
   "no-access": "This account has no active RMS profile. Ask an administrator for access.",
   locked: "This account is locked. Try again later or ask an administrator to unlock it.",
-  idle: "You were signed out after a period of inactivity.",
+  idle: "You were signed out because the computer was not used for a while. This keeps records safe. Please sign in again.",
+  "signed-out": "You have signed out safely.",
 };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
@@ -45,7 +46,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <div className="card p-6">
           <h2 className="text-lg font-semibold">Sign in</h2>
           {error && NOTICES[error] && (
-            <p className="mt-2 rounded-lg bg-amber-50 p-2 text-sm text-amber-900">{NOTICES[error]}</p>
+            <p role="status" className={`mt-2 rounded-lg p-2 text-sm ${error === "signed-out" ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}>{NOTICES[error]}</p>
           )}
           <LoginForm />
         </div>

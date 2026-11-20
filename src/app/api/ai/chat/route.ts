@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const exclude = await aiExcludesConfidential(ctx.supabase);
     const demo = isAiDemo();
     const result = demo
-      ? await demoChat(ctx.supabase, history.at(-1)!.content, exclude)
+      ? await demoChat(ctx.supabase, history.at(-1)!.content, exclude, ctx.me.office?.code)
       : await askAssistant(ctx.supabase, ctx.me, history, exclude);
     await ctx.supabase.rpc("rms_log_event", {
       p_table: "ai_chat",
