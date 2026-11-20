@@ -104,7 +104,11 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
       setF((p) => ({ ...p, ...next }));
       setAiFilled(new Set(Object.keys(next).filter((k) => next[k as keyof Fields]) as (keyof Fields)[]));
       setAiState("done");
-      setAiMsg("Fields filled from the document. Highlighted fields came from the assistant; check them before saving.");
+      setAiMsg(
+        r.demo
+          ? "Demo mode: sample AI output. This demo has no AI key, so the fields come from a prepared sample letter, not your file. Highlighted fields show what the AI fills in; check them before saving."
+          : "Fields filled from the document. Highlighted fields came from the assistant; check them before saving.",
+      );
     } catch (err) {
       setAiState("error");
       setAiMsg(err instanceof Error ? err.message : "Could not read the document");

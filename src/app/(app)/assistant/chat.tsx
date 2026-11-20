@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-type Turn = { role: "user" | "assistant"; content: string };
+type Turn = { role: "user" | "assistant"; content: string; demo?: boolean };
 
 const EXAMPLES = [
   "What documents came from the Punong Barangay?",
@@ -36,7 +36,9 @@ export function Chat() {
   const [error, setError] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
 
-  useEffect(() => end.current?.scrollIntoView({ behavior: "smooth" }), [turns, busy]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ behavior: "smooth" });
+  }, [turns, busy]);
 
   async function send(question: string) {
     if (!question.trim() || busy) return;
@@ -53,7 +55,7 @@ export function Chat() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "The assistant is unavailable");
-      setTurns([...next, { role: "assistant", content: json.answer }]);
+      setTurns([...next, { role: "assistant", content: json.answer, demo: Boolean(json.demo) }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "The assistant is unavailable");
     } finally {
@@ -77,6 +79,9 @@ export function Chat() {
         {turns.map((t, i) => (
           <div key={i} className={`flex ${t.role === "user" ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${t.role === "user" ? "bg-brand-700 text-white" : "bg-slate-100"}`}>
+              {t.role === "assistant" && t.demo && (
+                <span className="badge mb-1 bg-amber-100 text-amber-900">Demo mode: sample AI output</span>
+              )}
               {t.role === "assistant" ? <Rich text={t.content} /> : t.content}
             </div>
           </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { summarize } from "@/lib/ai";
+import { AI_MODEL, summarize } from "@/lib/ai";
+import { demoSummary, isAiDemo } from "@/lib/ai-demo";
 import { aiError, aiExcludesConfidential, apiContext } from "@/lib/api";
 
 export async function POST(req: Request) {
@@ -24,13 +25,16 @@ export async function POST(req: Request) {
     .order("created_at");
 
   try {
-    const summary = await summarize(
-      { ...rec, confidentiality: undefined, content_text: rec.content_text ? String(rec.content_text).slice(0, 8000) : null },
-      (routes ?? []).map((r) => `${r.created_at} ${r.status} ${r.action_taken ?? ""} ${r.remarks ?? ""}`).join("\n"),
-    );
+    const demo = isAiDemo();
+    const summary = demo
+      ? `Demo summary: ${demoSummary(rec, routes ?? [])}`
+      : await summarize(
+          { ...rec, confidentiality: undefined, content_text: rec.content_text ? String(rec.content_text).slice(0, 8000) : null },
+          (routes ?? []).map((r) => `${r.created_at} ${r.status} ${r.action_taken ?? ""} ${r.remarks ?? ""}`).join("\n"),
+        );
     const { error } = await supabase.from("rms_records").update({ ai_summary: summary }).eq("id", recordId);
-    await supabase.rpc("rms_log_event", { p_table: "ai_summary", p_row_id: recordId, p_data: { model: "claude-haiku-5-5", summary, saved: !error } });
-    return NextResponse.json({ summary, saved: !error });
+    await supabase.rpc("rms_log_event", { p_table: "ai_summary", p_row_id: recordId, p_data: { model: demo ? "demo" : AI_MODEL, summary, saved: !error } });
+    return NextResponse.json({ summary, saved: !error, demo });
   } catch (err) {
     return aiError(err);
   }

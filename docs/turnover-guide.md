@@ -17,7 +17,7 @@ For the person who will run and maintain the system.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable key) | `wrangler.jsonc` vars | No, protected by row-level security |
 | `ANTHROPIC_API_KEY` | `wrangler secret put` | Yes |
 
-The app has no service-role key. If AI is not configured, everything else still works and AI buttons show a clear message.
+The app has no service-role key. Without `ANTHROPIC_API_KEY`, AI features run in demo mode (prepared or rule-based output, labeled on screen); everything else is unaffected. Set `AI_DEMO_MODE=1` to force demo mode.
 
 ## Routine tasks
 - **Add an office or document type:** insert a row in `rms_offices` / `rms_document_types` (admin role in the app, or SQL editor).

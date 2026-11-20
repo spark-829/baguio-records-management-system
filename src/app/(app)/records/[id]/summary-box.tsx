@@ -43,7 +43,14 @@ export function SummaryBox({ recordId, initial, aiBlocked = false }: { recordId:
           {busy ? "Summarizing…" : summary ? "Refresh" : "Summarize"}
         </button>
       </div>
-      <p className="mt-2 text-sm text-slate-700">{summary ?? "No summary yet."}</p>
+      {summary?.startsWith("Demo summary: ") ? (
+        <p className="mt-2 text-sm text-slate-700">
+          <span className="badge mr-1 bg-amber-100 text-amber-900">Demo mode: sample AI output</span>
+          {summary.slice("Demo summary: ".length)}
+        </p>
+      ) : (
+        <p className="mt-2 text-sm text-slate-700">{summary ?? "No summary yet."}</p>
+      )}
       {error && <p className="mt-1 text-sm text-red-700">{error}</p>}
     </section>
   );
