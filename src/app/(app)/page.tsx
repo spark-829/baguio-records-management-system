@@ -60,7 +60,7 @@ export default async function Dashboard() {
             {isCentral(me) ? "You can see records across all offices." : `Showing records for ${me.office?.name ?? "your office"}.`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href="/records/new" className="btn-primary">Register a record</Link>
           <Link href="/assistant" className="btn-secondary">Ask the assistant</Link>
         </div>
@@ -68,25 +68,25 @@ export default async function Dashboard() {
 
       <div className={`grid grid-cols-2 gap-3 ${stats.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
         {stats.map((s) => (
-          <Link key={s.label} href={s.href} className={`card block p-4 hover:border-brand-600 hover:shadow ${s.alert ? "border-red-300 bg-red-50" : ""}`}>
-            <div className="text-sm font-semibold text-slate-700">{s.label}</div>
-            <div className={`mt-1 text-3xl font-bold ${s.alert ? "text-red-700" : ""}`}>{s.value}</div>
-            <div className="mt-1 text-sm text-brand-700 underline">{s.hint} →</div>
+          <Link key={s.label} href={s.href} className={`card block border-t-4 p-5 no-underline hover:shadow-md ${s.alert ? "border-red-300 border-t-red-700 bg-red-50" : "border-t-brand-700"}`}>
+            <div className="text-base font-semibold text-slate-700">{s.label}</div>
+            <div className={`mt-1 text-3xl font-bold tabular-nums ${s.alert ? "text-red-700" : "text-brand-900"}`}>{s.value}</div>
+            <div className="mt-1 text-base text-brand-700 underline">{s.hint} →</div>
           </Link>
         ))}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="card lg:col-span-2">
-          <h2 className="border-b border-slate-100 px-4 py-3 font-semibold">Waiting in my office</h2>
+          <h2 className="border-b border-slate-100 px-4 py-3 text-lg font-bold">Waiting in my office</h2>
           <RecordList rows={inbox} empty={me.office ? "Nothing waiting in your office." : "Your account is not assigned to an office."} showDue />
         </section>
         <section className="card">
-          <h2 className="border-b border-slate-100 px-4 py-3 font-semibold">By status</h2>
+          <h2 className="border-b border-slate-100 px-4 py-3 text-lg font-bold">By status</h2>
           <ul className="divide-y divide-slate-100">
             {counts.map(({ s, n }) => (
               <li key={s}>
-                <Link href={`/records?status=${s}`} className="flex items-center justify-between px-4 py-2 hover:bg-slate-50">
+                <Link href={`/records?status=${s}`} className="flex min-h-12 items-center justify-between px-4 py-2 hover:bg-brand-50">
                   <StatusBadge status={s} />
                   <span className="font-semibold tabular-nums">{n}</span>
                 </Link>
@@ -98,14 +98,14 @@ export default async function Dashboard() {
 
       {overdue.length > 0 && (
         <section className="card border-red-200">
-          <h2 className="border-b border-red-100 px-4 py-3 font-semibold text-red-800">Overdue</h2>
+          <h2 className="border-b border-red-100 px-4 py-3 text-lg font-bold text-red-800">Overdue</h2>
           <RecordList rows={overdue} empty="" showDue />
         </section>
       )}
 
       <section className="card">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-          <h2 className="font-semibold">Recently registered</h2>
+          <h2 className="text-lg font-bold">Recently registered</h2>
           <Link href="/records" className="text-sm text-brand-700 hover:underline">All records</Link>
         </div>
         <RecordList rows={rows.slice(0, 8)} empty="No records yet." />
@@ -120,16 +120,16 @@ function RecordList({ rows, empty, showDue = false }: { rows: Row[]; empty: stri
     <ul className="divide-y divide-slate-100">
       {rows.map((r) => (
         <li key={r.id}>
-          <Link href={`/records/${r.id}`} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-slate-50">
+          <Link href={`/records/${r.id}`} className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-brand-50">
             <span className="font-mono text-sm text-slate-600">{r.tracking_no}</span>
-            <span className="min-w-0 flex-1 basis-60 font-medium">{r.subject}</span>
+            <span className="min-w-0 flex-1 basis-full font-medium sm:basis-60">{r.subject}</span>
             <PriorityBadge priority={r.priority} />
             {isOverdue(r.due_date, r.status) && <OverdueBadge />}
             <StatusBadge status={r.status} />
             {showDue && r.due_date && (
               <span className={`text-sm font-medium ${isOverdue(r.due_date, r.status) ? "text-red-700" : "text-slate-700"}`}>{dueText(r.due_date)}</span>
             )}
-            {!showDue && <span className="text-sm text-slate-600" title={r.current_office?.name}>{r.current_office?.name}</span>}
+            {!showDue && <span className="text-sm text-slate-600">{r.current_office?.name}</span>}
             <span className="text-sm text-slate-600">{fmtDate(r.created_at)}</span>
           </Link>
         </li>

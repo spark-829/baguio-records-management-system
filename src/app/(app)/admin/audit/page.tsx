@@ -80,13 +80,13 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         </form>
       </div>
       {chain.error ? (
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">Could not check the log&apos;s integrity: {chain.error.message}</p>
+        <p className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-900">Could not check the log&apos;s integrity: {chain.error.message}</p>
       ) : chain.data === null ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+        <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           Integrity check passed. Each entry carries a fingerprint (SHA-256) of the one before it, and the whole chain matches, so no entry has been altered or removed.
         </p>
       ) : (
-        <p className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-900">
+        <p className="rounded-lg border border-l-4 border-red-300 border-l-red-700 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
           Integrity check FAILED at entry #{chain.data}. The log was changed outside the system from that point on.
         </p>
       )}

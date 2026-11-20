@@ -73,14 +73,14 @@ export function Chat() {
             <p className="text-sm text-slate-600">Try one of these:</p>
             <div className="flex flex-wrap gap-2">
               {EXAMPLES.map((e) => (
-                <button key={e} onClick={() => send(e)} className="rounded-full border border-slate-300 px-3 py-1 text-sm hover:bg-slate-50">{e}</button>
+                <button key={e} onClick={() => send(e)} className="min-h-11 rounded-full border-2 border-brand-200 bg-white px-4 py-1.5 text-left text-sm font-medium text-brand-900 hover:border-brand-700 hover:bg-brand-50">{e}</button>
               ))}
             </div>
           </div>
         )}
         {turns.map((t, i) => (
           <div key={i} className={`flex ${t.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${t.role === "user" ? "bg-brand-700 text-white" : "bg-slate-100"}`}>
+            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-base ${t.role === "user" ? "bg-brand-700 text-white" : "border border-slate-200 bg-slate-50"}`}>
               {t.role === "assistant" && t.demo && (
                 <span className="badge mb-1 bg-amber-100 text-amber-900">Practice answer</span>
               )}
@@ -89,7 +89,7 @@ export function Chat() {
           </div>
         ))}
         {busy && <p className="text-sm text-slate-500">Searching records…</p>}
-        {error && <p className="text-sm text-red-700">{error}</p>}
+        {error && <p role="alert" className="text-sm font-medium text-red-700">{error}</p>}
         <div ref={end} />
       </div>
       <form
