@@ -64,6 +64,8 @@
 
 html {
   font-size: 100%;
+  /* keeps a focused field above the register form's sticky Save bar */
+  scroll-padding-bottom: 6rem;
   -webkit-text-size-adjust: 100%;
 }
 

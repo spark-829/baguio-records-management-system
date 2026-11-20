@@ -29,7 +29,7 @@ type Row = {
   record: { id: string; tracking_no: string } | null;
 };
 
-type SP = { user?: string; record?: string; event?: string; person?: string };
+type SP = { user?: string; record?: string; event?: string; person?: string; more?: string };
 
 export default async function AccessHistoryPage({ searchParams }: { searchParams: Promise<SP> }) {
   const me = await getProfile();
@@ -46,7 +46,7 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
     .from("rms_access_log")
     .select("id, event, email, ip, user_agent, detail, created_at, user:rms_profiles(full_name), record:rms_records(id, tracking_no)")
     .order("created_at", { ascending: false })
-    .limit(300);
+    .limit(sp.more ? 500 : 50);
   if (sp.user) q = q.eq("user_id", sp.user);
   if (recordId) q = q.eq("record_id", recordId);
   if (sp.event) q = q.eq("event", sp.event);
@@ -67,19 +67,19 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
 
       <form method="get" className="card flex flex-wrap items-end gap-2 p-3">
         <div>
-          <label className="label">User</label>
-          <select name="user" defaultValue={sp.user ?? ""} className="input w-56">
+          <label className="label" htmlFor="acc-user">User</label>
+          <select id="acc-user" name="user" defaultValue={sp.user ?? ""} className="input w-56">
             <option value="">Everyone</option>
             {(people ?? []).map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
           </select>
         </div>
         <div>
-          <label className="label">Record (tracking no.)</label>
-          <input name="record" defaultValue={sp.record ?? ""} className="input w-40 font-mono" placeholder="IN-2026-0001" />
+          <label className="label" htmlFor="acc-record">Record (tracking no.)</label>
+          <input id="acc-record" name="record" defaultValue={sp.record ?? ""} className="input w-40 font-mono" placeholder="IN-2026-0001" />
         </div>
         <div>
-          <label className="label">Event</label>
-          <select name="event" defaultValue={sp.event ?? ""} className="input w-48">
+          <label className="label" htmlFor="acc-event">Event</label>
+          <select id="acc-event" name="event" defaultValue={sp.event ?? ""} className="input w-48">
             <option value="">All events</option>
             {Object.entries(EVENT_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
@@ -113,6 +113,13 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
           </tbody>
         </table>
       </section>
+      {!sp.more && (
+        <p>
+          <Link className="btn-secondary" href={`/admin/access?${new URLSearchParams({ ...Object.fromEntries(Object.entries(sp).filter(([, v]) => v)), more: "1" } as Record<string, string>)}`}>
+            Show older entries
+          </Link>
+        </p>
+      )}
 
       <section className="card space-y-3 p-4">
         <div>
@@ -122,7 +129,8 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
           </p>
         </div>
         <form method="get" className="flex flex-wrap gap-2">
-          <input name="person" defaultValue={sp.person ?? ""} className="input w-72" placeholder="e.g. Juan dela Cruz" minLength={3} required />
+          <label htmlFor="acc-person" className="sr-only">Person&apos;s name</label>
+          <input id="acc-person" name="person" defaultValue={sp.person ?? ""} className="input w-72" placeholder="e.g. Juan dela Cruz" minLength={3} required />
           <button className="btn-secondary">Run report</button>
         </form>
         {report?.error && <p className="text-sm text-red-700">{report.error.message}</p>}

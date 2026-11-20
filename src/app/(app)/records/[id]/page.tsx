@@ -143,7 +143,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
             </span>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="grid w-full gap-2 sm:flex sm:w-auto">
           <Link href={`/records/${rec.id}/slip`} className="btn-secondary">Print routing slip</Link>
           <Link href="/records" className="btn-secondary">Back to records</Link>
         </div>

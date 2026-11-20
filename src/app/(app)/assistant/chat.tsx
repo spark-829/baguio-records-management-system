@@ -39,7 +39,9 @@ export function Chat() {
   const end = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    end.current?.scrollIntoView({ behavior: "smooth" });
+    // Only scroll once a conversation has started, so the page doesn't jump on first load.
+    if (turns.length === 0) return;
+    end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [turns, busy]);
 
   async function send(question: string) {
@@ -100,7 +102,7 @@ export function Chat() {
         className="flex gap-2 border-t border-slate-200 p-3"
       >
         <label htmlFor="ask" className="sr-only">Your question</label>
-        <input id="ask" className="input flex-1" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your question, e.g. Where is the drainage voucher?" />
+        <input id="ask" className="input flex-1" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type your question" />
         <button className="btn-primary" disabled={busy}>Send</button>
       </form>
     </div>

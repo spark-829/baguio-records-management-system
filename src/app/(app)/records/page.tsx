@@ -10,9 +10,11 @@ import { AiSearchBox } from "./ai-search-box";
 export default async function RecordsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const f = filtersFromParams(sp);
+  // "Open only" comes from the dashboard boxes: hide finished records
+  const onlyOpen = sp.open === "1";
   const supabase = await createClient();
   const [rows, offices, types] = await Promise.all([
-    searchRecords(supabase, f, 100),
+    searchRecords(supabase, f, 100).then((rs) => (onlyOpen ? rs.filter((r) => !["completed", "released", "archived"].includes(r.status)) : rs)),
     supabase.from("rms_offices").select("code, name").eq("is_active", true).order("code"),
     supabase.from("rms_document_types").select("name").eq("is_active", true).order("name"),
   ]);
@@ -25,7 +27,15 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Records</h1>
-          <p className="text-sm text-slate-600">{rows.length} record{rows.length === 1 ? "" : "s"} found</p>
+          <p className="text-sm text-slate-600">
+            {rows.length} {onlyOpen ? "open " : ""}record{rows.length === 1 ? "" : "s"} found
+            {onlyOpen && (
+              <>
+                {" · "}
+                <Link href={`/records?${filtersToParams(f).toString()}`}>Show finished ones too</Link>
+              </>
+            )}
+          </p>
         </div>
         <div className="flex gap-2">
           <a href={exportHref} className="btn-secondary" title="Opens in Excel">Download list (Excel)</a>
@@ -104,13 +114,35 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         For privacy, people&apos;s names are shortened in this list (for example “J*** dela C***”). Open a record to see the full name.
       </p>
 
-      <div className="card overflow-x-auto">
+      {/* Phones: one card per record, the whole card is a link */}
+      <ul className="space-y-3 md:hidden">
+        {rows.map((r) => (
+          <li key={r.id}>
+            <Link href={`/records/${r.id}`} className="card block p-4 no-underline hover:border-brand-600">
+              <span className="font-mono text-sm text-slate-600">{r.tracking_no}</span>
+              <span className="mt-1 block font-semibold text-ink">{r.subject}</span>
+              <span className="mt-2 flex flex-wrap items-center gap-1.5">
+                <StatusBadge status={r.status} />
+                <PriorityBadge priority={r.priority} />
+                <ConfBadge level={r.confidentiality} />
+                {isOverdue(r.due_date, r.status) && <OverdueBadge />}
+              </span>
+              <span className="mt-2 block text-sm text-slate-700">
+                Now with {officeNames.get(r.current_office) ?? r.current_office} · logged {fmtDate(r.created_at)}
+              </span>
+            </Link>
+          </li>
+        ))}
+        {rows.length === 0 && <li className="card p-6 text-center text-slate-600">No records match. Try fewer filters.</li>}
+      </ul>
+
+      <div className="card hidden overflow-x-auto md:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
             <tr>
               <th className="px-4 py-2">Tracking no.</th>
               <th className="px-4 py-2">Subject</th>
-              <th className="px-4 py-2">Type</th>
+              <th className="hidden px-4 py-2 lg:table-cell">Type</th>
               <th className="px-4 py-2">From / To</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Office</th>
@@ -131,7 +163,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
                     {isOverdue(r.due_date, r.status) && <OverdueBadge />}
                   </div>
                 </td>
-                <td className="px-4 py-2 text-slate-600">{r.document_type}</td>
+                <td className="hidden px-4 py-2 text-slate-600 lg:table-cell">{r.document_type}</td>
                 <td className="px-4 py-2 text-slate-600">{r.direction === "incoming" ? partyLabel(r.sender_name, r.sender_org) : partyLabel(r.recipient_name, r.recipient_org)}</td>
                 <td className="px-4 py-2"><StatusBadge status={r.status} /></td>
                 <td className="px-4 py-2 text-slate-600">{officeNames.get(r.current_office) ?? r.current_office}</td>
