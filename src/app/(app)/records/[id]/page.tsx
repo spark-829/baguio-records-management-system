@@ -126,7 +126,8 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
       )}
       {isNew && (
         <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          Saved. Tracking number <strong>{rec.tracking_no}</strong> issued. Print the routing slip to attach to the paper copy.
+          Saved. Tracking number <strong>{rec.tracking_no}</strong> issued. Print the routing slip to attach to the paper copy
+          {incoming ? ", and the receipt to give the sender so they can track it online" : ""}.
         </p>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -145,6 +146,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         </div>
         <div className="flex gap-2">
           <Link href={`/records/${rec.id}/slip`} className="btn-secondary">Print routing slip</Link>
+          {incoming && <Link href={`/records/${rec.id}/receipt`} className="btn-secondary">Print receipt for the sender</Link>}
           <Link href="/records" className="btn-secondary">Back to records</Link>
         </div>
       </div>

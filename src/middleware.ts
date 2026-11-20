@@ -22,7 +22,9 @@ export async function middleware(request: NextRequest) {
 
   const { data } = await supabase.auth.getUser();
   const isLogin = request.nextUrl.pathname.startsWith("/login");
-  if (!data.user && !isLogin) {
+  // The public tracking page is open to citizens without an account.
+  const isPublic = request.nextUrl.pathname === "/track";
+  if (!data.user && !isLogin && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
