@@ -7,6 +7,9 @@ import { createClient } from "@/lib/supabase/server";
 import { ACTIONS, allowedActions, nextStatus, type ActionKind } from "@/lib/workflow";
 import type { Direction, Status } from "@/lib/types";
 
+const ATTACHMENT_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export type ActState = { error?: string; ok?: string } | undefined;
 
 export async function recordAction(_prev: ActState, form: FormData): Promise<ActState> {
@@ -57,6 +60,8 @@ export async function addAttachment(_prev: ActState, form: FormData): Promise<Ac
   const file = form.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "Choose a file" };
   if (file.size > 10 * 1024 * 1024) return { error: "File is larger than 10 MB" };
+  if (!ATTACHMENT_TYPES.includes(file.type)) return { error: "Use a PDF, PNG, JPG or WEBP file" };
+  if (!UUID.test(recordId)) return { error: "Record not found" };
   const supabase = await createClient();
   const { count } = await supabase
     .from("rms_attachments")
