@@ -6,15 +6,22 @@ import type { Profile } from "./types";
 /** The signed-in user's RMS profile. Sends locked, inactive or not-yet-verified users elsewhere. */
 export const getProfile = cache(async (): Promise<Profile> => {
   const supabase = await createClient();
-  const { data: auth } = await supabase.auth.getUser();
+  // Speed: the profile is fetched at the same time as the sign-in is verified with Supabase Auth.
+  // The query still runs under row-level security with the user's token, and we only use it
+  // once getUser() confirms the same user id.
+  const { data: local } = await supabase.auth.getSession();
+  const guessId = local.session?.user.id;
+  const profileQuery = (id: string) =>
+    supabase
+      .from("rms_profiles")
+      .select("id, full_name, role, office_id, is_active, locked_until, office:rms_offices(code, name)")
+      .eq("id", id)
+      .maybeSingle();
+  const [{ data: auth }, early] = await Promise.all([supabase.auth.getUser(), guessId ? profileQuery(guessId) : Promise.resolve(null)]);
   if (!auth.user) redirect("/login");
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
   if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") redirect("/mfa");
-  const { data } = await supabase
-    .from("rms_profiles")
-    .select("id, full_name, role, office_id, is_active, locked_until, office:rms_offices(code, name)")
-    .eq("id", auth.user.id)
-    .maybeSingle();
+  const { data } = early && guessId === auth.user.id ? early : await profileQuery(auth.user.id);
   if (!data || !data.is_active) redirect("/api/auth/signout?reason=no-access");
   if (data.locked_until && new Date(data.locked_until) > new Date()) redirect("/api/auth/signout?reason=locked");
   return data as unknown as Profile;
