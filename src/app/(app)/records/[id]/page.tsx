@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProfile, getSettings, isCentral } from "@/lib/session";
@@ -66,17 +67,17 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     .maybeSingle();
   if (!data) notFound();
   const rec = data as unknown as Rec;
-  // Access history: every opened record is logged with who, when and from which IP.
-  await supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: rec.id });
   const deleted = Boolean(rec.deleted_at);
 
-  const [{ data: routes }, { data: files }, { data: offices }] = await Promise.all([
+  const [, { data: routes }, { data: files }, { data: offices }] = await Promise.all([
+    // Access history: every opened record is logged with who, when and from which IP (in parallel with the reads below).
+    supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: rec.id }),
     supabase
       .from("rms_routes")
       .select("id, status, action_taken, remarks, created_at, from_office:rms_offices!rms_routes_from_office_id_fkey(id, code, name), to_office:rms_offices!rms_routes_to_office_id_fkey(id, code, name), actor:rms_profiles(full_name)")
       .eq("record_id", id)
       .order("created_at", { ascending: false }),
-    supabase.from("rms_attachments").select("id, file_name, mime_type, size_bytes, version, uploaded_at").eq("record_id", id).order("uploaded_at"),
+    supabase.from("rms_attachments").select("id, file_name, mime_type, size_bytes, version, uploaded_at, uploader:rms_profiles(full_name)").eq("record_id", id).order("uploaded_at"),
     supabase.from("rms_offices").select("id, code, name").eq("is_active", true).order("code"),
   ]);
 
@@ -89,6 +90,12 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   });
   const incoming = rec.direction === "incoming";
   const history = (routes ?? []) as unknown as Route[];
+  type FileRow = { id: string; file_name: string; version: number; uploaded_at: string; uploader: { full_name: string } | null };
+  // Uploaded files appear in the history too, placed just above the step they came after (history is newest first).
+  const fileEvents = ((files ?? []) as unknown as FileRow[]).map((f) => ({
+    ...f,
+    before: (history.find((h) => h.created_at <= f.uploaded_at) ?? history.at(-1))?.id,
+  }));
   const latest = history[0];
   // The step that brought the record to the office holding it now: who sent it, and any instruction they left.
   const arrival = history.find((r) => r.status === "forwarded" && r.to_office?.id === rec.current_office_id && r.from_office?.id !== rec.current_office_id);
@@ -162,7 +169,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               <dd className="text-lg font-semibold">{officeName(rec.current_office)}</dd>
               {latest && (
                 <dd className="text-sm text-slate-700">
-                  Last handled by {latest.actor?.full_name ?? "—"} on {fmtDate(latest.created_at)}
+                  Last update by {latest.actor?.full_name ?? "—"} on {fmtDate(latest.created_at)}
                 </dd>
               )}
             </div>
@@ -223,7 +230,20 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
             <h2 className="mb-3 font-semibold">History, actions and remarks</h2>
             <ol className="relative ml-2 border-l-2 border-slate-200">
               {history.map((r, i, all) => (
-                <li key={r.id} className="mb-4 ml-4">
+                <Fragment key={r.id}>
+                {fileEvents.filter((f) => f.before === r.id).map((f) => (
+                  <li key={`f${f.id}`} className="mb-4 ml-4">
+                    <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-gold-500" />
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="badge bg-amber-50 text-amber-900 ring-1 ring-amber-200">File</span>
+                      <span className="font-medium">Attached {f.file_name}{f.version > 1 ? ` (version ${f.version})` : ""}</span>
+                    </div>
+                    <p className="mt-0.5 text-sm text-slate-600">
+                      {fmtDateTime(f.uploaded_at)} · {f.uploader?.full_name ?? "—"}
+                    </p>
+                  </li>
+                ))}
+                <li className="mb-4 ml-4">
                   <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-brand-600" />
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     {all[i + 1]?.status !== r.status || (r.status === "forwarded" && r.to_office?.code !== all[i + 1]?.to_office?.code) ? (
@@ -241,12 +261,14 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                     {fmtDateTime(r.created_at)} · {r.actor?.full_name ?? "—"}
                   </p>
                 </li>
+                </Fragment>
               ))}
             </ol>
           </section>
         </div>
 
-        <div className="space-y-4">
+        {/* On narrow screens (phones, zoomed-in laptops) the action panel comes right after "Now with", not below the history */}
+        <div className="order-first space-y-4 lg:order-none">
           <section className="card p-4">
             <h2 className="mb-2 font-semibold">Take action</h2>
             {actions.length > 0 && <p className="mb-2 text-sm text-slate-600">Nothing is saved until you press Save and then confirm.</p>}

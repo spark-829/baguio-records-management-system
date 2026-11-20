@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getProfile } from "@/lib/session";
 import { filtersFromParams, filtersToParams, searchRecords } from "@/lib/search";
 import { STATUS_LABEL, fmtDate, partyLabel } from "@/lib/labels";
 import { isOverdue } from "@/lib/workflow";
@@ -13,7 +14,8 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   // "Open only" comes from the dashboard boxes: hide finished records
   const onlyOpen = Boolean(f.open);
   const supabase = await createClient();
-  const [rows, offices, types] = await Promise.all([
+  const [me, rows, offices, types] = await Promise.all([
+    getProfile(),
     searchRecords(supabase, f, 100),
     supabase.from("rms_offices").select("code, name").eq("is_active", true).order("code"),
     supabase.from("rms_document_types").select("name").eq("is_active", true).order("name"),
@@ -39,7 +41,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </div>
         <div className="flex gap-2">
           <a href={exportHref} className="btn-secondary" title="Opens in Excel">Download list (Excel)</a>
-          <Link href="/records/new" className="btn-primary">Register a record</Link>
+          {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">Register a record</Link>}
         </div>
       </div>
 
@@ -126,7 +128,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       </p>
 
       {/* Phones: one card per record, the whole card is a link */}
-      <ul className="space-y-3 md:hidden">
+      <ul className="space-y-3 lg:hidden">
         {rows.map((r) => (
           <li key={r.id}>
             <Link href={`/records/${r.id}`} className="card block p-4 no-underline hover:border-brand-600">
@@ -147,7 +149,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         {rows.length === 0 && <li className="card p-6 text-center text-slate-600">No records match. Try fewer filters.</li>}
       </ul>
 
-      <div className="card hidden overflow-x-auto md:block">
+      <div className="card hidden overflow-x-auto lg:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
             <tr>

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { ACTIONS, allowedActions, nextStatus, type ActionKind } from "@/lib/workflow";
+import { ACTIONS, allowedActions, doneText, nextStatus, type ActionKind } from "@/lib/workflow";
 import type { Direction, Status } from "@/lib/types";
 
 export type ActState = { error?: string; ok?: string } | undefined;
@@ -37,12 +37,16 @@ export async function recordAction(_prev: ActState, form: FormData): Promise<Act
   if (ACTIONS[kind].needsOffice && !toOffice) return { error: "Choose the office to forward to." };
   if (kind === "remark" && !actionTaken && !remarks) return { error: "Write the action taken or a remark." };
 
+  const toName =
+    kind === "forward" && toOffice
+      ? (await supabase.from("rms_offices").select("name").eq("id", toOffice).maybeSingle()).data?.name
+      : null;
   const { error } = await supabase.from("rms_routes").insert({
     record_id: rec.id,
     from_office_id: rec.current_office_id,
     to_office_id: kind === "forward" ? toOffice : rec.current_office_id,
     status: nextStatus(rec.status as Status, kind),
-    action_taken: actionTaken || ACTIONS[kind].label,
+    action_taken: actionTaken || doneText(kind, toName),
     remarks: remarks || null,
     acted_by: me.id,
   });

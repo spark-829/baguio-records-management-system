@@ -194,12 +194,23 @@ main table tbody tr:hover {
 .print-only {
   display: none;
 }
+@page {
+  margin: 12mm;
+}
 @media print {
   .print-only {
     display: block !important;
   }
   .no-print {
     display: none !important;
+  }
+  /* The screen layout fills the window; on paper that pushes an empty second page */
+  .min-h-screen {
+    min-height: 0 !important;
+  }
+  main {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
   }
   body {
     background: white;

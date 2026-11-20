@@ -74,7 +74,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           <p className="print-only text-xs font-semibold uppercase tracking-widest">City Government of Baguio · Records Management System (demo)</p>
           <h1 className="text-2xl font-bold">Reports</h1>
           <p className="text-sm text-slate-600">
-            {isCentral(me) ? "All offices" : me.office?.name} · {from || to ? `${fmtDate(from)} to ${fmtDate(to)}` : "all dates"} · {rows.length} records
+            {isCentral(me) ? "All offices" : `Records ${me.office?.name ?? "your office"} sent or holds`} · {from || to ? `${fmtDate(from)} to ${fmtDate(to)}` : "all dates"} · {rows.length} records
           </p>
           <p className="print-only text-sm">Prepared by {me.full_name} on {printedAt}</p>
         </div>
@@ -87,7 +87,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         </form>
       </div>
       <nav aria-label="More reports" className="no-print flex flex-wrap gap-2">
-        <Link href="/reports/offices" className="btn-secondary">Office workload</Link>
+        {me.role !== "viewer" && <Link href="/reports/offices" className="btn-secondary">Office workload</Link>}
         {isCentral(me) && <Link href="/reports/retention" className="btn-secondary">Retention schedule</Link>}
       </nav>
 
