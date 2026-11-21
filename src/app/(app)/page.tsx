@@ -81,6 +81,13 @@ export default async function Dashboard() {
         ))}
       </div>
 
+      <DueCalendar
+        today={new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date())}
+        items={open
+          .filter((r) => r.due_date)
+          .map((r) => ({ id: r.id, tracking_no: r.tracking_no, subject: r.subject, due_date: r.due_date!.slice(0, 10), office: r.current_office?.name ?? null }))}
+      />
+
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="card lg:col-span-2">
           <h2 className="border-b border-slate-100 px-4 py-3 text-lg font-bold">Waiting in my office</h2>
@@ -100,13 +107,6 @@ export default async function Dashboard() {
           </ul>
         </section>
       </div>
-
-      <DueCalendar
-        today={new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date())}
-        items={open
-          .filter((r) => r.due_date)
-          .map((r) => ({ id: r.id, tracking_no: r.tracking_no, subject: r.subject, due_date: r.due_date!.slice(0, 10), office: r.current_office?.name ?? null }))}
-      />
 
       {overdue.length > 0 && (
         <section className="card border-red-200">
