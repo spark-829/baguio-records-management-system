@@ -85,7 +85,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           <div><label className="label" htmlFor="rep-from">{t("From|date")}</label><input id="rep-from" type="date" name="from" defaultValue={from} className="input" /></div>
           <div><label className="label" htmlFor="rep-to">{t("To|date")}</label><input id="rep-to" type="date" name="to" defaultValue={to} className="input" /></div>
           <button className="btn-secondary">{t("Apply")}</button>
-          <a className="btn-secondary" href={`/api/reports/csv?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`}>{t("Download list (Excel)")}</a>
+          <a className="btn-secondary" href={`/api/reports/csv?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`}>{t("Download list (CSV, opens in Excel)")}</a>
           <PrintButton label="Print report" />
         </form>
       </div>

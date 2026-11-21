@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ACTIONS, allowedActions, doneText, nextStatus, type ActionKind } from "@/lib/workflow";
 import type { Direction, Status } from "@/lib/types";
 
+const NO_ATTACH = "Only the office holding this record, the office that sent it, or the records desk can add files.";
 const ATTACHMENT_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -75,7 +76,8 @@ export async function addAttachment(_prev: ActState, form: FormData): Promise<Ac
   const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-120);
   const path = `${recordId}/${crypto.randomUUID()}-${safeName}`;
   const up = await supabase.storage.from("rms-attachments").upload(path, file, { contentType: file.type });
-  if (up.error) return { error: up.error.message };
+  // Raw storage and row-security messages mean nothing to staff, so they get a plain sentence (QA-010).
+  if (up.error) return { error: /row-level security|unauthorized|403/i.test(up.error.message) ? NO_ATTACH : "The file could not be uploaded. Please try again." };
   const { error } = await supabase.from("rms_attachments").insert({
     record_id: recordId,
     file_path: path,
@@ -85,7 +87,7 @@ export async function addAttachment(_prev: ActState, form: FormData): Promise<Ac
     version: (count ?? 0) + 1,
     uploaded_by: me.id,
   });
-  if (error) return { error: error.message };
+  if (error) return { error: /row-level security/i.test(error.message) ? NO_ATTACH : "The file could not be saved. Please try again." };
   revalidatePath(`/records/${recordId}`);
   return { ok: "File attached." };
 }
@@ -98,10 +100,13 @@ export async function deleteRecord(_prev: ActState, form: FormData): Promise<Act
   const reason = String(form.get("reason") ?? "").trim();
   if (reason.length < 5) return { error: "Give a short reason for deleting." };
   const supabase = await createClient();
+  const { data: rec } = await supabase.from("rms_records").select("tracking_no").eq("id", recordId).maybeSingle();
   const { error } = await supabase.rpc("rms_delete_record", { p_record_id: recordId, p_reason: reason });
   if (error) return { error: error.message };
   revalidatePath("/records");
-  redirect(me.role === "admin" ? "/admin/bin?deleted=1" : "/records?deleted=1");
+  // The next page shows a banner naming the record, like Gmail's "moved to Trash" note (QA-012).
+  const no = encodeURIComponent(rec?.tracking_no ?? "1");
+  redirect(me.role === "admin" ? `/admin/bin?deleted=${no}` : `/records?deleted=${no}`);
 }
 
 export async function restoreRecord(form: FormData) {

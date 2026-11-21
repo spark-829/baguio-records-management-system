@@ -44,6 +44,17 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
     setOpen(false);
     setConfirming(false);
   };
+  const [saving, setSaving] = useState(false);
+  const before = useRef(state);
+  const busy = saving || pending;
+  // When the save comes back (a new result arrives): close the panel if it worked, or stay open with the message.
+  useEffect(() => {
+    if (!saving || pending || state === before.current) return;
+    setSaving(false);
+    setConfirming(false);
+    if (state?.ok) setOpen(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, pending]);
   const kind: ActionKind = choice === "return" ? "forward" : (choice as ActionKind);
   const toOffice = choice === "return" ? returnTo!.id : office;
   const officeLabel = offices.find((o) => o.id === toOffice)?.name;
@@ -67,8 +78,10 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
   return (
     <form
       action={(fd) => {
-        setConfirming(false);
-        setOpen(false);
+        // Like Gmail's "Sending…": the panel stays open with a disabled "Saving…" button until the save
+        // has finished, so nobody presses it twice while waiting (QA-011).
+        before.current = state;
+        setSaving(true);
         return action(fd);
       }}
       onSubmit={(e) => {
@@ -119,8 +132,8 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
         <div ref={confirmBox} tabIndex={-1} className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3" role="alertdialog" aria-label={t("Please confirm")} aria-describedby="act-confirm-q">
           <p id="act-confirm-q" className="font-medium text-amber-950">{summary}</p>
           <div className="flex gap-2">
-            <button className="btn-primary flex-1" disabled={pending}>{t(pending ? "Saving…" : "Yes, save it")}</button>
-            <button type="button" className="btn-secondary flex-1" onClick={() => setConfirming(false)}>{t("No, go back")}</button>
+            <button className="btn-primary flex-1" disabled={busy} aria-busy={busy}>{t(busy ? "Saving…" : "Yes, save it")}</button>
+            <button type="button" className="btn-secondary flex-1" disabled={busy} onClick={() => setConfirming(false)}>{t("No, go back")}</button>
           </div>
         </div>
       ) : (

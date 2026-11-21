@@ -52,7 +52,7 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
     const years = r.doc_type?.retention_years ?? 5;
     return { ...r, finishedAt, years, ...retention(finishedAt, years) };
   });
-  rows.sort((a, b) => a.keepUntil.localeCompare(b.keepUntil));
+  rows.sort((a, b) => (a.keepUntil ?? "9999").localeCompare(b.keepUntil ?? "9999"));
   const counts = { review_now: 0, review_soon: 0, keep: 0 } as Record<RetentionState, number>;
   rows.forEach((r) => counts[r.state]++);
   const shown = show && show in STATE ? rows.filter((r) => r.state === show) : rows;
@@ -98,10 +98,10 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
               <tr key={r.id}>
                 <td className="whitespace-nowrap px-4 py-2 font-mono text-sm"><Link href={`/records/${r.id}`}>{r.tracking_no}</Link></td>
                 <td className="px-4 py-2">{r.subject}<div className="text-sm text-slate-600">{STATUS_LABEL[r.status]} · {r.current_office?.name}</div></td>
-                <td className="px-4 py-2 text-slate-700">{r.doc_type?.name}<div className="text-sm text-slate-600">{r.years === 0 ? t("No keep period") : t("{n} years", { n: r.years })}</div></td>
+                <td className="px-4 py-2 text-slate-700">{r.doc_type?.name}<div className="text-sm text-slate-600">{r.permanent ? t("Permanent") : r.years === 0 ? t("No keep period") : t("{n} years", { n: r.years })}</div></td>
                 <td className="whitespace-nowrap px-4 py-2">{fmtDate(r.finishedAt)}</td>
-                <td className="whitespace-nowrap px-4 py-2 font-semibold">{fmtDate(r.keepUntil)}</td>
-                <td className="px-4 py-2"><span className={`badge border ${STATE[r.state].tone}`}>{t(STATE[r.state].label)}</span></td>
+                <td className="whitespace-nowrap px-4 py-2 font-semibold">{r.keepUntil ? fmtDate(r.keepUntil) : t("Permanent")}</td>
+                <td className="px-4 py-2"><span className={`badge border ${STATE[r.state].tone}`}>{t(r.permanent ? "Keep permanently" : STATE[r.state].label)}</span></td>
               </tr>
             ))}
             {shown.length === 0 && (

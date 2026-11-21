@@ -18,7 +18,7 @@ const TABLE_LABEL: Record<string, string> = {
   ai_intake: "Form filled from a scan",
   ai_chat: "AI assistant question",
   ai_summary: "AI summary",
-  export_csv: "List downloaded (Excel)",
+  export_csv: "List downloaded (CSV)",
   download: "File download",
   rms_settings: "Security setting",
 };
