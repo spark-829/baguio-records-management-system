@@ -34,6 +34,7 @@ type Rec = {
   created_at: string;
   ai_summary: string | null;
   content_text: string | null;
+  barangay?: string | null;
   current_office_id: string;
   deleted_at: string | null;
   delete_reason: string | null;
@@ -114,6 +115,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     [t("Received or sent out"), t(incoming ? "Received by the City" : "Sent out by the City")],
     [t("Document type"), rec.doc_type?.name],
     [t(incoming ? "From" : "To"), [incoming ? rec.sender_name : rec.recipient_name, incoming ? rec.sender_org : rec.recipient_org].filter(Boolean).join(", ") || "—"],
+    ...(rec.barangay !== undefined ? [[t("Barangay"), rec.barangay ?? "—"] as [string, React.ReactNode]] : []),
     [t("Date on document"), fmtDate(rec.document_date)],
     [t("How it arrived"), rec.mode ? t(rec.mode[0].toUpperCase() + rec.mode.slice(1)) : "—"],
     [t("Subject area"), rec.category ?? "—"],

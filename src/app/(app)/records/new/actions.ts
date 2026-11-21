@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
+import { BARANGAYS } from "@/lib/baguio-map";
 
 const RecordInput = z.object({
   direction: z.enum(["incoming", "outgoing"]),
@@ -24,6 +25,7 @@ const RecordInput = z.object({
   forward_to: z.string().optional(),
   content_text: z.string().max(200000).optional(),
   ai_summary: z.string().max(2000).optional(),
+  barangay: z.string().refine((b) => BARANGAYS.some((x) => x.name === b), "Choose a barangay from the list").optional(),
 });
 
 export type RegisterState = { error?: string } | undefined;
@@ -64,6 +66,7 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
       current_office_id: me.office_id,
       content_text: v.content_text ?? null,
       ai_summary: v.ai_summary ?? null,
+      ...(v.barangay ? { barangay: v.barangay } : {}),
       created_by: me.id,
       tracking_no: "pending",
     })

@@ -1,0 +1,70 @@
+import { BarangayMap, type MapRecord } from "@/components/barangay-map";
+import { getT } from "@/lib/i18n/server";
+import { createClient } from "@/lib/supabase/server";
+import { isOverdue } from "@/lib/workflow";
+import type { Status } from "@/lib/types";
+
+export const metadata = { title: "Barangay map" };
+
+const DONE: Status[] = ["completed", "released", "archived"];
+
+/** Where documents come from or go to, by barangay. Only records the account may see are counted. */
+export default async function MapPage({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
+  const [{ t }, { show }] = await Promise.all([getT(), searchParams]);
+  const onlyOpen = show === "open";
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("rms_records")
+    .select("id, tracking_no, subject, status, due_date, barangay")
+    .is("deleted_at", null)
+    .not("barangay", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(2000);
+  const rows = (data ?? []) as { id: string; tracking_no: string; subject: string; status: Status; due_date: string | null; barangay: string }[];
+  const records: MapRecord[] = rows.filter((r) => !onlyOpen || !DONE.includes(r.status)).map((r) => ({
+    id: r.id,
+    tracking_no: r.tracking_no,
+    subject: r.subject,
+    barangay: r.barangay as string,
+    late: isOverdue(r.due_date, r.status as Status),
+    open: !DONE.includes(r.status as Status),
+  }));
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{t("Barangay map")}</h1>
+          <p className="max-w-3xl text-slate-700">
+            {t("How many documents are addressed to or are about each barangay. Only records your account may see are counted.")}
+          </p>
+        </div>
+        <nav aria-label={t("Which records to count")} className="inline-flex rounded-lg border-2 border-brand-700 p-0.5">
+          {[
+            ["all", "All records"],
+            ["open", "Still being handled"],
+          ].map(([k, label]) => {
+            const on = (k === "open") === onlyOpen;
+            return (
+              <a
+                key={k}
+                href={k === "open" ? "/map?show=open" : "/map"}
+                aria-current={on ? "page" : undefined}
+                className={`inline-flex min-h-10 items-center rounded-md px-3 text-sm font-semibold no-underline ${on ? "bg-brand-700 text-white" : "text-brand-800 hover:bg-brand-50"}`}
+              >
+                {t(label)}
+              </a>
+            );
+          })}
+        </nav>
+      </div>
+      {error ? (
+        <p className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-amber-950">
+          {t("The map turns on after the database update for barangays is run.")}
+        </p>
+      ) : (
+        <BarangayMap records={records} />
+      )}
+    </div>
+  );
+}

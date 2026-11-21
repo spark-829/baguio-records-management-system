@@ -30,7 +30,7 @@ type Fields = {
   ai_summary: string;
 };
 
-export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canIncoming: boolean; myOfficeId: string | null }) {
+export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canIncoming: boolean; myOfficeId: string | null; barangays?: string[] | null }) {
   const t = useT();
   const [state, action, pending] = useActionState(registerRecord, undefined);
   const [f, setF] = useState<Fields>({
@@ -203,6 +203,15 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
               <input id="f-recipient_org" name="recipient_org" className={`input ${hl("recipient_org")}`} value={f.recipient_org} onChange={(e) => set("recipient_org", e.target.value)} />
             </div>
           </>
+        )}
+        {props.barangays && (
+          <div>
+            <label className="label" htmlFor="f-barangay">{t("Barangay it is about (optional)")}</label>
+            <select id="f-barangay" name="barangay" className="input" defaultValue="">
+              <option value="">{t("None, or not about a place")}</option>
+              {props.barangays.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </div>
         )}
         <div>
           <label className="label" htmlFor="f-document_date">{t("Date written on the document")}</label>
