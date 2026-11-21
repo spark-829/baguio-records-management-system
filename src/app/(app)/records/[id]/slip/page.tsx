@@ -22,11 +22,15 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
     .maybeSingle();
   if (!rec) notFound();
   // Steps already done are printed on the slip, so the paper matches the system.
-  const { data: steps } = await supabase
-    .from("rms_routes")
-    .select("created_at, action_taken, remarks, from_office:rms_offices!rms_routes_from_office_id_fkey(code), to_office:rms_offices!rms_routes_to_office_id_fkey(code)")
-    .eq("record_id", id)
-    .order("created_at");
+  // The slip shows names and history, so opening it goes in the access history like the record page.
+  const [, { data: steps }] = await Promise.all([
+    supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: rec.id, p_detail: { page: "slip" } }),
+    supabase
+      .from("rms_routes")
+      .select("created_at, action_taken, remarks, from_office:rms_offices!rms_routes_from_office_id_fkey(code), to_office:rms_offices!rms_routes_to_office_id_fkey(code)")
+      .eq("record_id", id)
+      .order("created_at"),
+  ]);
   const done = (steps ?? []) as unknown as { created_at: string; action_taken: string | null; remarks: string | null; from_office: { code: string } | null; to_office: { code: string } | null }[];
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;

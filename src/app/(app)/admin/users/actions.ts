@@ -8,7 +8,8 @@ import { createClient } from "@/lib/supabase/server";
 export type UserState = { error?: string; ok?: string } | undefined;
 
 const NewUser = z.object({
-  email: z.email("Enter a valid email"),
+  // The demo admin login is public, so new accounts are limited to the reserved test domain (QA-001).
+  email: z.email("Enter a valid email").refine((e) => /@rms-demo\.test$/i.test(e.trim()), "In this demo, new accounts must use an @rms-demo.test email."),
   full_name: z.string().trim().min(3, "Enter the full name").max(120),
   password: z.string().min(8, "Password must be at least 8 characters"),
   role: z.enum(["admin", "records_officer", "dept_head", "staff", "viewer"]),

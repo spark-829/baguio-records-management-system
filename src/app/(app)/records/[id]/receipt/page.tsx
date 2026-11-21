@@ -20,6 +20,8 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
     .eq("id", id)
     .maybeSingle();
   if (!data) notFound();
+  // The receipt shows the filer's name, so opening it goes in the access history like the record page.
+  await supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: data.id, p_detail: { page: "receipt" } });
   const r = data as unknown as {
     tracking_no: string; track_code: string; direction: string; created_at: string; sender_name: string | null;
     doc_type: { name: string } | null; creator: { full_name: string } | null;
