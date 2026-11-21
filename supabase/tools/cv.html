@@ -1,0 +1,87 @@
+<!doctype html>
+<!-- Source for public/Vicson-Yaris-CV.pdf. Regenerate with: node supabase/tools/make_cv_pdf.js
+     Public facts only: no home address, no phone number. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vicson Yaris CV</title>
+<style>
+  @page { size: A4; margin: 9mm 12mm; }
+  body { font: 9.6pt/1.32 "Segoe UI", Arial, sans-serif; color: #1f2937; margin: 0; }
+  h1 { font-size: 22pt; margin: 0; color: #12402a; }
+  .role { font-size: 12pt; color: #6b4c0e; font-weight: 600; margin: 2px 0 6px; }
+  .contact { font-size: 9.5pt; color: #374151; }
+  .contact a { color: #12402a; text-decoration: none; }
+  header { border-bottom: 3px solid #c9a227; padding-bottom: 8px; margin-bottom: 10px; }
+  h2 { font-size: 11pt; text-transform: uppercase; letter-spacing: .08em; color: #12402a; border-bottom: 1px solid #d1d5db; padding-bottom: 2px; margin: 9px 0 4px; }
+  h3 { font-size: 10.5pt; margin: 4px 0 0; }
+  .meta { color: #6b7280; font-size: 9.5pt; }
+  ul { margin: 3px 0 0; padding-left: 16px; }
+  li { margin: 1px 0; }
+  p { margin: 3px 0; }
+  .skills { display: grid; grid-template-columns: 9.5em 1fr; gap: 2px 8px; }
+  .skills b { color: #12402a; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Vicson Yaris</h1>
+  <div class="role">Junior Software Developer · Data Analyst</div>
+  <div class="contact">Baguio City, Philippines · vicsonyaris29@gmail.com · <a href="https://github.com/spark-829">github.com/spark-829</a> · <a href="https://www.linkedin.com/in/vicson-yaris-67a1b9160">linkedin.com/in/vicson-yaris-67a1b9160</a> · <a href="https://spark-829.github.io/VicsonYaris_Portfolio">spark-829.github.io/VicsonYaris_Portfolio</a></div>
+</header>
+
+<h2>Profile</h2>
+<p>Computer Engineering graduate from Baguio who builds complete systems: database, back end, web front end and reports. Built a working Records Management System demo for local government work, a daily data pipeline running on PostgreSQL, and Power Platform automations used in a real HR team.</p>
+
+<h2>Projects</h2>
+<h3>Baguio Records Management System (demo)</h3>
+<div class="meta">Next.js 15, TypeScript, Supabase PostgreSQL, Cloudflare Workers · baguio-rms.vicsonyaris29.workers.dev</div>
+<ul>
+  <li>Registers incoming and outgoing documents, routes them between offices, and keeps the full history of every action and remark.</li>
+  <li>Search by tracking number, subject, office or date, file attachments, a due-date calendar, reports with CSV export, and a public page where citizens track their document with a receipt code.</li>
+  <li>Security built in: row-level security, roles and access levels, audit log, access history, login lockout and MFA, soft delete, and Data Privacy Act features.</li>
+  <li>Designed for older and non-technical staff: large text, plain words, and printable routing slips.</li>
+</ul>
+<h3>Social media ELT pipeline</h3>
+<div class="meta">Python, Supabase PostgreSQL, SQL, TypeScript Edge Functions, pg_cron, GitHub Actions, Power BI</div>
+<ul>
+  <li>Daily pipeline collecting a Philippine record label's public YouTube, TikTok and Instagram data: 3,041 posts tracked, 44 SQL scripts, 17 Edge Functions, 17 scheduled jobs and a 7-page Power BI report.</li>
+</ul>
+<h3>Solar-powered biogas monitoring and control (capstone, University of Baguio)</h3>
+<div class="meta">ESP32, MicroPython, Firebase Realtime Database, Django, Python</div>
+<ul>
+  <li>IoT sensors stream readings to Firebase; a Django web app shows production data used to improve biogas efficiency.</li>
+</ul>
+<h3>Olist e-commerce analysis and FMCG sales workbook</h3>
+<div class="meta">Power BI, DAX, Power Query, Excel, VBA, Python</div>
+<ul>
+  <li>Four-page Power BI report on 99,441 orders, and an Excel workbook with PivotTables, slicers and VBA.</li>
+</ul>
+
+<h2>Experience</h2>
+<h3>IEM Engineer · Philippine record label</h3>
+<div class="meta">2024 – present</div>
+<ul>
+  <li>Diagnose equipment failures through systematic testing and root-cause analysis; document maintenance to support planning.</li>
+  <li>Work with technical teams to improve maintenance efficiency and minimise downtime.</li>
+</ul>
+<h3>Data Analyst Intern · Pacificall Incorporated Philippines</h3>
+<div class="meta">2025</div>
+<ul>
+  <li>Built HR reporting workbooks (advanced Excel, PivotTables, Power Query) and Power BI dashboards with DAX.</li>
+  <li>Replaced a manual applicant-tracking process with Power Apps and Power Automate on SharePoint, cutting manual processing time by about 40%.</li>
+</ul>
+
+<h2>Education and certification</h2>
+<p><b>BS Computer Engineering</b>, University of Baguio · 2020 – 2026</p>
+<p><b>Data Analytics Level III</b>, Northridge Institute of Business and Technology · top of the class</p>
+
+<h2>Skills</h2>
+<div class="skills">
+  <b>Web and code</b><span>TypeScript, Next.js, React, Python, Django, PHP, Java, C++, MicroPython, HTML, CSS</span>
+  <b>Data</b><span>PostgreSQL / SQL, Supabase, row-level security, Firebase, REST APIs, OAuth 2.0, pg_cron</span>
+  <b>Tools</b><span>Git, GitHub Actions, Cloudflare Workers, Power BI, DAX, Excel and VBA, Tableau, Looker Studio</span>
+  <b>Automation</b><span>Power Apps, Power Automate, SharePoint</span>
+</div>
+</body>
+</html>

@@ -25,7 +25,8 @@ export function SiteFooter({ className = "mt-10" }: { className?: string }) {
         </div>
         <p className="max-w-xl leading-relaxed sm:text-right">
           <strong className="font-semibold text-white">Demo system — not an official City Government of Baguio service.</strong>{" "}
-          All names and records shown are fictional.
+          All names and records shown are fictional.{" "}
+          <a href="/developer" className="font-semibold text-white underline">About the developer</a>
         </p>
       </div>
     </footer>

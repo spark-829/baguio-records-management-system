@@ -46,7 +46,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               </ul>
             </div>
             <p className="mt-4 text-sm text-brand-100">
-              Portfolio demo built by Vic. Not an official City Government system; all data is fictional.
+              Portfolio demo built by{" "}
+              <a href="/developer" className="font-semibold text-white underline">Vicson Yaris</a>. Not an official City Government
+              system; all data is fictional.
             </p>
           </div>
           <div className="card order-first border-t-4 border-t-gold-500 p-6 text-ink sm:p-8 md:order-none">

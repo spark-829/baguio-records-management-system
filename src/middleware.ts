@@ -22,8 +22,8 @@ export async function middleware(request: NextRequest) {
 
   const { data } = await supabase.auth.getUser();
   const isLogin = request.nextUrl.pathname.startsWith("/login");
-  // The public tracking page is open to citizens without an account.
-  const isPublic = request.nextUrl.pathname === "/track";
+  // The public tracking and developer pages are open to citizens without an account.
+  const isPublic = ["/track", "/developer"].includes(request.nextUrl.pathname);
   if (!data.user && !isLogin && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -38,5 +38,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp|pdf)$).*)"],
 };
