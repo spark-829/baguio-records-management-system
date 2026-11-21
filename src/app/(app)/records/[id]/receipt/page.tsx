@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
@@ -10,6 +11,7 @@ import { PrintButton } from "../slip/print-button";
  * and a QR code that opens the public tracking page. It shows no other personal data.
  */
 export default async function ReceiptPage({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = await getT();
   const { id } = await params;
   const supabase = await createClient();
   const { data } = await supabase
@@ -31,22 +33,21 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
     <div className="mx-auto max-w-md">
       <div className="no-print mb-4 flex justify-end"><PrintButton label="Print receipt" /></div>
       <div className="border-2 border-dashed border-slate-900 bg-white p-5 text-slate-900">
-        <p className="text-center text-xs font-semibold uppercase tracking-widest">Baguio RMS · Demo</p>
-        <h1 className="text-center text-xl font-bold">Acknowledgment Receipt</h1>
-        <p className="mt-1 text-center text-sm">Keep this receipt. You need it to follow up your document.</p>
+        <p className="text-center text-xs font-semibold uppercase tracking-widest">{t("Baguio RMS · Demo")}</p>
+        <h1 className="text-center text-xl font-bold">{t("Acknowledgment Receipt")}</h1>
+        <p className="mt-1 text-center text-sm">{t("Keep this receipt. You need it to follow up your document.")}</p>
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-          <dt className="font-semibold">Tracking no.</dt><dd className="font-mono text-lg font-bold">{r.tracking_no}</dd>
-          <dt className="font-semibold">Tracking code</dt><dd className="font-mono text-lg font-bold tracking-widest">{r.track_code}</dd>
-          <dt className="font-semibold">Document</dt><dd>{r.doc_type?.name}</dd>
-          {r.sender_name && (<><dt className="font-semibold">Filed by</dt><dd>{r.sender_name}</dd></>)}
-          <dt className="font-semibold">Received</dt><dd>{fmtDateTime(r.created_at)}</dd>
-          <dt className="font-semibold">Received by</dt><dd>{r.creator?.full_name?.split(" (")[0]}</dd>
+          <dt className="font-semibold">{t("Tracking no.")}</dt><dd className="font-mono text-lg font-bold">{r.tracking_no}</dd>
+          <dt className="font-semibold">{t("Tracking code")}</dt><dd className="font-mono text-lg font-bold tracking-widest">{r.track_code}</dd>
+          <dt className="font-semibold">{t("Document")}</dt><dd>{r.doc_type?.name}</dd>
+          {r.sender_name && (<><dt className="font-semibold">{t("Filed by")}</dt><dd>{r.sender_name}</dd></>)}
+          <dt className="font-semibold">{t("Received")}</dt><dd>{fmtDateTime(r.created_at)}</dd>
+          <dt className="font-semibold">{t("Received by")}</dt><dd>{r.creator?.full_name?.split(" (")[0]}</dd>
         </dl>
         <div className="mt-4 flex items-center gap-4 border-t border-slate-300 pt-4">
           <div className="shrink-0" dangerouslySetInnerHTML={{ __html: qr }} />
           <p className="text-sm">
-            Scan the code, or go to <strong>{origin.replace(/^https?:\/\//, "")}/track</strong> and type the tracking number and code
-            to see where your document is.
+            {t("Scan the code, or go to")} <strong>{origin.replace(/^https?:\/\//, "")}/track</strong> {t("and type the tracking number and code to see where your document is.")}
           </p>
         </div>
       </div>

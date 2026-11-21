@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
@@ -57,11 +58,12 @@ function describe(table: string, action: string, data: Record<string, unknown> |
 export default async function AuditPage({ searchParams }: { searchParams: Promise<{ t?: string; more?: string }> }) {
   const me = await getProfile();
   if (me.role !== "admin") redirect("/");
-  const { t, more } = await searchParams;
+  const { t: table, more } = await searchParams;
+  const { t } = await getT();
   const limit = more ? 500 : 50;
   const supabase = await createClient();
   let q = supabase.from("rms_audit_log").select("id, table_name, row_id, action, old_data, new_data, actor_id, created_at, ip").order("created_at", { ascending: false }).limit(limit);
-  if (t) q = q.eq("table_name", t);
+  if (table) q = q.eq("table_name", table);
   const [{ data: rows }, { data: people }, chain] = await Promise.all([
     q,
     supabase.from("rms_profiles").select("id, full_name"),
@@ -73,41 +75,41 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Audit log</h1>
-          <p className="text-sm text-slate-600">Every change, download and assistant use, recorded automatically. Nobody can edit or delete entries.</p>
+          <h1 className="text-2xl font-bold">{t("Audit log")}</h1>
+          <p className="text-sm text-slate-600">{t("Every change, download and assistant use, recorded automatically. Nobody can edit or delete entries.")}</p>
         </div>
         <form method="get" className="flex gap-2">
-          <label htmlFor="audit-t" className="sr-only">Show</label>
-          <select id="audit-t" name="t" defaultValue={t ?? ""} className="input">
-            <option value="">All entries</option>
-            {Object.entries(TABLE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          <label htmlFor="audit-t" className="sr-only">{t("Show")}</label>
+          <select id="audit-t" name="t" defaultValue={table ?? ""} className="input">
+            <option value="">{t("All entries")}</option>
+            {Object.entries(TABLE_LABEL).map(([k, v]) => <option key={k} value={k}>{t(v)}</option>)}
           </select>
-          <button className="btn-secondary">Filter</button>
+          <button className="btn-secondary">{t("Filter")}</button>
         </form>
       </div>
       {chain.error ? (
-        <p className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-900">Could not check the log&apos;s integrity: {chain.error.message}</p>
+        <p className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-900">{t("Could not check the log's integrity:")} {chain.error.message}</p>
       ) : chain.data === null ? (
         <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          Integrity check passed. Each entry is sealed with a digital fingerprint of the one before it, and every seal still matches, so no entry has been changed or removed.
+          {t("Integrity check passed. Each entry is sealed with a digital fingerprint of the one before it, and every seal still matches, so no entry has been changed or removed.")}
         </p>
       ) : (
         <p className="rounded-lg border border-l-4 border-red-300 border-l-red-700 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
-          Integrity check FAILED at entry #{chain.data}. The log was changed outside the system from that point on.
+          {t("Integrity check FAILED at entry #{n}. The log was changed outside the system from that point on.", { n: String(chain.data) })}
         </p>
       )}
-      <section className="card overflow-x-auto" tabIndex={0} aria-label="Audit entries (scroll sideways for more columns)">
+      <section className="card overflow-x-auto" tabIndex={0} aria-label={t("Audit entries (scroll sideways for more columns)")}>
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
-            <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Who</th><th className="px-3 py-2">What</th><th className="px-3 py-2">Change</th><th className="px-3 py-2">Details</th><th className="px-3 py-2">Computer (IP address)</th></tr>
+            <tr><th className="px-3 py-2">{t("When")}</th><th className="px-3 py-2">{t("Who")}</th><th className="px-3 py-2">{t("What")}</th><th className="px-3 py-2">{t("Change")}</th><th className="px-3 py-2">{t("Details")}</th><th className="px-3 py-2">{t("Computer (IP address)")}</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {(rows ?? []).map((r) => (
               <tr key={r.id} className="align-top">
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.created_at)}</td>
-                <td className="px-3 py-2">{r.actor_id ? names.get(r.actor_id) ?? "—" : "System"}</td>
-                <td className="px-3 py-2">{TABLE_LABEL[r.table_name] ?? r.table_name}</td>
-                <td className="px-3 py-2">{r.action === "INSERT" ? "Added" : r.action === "UPDATE" ? "Changed" : "Removed"}</td>
+                <td className="px-3 py-2">{r.actor_id ? names.get(r.actor_id) ?? "—" : t("System")}</td>
+                <td className="px-3 py-2">{t(TABLE_LABEL[r.table_name] ?? r.table_name)}</td>
+                <td className="px-3 py-2">{t(r.action === "INSERT" ? "Added" : r.action === "UPDATE" ? "Changed" : "Removed")}</td>
                 <td className="px-3 py-2 text-slate-700">{describe(r.table_name, r.action, r.new_data, r.old_data)}</td>
                 <td className="px-3 py-2 font-mono text-xs text-slate-500">{r.ip || "—"}</td>
               </tr>
@@ -117,8 +119,8 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
       </section>
       {(rows ?? []).length >= limit && !more && (
         <p>
-          <Link className="btn-secondary" href={`/admin/audit?${new URLSearchParams({ ...(t ? { t } : {}), more: "1" })}`}>
-            Show older entries
+          <Link className="btn-secondary" href={`/admin/audit?${new URLSearchParams({ ...(table ? { t: table } : {}), more: "1" })}`}>
+            {t("Show older entries")}
           </Link>
         </p>
       )}

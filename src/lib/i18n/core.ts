@@ -20,7 +20,8 @@ export type T = (english: string, vars?: Vars) => string;
  */
 export function makeT(lang: Lang): T {
   return (english, vars) => {
-    let s = lang === "fil" ? (FIL[english] ?? english) : english;
+    // "From|date": the part after "|" only tells phrases apart for translation; English shows "From"
+    let s = (lang === "fil" && FIL[english]) || english.split("|")[0];
     if (vars) for (const [k, v] of Object.entries(vars)) s = s.split(`{${k}}`).join(String(v));
     return s;
   };
@@ -28,3 +29,11 @@ export function makeT(lang: Lang): T {
 
 /** Locale for dates: Filipino month names when Filipino is chosen. */
 export const dateLocale = (lang: Lang) => (lang === "fil" ? "fil-PH" : "en-PH");
+
+/** Stored action words ("Received", "Sent to City Engineering Office") shown in the chosen language. Free text passes through. */
+export function actionText(text: string | null | undefined, t: T) {
+  if (!text) return "";
+  const m = /^Sent to (.+)$/.exec(text);
+  if (m && m[1] !== "another office") return t("Sent to {office}", { office: m[1] });
+  return t(text);
+}

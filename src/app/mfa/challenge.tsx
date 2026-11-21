@@ -1,10 +1,13 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
+
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { mfaVerified } from "./actions";
 
 export function MfaChallenge() {
+  const t = useT();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -43,9 +46,9 @@ export function MfaChallenge() {
         autoFocus
         required
       />
-      {error && <p className="text-sm text-red-700">{error}</p>}
-      <button className="btn-primary w-full" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Verify"}</button>
-      <a href="/api/auth/signout" className="block text-center text-xs text-slate-500 hover:underline">Cancel and sign out</a>
+      {error && <p className="text-sm text-red-700">{t(error)}</p>}
+      <button className="btn-primary w-full" disabled={busy || code.length !== 6}>{t(busy ? "Checking…" : "Verify")}</button>
+      <a href="/api/auth/signout" className="block text-center text-xs text-slate-500 hover:underline">{t("Cancel and sign out")}</a>
     </form>
   );
 }

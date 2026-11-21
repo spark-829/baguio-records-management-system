@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
+
 import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 import { registerRecord } from "./actions";
@@ -29,6 +31,7 @@ type Fields = {
 };
 
 export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canIncoming: boolean; myOfficeId: string | null }) {
+  const t = useT();
   const [state, action, pending] = useActionState(registerRecord, undefined);
   const [f, setF] = useState<Fields>({
     direction: props.canIncoming ? "incoming" : "outgoing",
@@ -123,26 +126,26 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
   return (
     <form action={action} className="grid gap-4 lg:grid-cols-3">
       <section className="card space-y-4 p-5 lg:col-span-1">
-        <h2 className="text-lg font-bold">1. Scanned copy (optional)</h2>
+        <h2 className="text-lg font-bold">{t("1. Scanned copy (optional)")}</h2>
         <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-800">
-          <strong>No scan?</strong> That is fine. Just fill in the form and press Save.
+          <strong>{t("No scan?")}</strong> {t("That is fine. Just fill in the form and press Save.")}
         </p>
-        <label htmlFor="file" className="label">Choose the scanned file</label>
+        <label htmlFor="file" className="label">{t("Choose the scanned file")}</label>
         <input id="file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" />
-        <p className="text-sm text-slate-600">A PDF or a photo, up to 10 MB. The file is kept with the record.</p>
+        <p className="text-sm text-slate-600">{t("A PDF or a photo, up to 10 MB. The file is kept with the record.")}</p>
         <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="checkbox mt-0.5" />
-          <span>Sensitive document: do not send it to the AI. Fill the form by hand.</span>
+          <span>{t("Sensitive document: do not send it to the AI. Fill the form by hand.")}</span>
         </label>
         <button type="button" onClick={readWithAi} className="btn-secondary w-full" disabled={aiState === "reading" || noAi}>
-          {aiState === "reading" ? "Reading…" : "Fill in the form for me from this file"}
+          {t(aiState === "reading" ? "Reading…" : "Fill in the form for me from this file")}
         </button>
         {aiMsg && (
-          <p role="status" className={`rounded-lg p-3 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{aiMsg}</p>
+          <p role="status" className={`rounded-lg p-3 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{t(aiMsg)}</p>
         )}
         {f.content_text && (
           <details className="text-sm">
-            <summary className="cursor-pointer text-slate-600">Text read from the document</summary>
+            <summary className="cursor-pointer text-slate-600">{t("Text read from the document")}</summary>
             <p className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-2 text-xs">{f.content_text}</p>
           </details>
         )}
@@ -151,112 +154,112 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
       </section>
 
       <section className="card grid gap-4 p-5 md:grid-cols-2 lg:col-span-2">
-        <h2 className="text-lg font-bold md:col-span-2">2. About the document</h2>
-        <p className="text-sm text-slate-600 md:col-span-2">Boxes marked <span className="font-semibold text-red-700">*</span> must be filled in. The rest are optional.</p>
+        <h2 className="text-lg font-bold md:col-span-2">{t("2. About the document")}</h2>
+        <p className="text-sm text-slate-600 md:col-span-2">{t("Boxes marked")} <span className="font-semibold text-red-700">*</span> {t("must be filled in. The rest are optional.")}</p>
         <div>
-          <label className="label" htmlFor="f-direction">Received or sent out?</label>
+          <label className="label" htmlFor="f-direction">{t("Received or sent out?")}</label>
           <select id="f-direction" name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => set("direction", e.target.value as Fields["direction"])}>
-            {props.canIncoming && <option value="incoming">Incoming (received by the City)</option>}
-            <option value="outgoing">Outgoing (sent by the City or your office)</option>
+            {props.canIncoming && <option value="incoming">{t("Incoming (received by the City)")}</option>}
+            <option value="outgoing">{t("Outgoing (sent by the City or your office)")}</option>
           </select>
           {!props.canIncoming && (
-            <p className="mt-1 text-sm text-slate-600">Letters that arrive from outside are logged by the Records Section. Memos to another City office are logged here as outgoing.</p>
+            <p className="mt-1 text-sm text-slate-600">{t("Letters that arrive from outside are logged by the Records Section. Memos to another City office are logged here as outgoing.")}</p>
           )}
         </div>
         <div>
-          <label className="label" htmlFor="f-document_type_id">Kind of document <Req /></label>
+          <label className="label" htmlFor="f-document_type_id">{t("Kind of document")} <Req /></label>
           <select id="f-document_type_id" name="document_type_id" required className={`input ${hl("document_type_id")}`} value={f.document_type_id} onChange={(e) => set("document_type_id", e.target.value)}>
-            <option value="">Choose…</option>
+            <option value="">{t("Choose…")}</option>
             {props.types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
         <div className="md:col-span-2">
-          <label className="label" htmlFor="f-subject">Subject (what it is about) <Req /></label>
+          <label className="label" htmlFor="f-subject">{t("Subject (what it is about)")} <Req /></label>
           <input id="f-subject" name="subject" required className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />
         </div>
         <div className="md:col-span-2">
-          <label className="label" htmlFor="f-description">Short description</label>
+          <label className="label" htmlFor="f-description">{t("Short description")}</label>
           <textarea id="f-description" name="description" rows={2} className={`input ${hl("description")}`} value={f.description} onChange={(e) => set("description", e.target.value)} />
         </div>
         {incoming ? (
           <>
             <div>
-              <label className="label" htmlFor="f-sender_name">Name of sender</label>
+              <label className="label" htmlFor="f-sender_name">{t("Name of sender")}</label>
               <input id="f-sender_name" name="sender_name" className={`input ${hl("sender_name")}`} value={f.sender_name} onChange={(e) => set("sender_name", e.target.value)} />
             </div>
             <div>
-              <label className="label" htmlFor="f-sender_org">Sender&apos;s office, barangay or company</label>
+              <label className="label" htmlFor="f-sender_org">{t("Sender's office, barangay or company")}</label>
               <input id="f-sender_org" name="sender_org" className={`input ${hl("sender_org")}`} value={f.sender_org} onChange={(e) => set("sender_org", e.target.value)} />
             </div>
           </>
         ) : (
           <>
             <div>
-              <label className="label" htmlFor="f-recipient_name">Name of recipient</label>
+              <label className="label" htmlFor="f-recipient_name">{t("Name of recipient")}</label>
               <input id="f-recipient_name" name="recipient_name" className={`input ${hl("recipient_name")}`} value={f.recipient_name} onChange={(e) => set("recipient_name", e.target.value)} />
             </div>
             <div>
-              <label className="label" htmlFor="f-recipient_org">Recipient&apos;s office, barangay or company</label>
+              <label className="label" htmlFor="f-recipient_org">{t("Recipient's office, barangay or company")}</label>
               <input id="f-recipient_org" name="recipient_org" className={`input ${hl("recipient_org")}`} value={f.recipient_org} onChange={(e) => set("recipient_org", e.target.value)} />
             </div>
           </>
         )}
         <div>
-          <label className="label" htmlFor="f-document_date">Date written on the document</label>
+          <label className="label" htmlFor="f-document_date">{t("Date written on the document")}</label>
           <input id="f-document_date" name="document_date" type="date" className={`input ${hl("document_date")}`} value={f.document_date} onChange={(e) => set("document_date", e.target.value)} />
         </div>
         <div>
-          <label className="label" htmlFor="f-mode">{incoming ? "How it arrived" : "How it will be sent"}</label>
+          <label className="label" htmlFor="f-mode">{t(incoming ? "How it arrived" : "How it will be sent")}</label>
           <select id="f-mode" name="mode" className="input" value={f.mode} onChange={(e) => set("mode", e.target.value)}>
-            <option value="walk-in">Hand-carried (walk-in)</option>
-            <option value="courier">Courier</option>
-            <option value="mail">Mail</option>
-            <option value="email">Email</option>
-            <option value="internal">{incoming ? "From another City office" : "To another City office"}</option>
+            <option value="walk-in">{t("Hand-carried (walk-in)")}</option>
+            <option value="courier">{t("Courier")}</option>
+            <option value="mail">{t("Mail")}</option>
+            <option value="email">{t("Email")}</option>
+            <option value="internal">{t(incoming ? "From another City office" : "To another City office")}</option>
           </select>
         </div>
 
-        <h2 className="mt-4 border-t border-slate-200 pt-4 text-lg font-bold md:col-span-2">3. Filing and where it goes next</h2>
+        <h2 className="mt-4 border-t border-slate-200 pt-4 text-lg font-bold md:col-span-2">{t("3. Filing and where it goes next")}</h2>
         <div>
-          <label className="label" htmlFor="f-category">Subject area (optional)</label>
+          <label className="label" htmlFor="f-category">{t("Subject area (optional)")}</label>
           <input id="f-category" name="category" className={`input ${hl("category")}`} value={f.category} onChange={(e) => set("category", e.target.value)} />
         </div>
         <div>
-          <label className="label" htmlFor="f-keywords">Search words (optional)</label>
+          <label className="label" htmlFor="f-keywords">{t("Search words (optional)")}</label>
           <input id="f-keywords" name="keywords" className={`input ${hl("keywords")}`} value={f.keywords} onChange={(e) => set("keywords", e.target.value)} />
         </div>
         <div>
-          <label className="label" htmlFor="f-priority">Priority</label>
+          <label className="label" htmlFor="f-priority">{t("Priority")}</label>
           <select id="f-priority" name="priority" className={`input ${hl("priority")}`} value={f.priority} onChange={(e) => set("priority", e.target.value as Fields["priority"])}>
-            <option value="low">Low</option>
-            <option value="normal">Normal</option>
-            <option value="urgent">Urgent</option>
+            <option value="low">{t("Low")}</option>
+            <option value="normal">{t("Normal")}</option>
+            <option value="urgent">{t("Urgent")}</option>
           </select>
         </div>
         <div>
-          <label className="label" htmlFor="f-confidentiality">Who may see it</label>
+          <label className="label" htmlFor="f-confidentiality">{t("Who may see it")}</label>
           <select id="f-confidentiality" name="confidentiality" className={`input ${hl("confidentiality")}`} value={f.confidentiality} onChange={(e) => set("confidentiality", e.target.value as Fields["confidentiality"])}>
-            <option value="public">Public: anyone in the City offices</option>
-            <option value="internal">Internal: City staff involved with it</option>
-            <option value="confidential">Confidential: records desk and handling offices only</option>
+            <option value="public">{t("Public: anyone in the City offices")}</option>
+            <option value="internal">{t("Internal: City staff involved with it")}</option>
+            <option value="confidential">{t("Confidential: records desk and handling offices only")}</option>
           </select>
         </div>
         <div>
-          <label className="label" htmlFor="f-forward_to">Send to office (optional)</label>
+          <label className="label" htmlFor="f-forward_to">{t("Send to office (optional)")}</label>
           <select id="f-forward_to" name="forward_to" className={`input ${hl("forward_to")}`} value={f.forward_to} onChange={(e) => set("forward_to", e.target.value)}>
-            <option value="">Keep in my office</option>
+            <option value="">{t("Keep in my office")}</option>
             {props.offices.filter((o) => o.id !== props.myOfficeId).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="label" htmlFor="f-due_date">Must be acted on by (optional)</label>
+          <label className="label" htmlFor="f-due_date">{t("Must be acted on by (optional)")}</label>
           <input id="f-due_date" name="due_date" type="date" className="input" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} />
         </div>
 
         <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-xl border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
-          {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{state.error}</p>}
-          <Link href="/records" className="btn-secondary">Cancel<span className="hidden sm:inline">&nbsp;(nothing is saved)</span></Link>
-          <button className="btn-primary" disabled={pending}>{pending ? "Saving…" : <>Save<span className="hidden sm:inline">&nbsp;and get tracking number</span></>}</button>
+          {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{t(state.error)}</p>}
+          <Link href="/records" className="btn-secondary">{t("Cancel")}<span className="hidden sm:inline">{t(" (nothing is saved)")}</span></Link>
+          <button className="btn-primary" disabled={pending}>{pending ? t("Saving…") : <>{t("Save")}<span className="hidden sm:inline">{t(" and get tracking number")}</span></>}</button>
         </div>
       </section>
     </form>
@@ -264,8 +267,9 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
 }
 
 function Req() {
+  const t = useT();
   return (
-    <span className="font-semibold text-red-700" aria-label="required">
+    <span className="font-semibold text-red-700" aria-label={t("required")}>
       *
     </span>
   );

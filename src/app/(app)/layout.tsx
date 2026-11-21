@@ -37,7 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/" className="flex min-h-11 items-center gap-3 rounded-lg">
             <PineMark />
             <span className="leading-tight">
-              <span className="block text-xl font-bold tracking-tight">Baguio RMS</span>
+              <span className="block text-xl font-bold tracking-tight">{t("Baguio RMS")}</span>
               <span className="hidden text-xs text-brand-100 sm:block">{t("Records Management System")}</span>
             </span>
           </Link>

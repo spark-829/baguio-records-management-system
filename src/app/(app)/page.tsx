@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -21,6 +22,7 @@ type Row = {
 };
 
 export default async function Dashboard() {
+  const { t } = await getT();
   const me = await getProfile();
   const supabase = await createClient();
   const { data } = await supabase
@@ -48,26 +50,26 @@ export default async function Dashboard() {
   const counts = (Object.keys(STATUS_LABEL) as Status[]).map((s) => ({ s, n: rows.filter((r) => r.status === s).length }));
 
   const stats = [
-    { label: "Open records", value: open.length, href: "/records?open=1", hint: "See the open ones" },
-    { label: isCentral(me) ? "Overdue" : "Overdue (all you can see)", value: overdue.length, alert: overdue.length > 0, href: "/records?overdue=1", hint: "See the late ones" },
+    { label: t("Open records"), value: open.length, href: "/records?open=1", hint: t("See the open ones") },
+    { label: t(isCentral(me) ? "Overdue" : "Overdue (all you can see)"), value: overdue.length, alert: overdue.length > 0, href: "/records?overdue=1", hint: t("See the late ones") },
     ...(me.office
-      ? [{ label: "In my office", value: inbox.length, href: `/records?office=${encodeURIComponent(me.office.code)}&here=1&open=1`, hint: "See my office's open records" }]
+      ? [{ label: t("In my office"), value: inbox.length, href: `/records?office=${encodeURIComponent(me.office.code)}&here=1&open=1`, hint: t("See my office's open records") }]
       : []),
-    { label: "Logged this month", value: thisMonth.length, href: `/records?from=${monthFrom}`, hint: "See this month's records" },
+    { label: t("Logged this month"), value: thisMonth.length, href: `/records?from=${monthFrom}`, hint: t("See this month's records") },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Good day, {me.full_name.split(" (")[0].split(" ")[0]}</h1>
+          <h1 className="text-2xl font-bold">{t("Good day, {name}", { name: me.full_name.split(" (")[0].split(" ")[0] })}</h1>
           <p className="text-sm text-slate-600">
-            {isCentral(me) ? "You can see records across all offices." : `Showing records that ${me.office?.name ?? "your office"} started or now holds.`}
+            {isCentral(me) ? t("You can see records across all offices.") : t("Showing records that {office} started or now holds.", { office: me.office?.name ?? t("your office") })}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">Register a record</Link>}
-          <Link href="/assistant" className="btn-secondary">Ask the assistant</Link>
+          {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
+          <Link href="/assistant" className="btn-secondary">{t("Ask the assistant")}</Link>
         </div>
       </div>
 
@@ -90,11 +92,11 @@ export default async function Dashboard() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="card lg:col-span-2">
-          <h2 className="border-b border-slate-100 px-4 py-3 text-lg font-bold">Waiting in my office</h2>
-          <RecordList rows={inbox} empty={me.office ? "Nothing waiting in your office." : "Your account is not assigned to an office."} showDue />
+          <h2 className="border-b border-slate-100 px-4 py-3 text-lg font-bold">{t("Waiting in my office")}</h2>
+          <RecordList rows={inbox} empty={t(me.office ? "Nothing waiting in your office." : "Your account is not assigned to an office.")} showDue />
         </section>
         <section className="card">
-          <h2 className="border-b border-slate-100 px-4 py-3 text-lg font-bold">By status</h2>
+          <h2 className="border-b border-slate-100 px-4 py-3 text-lg font-bold">{t("By status")}</h2>
           <ul className="divide-y divide-slate-100">
             {counts.map(({ s, n }) => (
               <li key={s}>
@@ -110,30 +112,31 @@ export default async function Dashboard() {
 
       {overdue.length > 0 && (
         <section className="card border-red-200">
-          <h2 className="border-b border-red-100 px-4 py-3 text-lg font-bold text-red-800">Overdue</h2>
+          <h2 className="border-b border-red-100 px-4 py-3 text-lg font-bold text-red-800">{t("Overdue")}</h2>
           <RecordList rows={overdue} empty="" showDue />
         </section>
       )}
 
       {dueSoon.length > 0 && (
         <section id="due-soon" className="card scroll-mt-4 border-amber-200">
-          <h2 className="border-b border-amber-100 px-4 py-3 text-lg font-bold text-amber-900">Due in the next 7 days</h2>
+          <h2 className="border-b border-amber-100 px-4 py-3 text-lg font-bold text-amber-900">{t("Due in the next 7 days")}</h2>
           <RecordList rows={dueSoon} empty="" showDue />
         </section>
       )}
 
       <section className="card">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-          <h2 className="text-lg font-bold">Recently registered</h2>
-          <Link href="/records" className="text-sm text-brand-700 hover:underline">All records</Link>
+          <h2 className="text-lg font-bold">{t("Recently registered")}</h2>
+          <Link href="/records" className="text-sm text-brand-700 hover:underline">{t("All records")}</Link>
         </div>
-        <RecordList rows={rows.slice(0, 8)} empty="No records yet." />
+        <RecordList rows={rows.slice(0, 8)} empty={t("No records yet.")} />
       </section>
     </div>
   );
 }
 
-function RecordList({ rows, empty, showDue = false }: { rows: Row[]; empty: string; showDue?: boolean }) {
+async function RecordList({ rows, empty, showDue = false }: { rows: Row[]; empty: string; showDue?: boolean }) {
+  const { t } = await getT();
   if (rows.length === 0) return <p className="px-4 py-6 text-sm text-slate-600">{empty}</p>;
   return (
     <ul className="divide-y divide-slate-100">
@@ -146,10 +149,10 @@ function RecordList({ rows, empty, showDue = false }: { rows: Row[]; empty: stri
             {isOverdue(r.due_date, r.status) && <OverdueBadge />}
             <StatusBadge status={r.status} />
             {showDue && r.due_date && (
-              <span className={`text-sm font-medium ${isOverdue(r.due_date, r.status) ? "text-red-700" : "text-slate-700"}`}>{dueText(r.due_date)}</span>
+              <span className={`text-sm font-medium ${isOverdue(r.due_date, r.status) ? "text-red-700" : "text-slate-700"}`}>{dueText(r.due_date, undefined, t)}</span>
             )}
             {!showDue && <span className="text-sm text-slate-600">{r.current_office?.name}</span>}
-            <span className="text-sm text-slate-600">Logged {fmtDate(r.created_at)}</span>
+            <span className="text-sm text-slate-600">{t("Logged {date}", { date: fmtDate(r.created_at) })}</span>
           </Link>
         </li>
       ))}

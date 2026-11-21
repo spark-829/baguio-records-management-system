@@ -1,32 +1,33 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
+
 import { useActionState } from "react";
 import { signIn } from "./actions";
 
 export function LoginForm() {
+  const t = useT();
   const [state, action, pending] = useActionState(signIn, undefined);
   return (
     <form action={action} className="mt-5 space-y-5">
       <div>
-        <label className="label" htmlFor="email">Email</label>
+        <label className="label" htmlFor="email">{t("Email")}</label>
         <input key={state?.email ?? "default"} className="input" id="email" name="email" type="email" autoComplete="username" defaultValue={state?.email ?? ""} placeholder="e.g. records@rms-demo.test" required />
       </div>
       <div>
-        <label className="label" htmlFor="password">Password</label>
+        <label className="label" htmlFor="password">{t("Password")}</label>
         <input className="input" id="password" name="password" type="password" autoComplete="current-password" required />
       </div>
       <details open className="rounded-lg border border-slate-300 bg-slate-50 px-4 py-2 text-sm text-slate-700">
-        <summary className="cursor-pointer font-semibold text-brand-800">Privacy notice (Data Privacy Act of 2012)</summary>
+        <summary className="cursor-pointer font-semibold text-brand-800">{t("Privacy notice (Data Privacy Act of 2012)")}</summary>
         <div className="mt-2 space-y-2 pb-2">
           <p>
-            This system holds personal information of citizens and employees found in official records. It is processed only
-            to register, route, act on and keep public records, as allowed by Republic Act No. 10173 and records laws.
+            {t("This system holds personal information of citizens and employees found in official records. It is processed only to register, route, act on and keep public records, as allowed by Republic Act No. 10173 and records laws.")}
           </p>
           <p>
-            Every sign-in, record you open and file you download is logged with your name, date, time and IP address.
-            Use the records only for your official work. Do not copy, share or disclose them outside the office.
+            {t("Every sign-in, record you open and file you download is logged with your name, date, time and IP address. Use the records only for your official work. Do not copy, share or disclose them outside the office.")}
           </p>
-          <p>Questions or requests about personal data go to the City&apos;s Data Protection Officer.</p>
+          <p>{t("Questions or requests about personal data go to the City's Data Protection Officer.")}</p>
         </div>
       </details>
       <label className="flex cursor-pointer items-start gap-3 text-base">
@@ -37,13 +38,13 @@ export function LoginForm() {
           className="checkbox mt-1"
           defaultChecked={Boolean(state?.email)}
           required
-          onInvalid={(e) => e.currentTarget.setCustomValidity("Please tick this box to agree before signing in.")}
+          onInvalid={(e) => e.currentTarget.setCustomValidity(t("Please tick this box to agree before signing in."))}
           onChange={(e) => e.currentTarget.setCustomValidity("")}
         />
-        <span>I have read the privacy notice and will use records for official work only.</span>
+        <span>{t("I have read the privacy notice and will use records for official work only.")}</span>
       </label>
-      {state?.error && <p className="rounded-lg border-l-4 border-red-700 bg-red-50 p-3 text-sm font-medium text-red-800" role="alert">{state.error}</p>}
-      <button className="btn-primary min-h-12 w-full text-lg" disabled={pending}>{pending ? "Signing in…" : "Sign in"}</button>
+      {state?.error && <p className="rounded-lg border-l-4 border-red-700 bg-red-50 p-3 text-sm font-medium text-red-800" role="alert">{t(state.error)}</p>}
+      <button className="btn-primary min-h-12 w-full text-lg" disabled={pending}>{t(pending ? "Signing in…" : "Sign in")}</button>
     </form>
   );
 }
