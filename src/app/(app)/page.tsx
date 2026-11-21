@@ -5,6 +5,7 @@ import { STATUS_LABEL, daysFromToday, dueText, fmtDate } from "@/lib/labels";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
+import { DueCalendar } from "@/components/due-calendar";
 
 type Row = {
   id: string;
@@ -100,6 +101,13 @@ export default async function Dashboard() {
         </section>
       </div>
 
+      <DueCalendar
+        today={new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date())}
+        items={open
+          .filter((r) => r.due_date)
+          .map((r) => ({ id: r.id, tracking_no: r.tracking_no, subject: r.subject, due_date: r.due_date!.slice(0, 10), office: r.current_office?.name ?? null }))}
+      />
+
       {overdue.length > 0 && (
         <section className="card border-red-200">
           <h2 className="border-b border-red-100 px-4 py-3 text-lg font-bold text-red-800">Overdue</h2>
@@ -108,7 +116,7 @@ export default async function Dashboard() {
       )}
 
       {dueSoon.length > 0 && (
-        <section className="card border-amber-200">
+        <section id="due-soon" className="card scroll-mt-4 border-amber-200">
           <h2 className="border-b border-amber-100 px-4 py-3 text-lg font-bold text-amber-900">Due in the next 7 days</h2>
           <RecordList rows={dueSoon} empty="" showDue />
         </section>
