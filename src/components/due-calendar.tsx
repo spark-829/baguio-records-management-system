@@ -13,6 +13,8 @@ const TONE: Record<Tone, { dot: string; text: string; label: string }> = {
   ok: { dot: "bg-emerald-600", text: "text-emerald-800", label: "On track" },
 };
 
+const ORDER: Record<Tone, number> = { late: 0, soon: 1, ok: 2 };
+const MAX_DOTS = 4;
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH = new Intl.DateTimeFormat("en-PH", { month: "long", year: "numeric", timeZone: "UTC" });
 const LONG_DAY = new Intl.DateTimeFormat("en-PH", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
@@ -96,19 +98,18 @@ export function DueCalendar({ items, today }: { items: DueItem[]; today: string 
                         onClick={() => { setPicked(d); if (!inMonth) setMonth(d.slice(0, 7)); }}
                         aria-label={label}
                         aria-pressed={picked === d}
-                        className={`flex h-14 w-full flex-col items-center justify-start rounded-lg pt-1 text-base sm:h-16 ${
+                        className={`flex h-14 w-full flex-col items-center justify-center rounded-lg text-base sm:h-16 ${
                           picked === d ? "bg-brand-700 text-white" : d === today ? "bg-gold-100 ring-2 ring-gold-500" : "hover:bg-brand-50"
                         } ${inMonth ? "" : "opacity-40"}`}
                       >
-                        <span className={`tabular-nums ${d === today ? "font-bold" : ""}`}>{Number(d.slice(8))}</span>
-                        {due.length > 0 && (
-                          <span className="mt-1 flex items-center gap-0.5" aria-hidden>
-                            {counts.map(([t]) => (
-                              <span key={t} className={`h-2.5 w-2.5 rounded-full ring-1 ring-white ${TONE[t].dot}`} />
-                            ))}
-                            {due.length > 1 && <span className={`ml-0.5 text-xs font-semibold ${picked === d ? "text-white" : "text-slate-700"}`}>{due.length}</span>}
-                          </span>
-                        )}
+                        {/* One dot per record, above the date, most urgent first; a busy day shows 4 and a "+" */}
+                        <span className="flex h-3 items-center gap-0.5" aria-hidden>
+                          {[...tones].sort((x, y) => ORDER[x] - ORDER[y]).slice(0, MAX_DOTS).map((t, i) => (
+                            <span key={i} className={`h-2 w-2 rounded-full ring-1 ring-white sm:h-2.5 sm:w-2.5 ${TONE[t].dot}`} />
+                          ))}
+                          {tones.length > MAX_DOTS && <span className={`text-xs leading-none font-bold ${picked === d ? "text-white" : "text-slate-700"}`}>+</span>}
+                        </span>
+                        <span className={`mt-0.5 tabular-nums ${d === today ? "font-bold" : ""}`}>{Number(d.slice(8))}</span>
                       </button>
                     </div>
                   );

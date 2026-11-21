@@ -79,7 +79,7 @@ export default async function HelpPage() {
         <li>Click <Btn>Dashboard</Btn>.</li>
         <li>Click the red <em>Overdue</em> box. It lists every late document you are allowed to see.</li>
         <li>Further down, <em>Due in the next 7 days</em> lists what will be late soon, the nearest date first.</li>
-        <li>The <em>Due dates calendar</em> puts a dot under each date that has something due: <strong className="text-red-700">red</strong> is late, <strong className="text-amber-800">orange</strong> is due within 7 days, <strong className="text-emerald-800">green</strong> is on track. Tap a date to see what is due that day.</li>
+        <li>The <em>Due dates calendar</em> puts a dot above each date for every record due that day: <strong className="text-red-700">red</strong> is late, <strong className="text-amber-800">orange</strong> is due within 7 days, <strong className="text-emerald-800">green</strong> is on track. Tap a date to see what is due that day.</li>
       </Topic>
 
       {me.role !== "viewer" && (
