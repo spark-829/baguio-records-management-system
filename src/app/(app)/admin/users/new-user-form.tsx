@@ -11,7 +11,9 @@ export function NewUserForm({ offices }: { offices: { id: string; code: string; 
   return (
     <form action={action} className="space-y-3">
       <div><label className="label" htmlFor="nu-full_name">{t("Full name")}</label><input name="full_name" id="nu-full_name" className="input" required /></div>
-      <div><label className="label" htmlFor="nu-email">{t("Email")}</label><input name="email" id="nu-email" type="email" className="input" required /></div>
+      <div><label className="label" htmlFor="nu-email">{t("Email")}</label><input name="email" id="nu-email" type="email" className="input" required pattern=".+@rms-demo\.test" placeholder="name@rms-demo.test" aria-describedby="nu-email-hint" />
+        <p id="nu-email-hint" className="mt-1 text-sm text-slate-600">{t("In this demo, new accounts must use an @rms-demo.test email.")}</p>
+      </div>
       <div><label className="label" htmlFor="nu-password">{t("Temporary password")}</label><input name="password" id="nu-password" type="text" minLength={8} className="input" required /></div>
       <div>
         <label className="label" htmlFor="nu-role">{t("Role")}</label>

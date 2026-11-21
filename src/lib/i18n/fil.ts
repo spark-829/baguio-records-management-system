@@ -662,4 +662,6 @@ export const FIL: Record<string, string> = {
   "None, or not about a place": "Wala, o hindi tungkol sa isang lugar",
   "Barangay": "Barangay",
   "Choose a barangay from the list": "Pumili ng barangay mula sa listahan",
+  "In this demo, new accounts must use an @rms-demo.test email.": "Sa demo na ito, dapat gumamit ng @rms-demo.test na email ang mga bagong account.",
+  "The demo allows 20 new accounts a day. Try again tomorrow.": "Hanggang 20 bagong account lang bawat araw sa demo. Subukan ulit bukas.",
 };
