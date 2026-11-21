@@ -72,7 +72,7 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
   if (error || !rec) return { error: error?.message ?? "Could not save the record" };
 
   const file = form.get("file");
-  if (file instanceof File && file.size > 0) {
+  if (file instanceof File && file.size > 0 && ["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(file.type)) {
     const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-120);
     const path = `${rec.id}/${crypto.randomUUID()}-${safeName}`;
     const up = await supabase.storage.from("rms-attachments").upload(path, file, { contentType: file.type });
