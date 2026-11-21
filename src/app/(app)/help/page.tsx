@@ -103,7 +103,7 @@ export default async function HelpPage() {
         <Topic id="reports" title={t("Reports and totals")}>
           {S("Click [[Reports]] at the top.")}
           {S("To see one period only, choose the _From_ and _To_ dates, then press [[Apply]].")}
-          {S("Press [[Print report]] for a paper copy, or [[Download list (Excel)]] to open it in Excel.")}
+          {S("Press [[Print report]] for a paper copy, or [[Download list (CSV, opens in Excel)]] to open it in Excel.")}
           {me.role !== "viewer" && S("_Office workload_ shows which offices have the most waiting and late documents.")}
         </Topic>
       )}

@@ -36,6 +36,7 @@ type Rec = {
   content_text: string | null;
   barangay?: string | null;
   current_office_id: string;
+  origin_office_id: string;
   deleted_at: string | null;
   delete_reason: string | null;
   deleter: { full_name: string } | null;
@@ -73,7 +74,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const rec = data as unknown as Rec;
   const deleted = Boolean(rec.deleted_at);
 
-  const [, { data: routes }, { data: files }, { data: offices }] = await Promise.all([
+  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }] = await Promise.all([
     // Access history: every opened record is logged with who, when and from which IP (in parallel with the reads below).
     supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: rec.id }),
     supabase
@@ -83,7 +84,15 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
       .order("created_at", { ascending: false }),
     supabase.from("rms_attachments").select("id, file_name, mime_type, size_bytes, version, uploaded_at, uploader:rms_profiles(full_name)").eq("record_id", id).order("uploaded_at"),
     supabase.from("rms_offices").select("id, code, name").eq("is_active", true).order("code"),
+    // Moved to the bin and restored (QA-013). Empty until the database update for it is run.
+    supabase.rpc("rms_record_bin_history", { p_record_id: rec.id }),
   ]);
+
+  // Same rule as rms_can_attach in the database, so the form only shows when the upload will be allowed (QA-010).
+  const canAttach =
+    !deleted &&
+    rec.status !== "archived" &&
+    (isCentral(me) || ((me.role === "dept_head" || me.role === "staff") && !!me.office_id && [rec.current_office_id, rec.origin_office_id].includes(me.office_id)));
 
   const actions = deleted ? [] : allowedActions({
     status: rec.status,
@@ -99,6 +108,12 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const fileEvents = ((files ?? []) as unknown as FileRow[]).map((f) => ({
     ...f,
     before: (history.find((h) => h.created_at <= f.uploaded_at) ?? history.at(-1))?.id,
+  }));
+  type BinRow = { at: string; event: "deleted" | "restored"; actor: string | null; reason: string | null };
+  const binEvents = ((binRows ?? []) as BinRow[]).map((e, i) => ({
+    ...e,
+    key: `b${i}`,
+    before: (history.find((h) => h.created_at <= e.at) ?? history.at(-1))?.id,
   }));
   const latest = history[0];
   // The step that brought the record to the office holding it now: who sent it, and any instruction they left.
@@ -249,6 +264,21 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                     </p>
                   </li>
                 ))}
+                {binEvents.filter((e) => e.before === r.id).map((e) => (
+                  <li key={e.key} className="mb-4 ml-4">
+                    <span className={`absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white ${e.event === "deleted" ? "bg-red-600" : "bg-emerald-600"}`} />
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className={`badge ring-1 ${e.event === "deleted" ? "bg-red-50 text-red-900 ring-red-200" : "bg-emerald-50 text-emerald-900 ring-emerald-200"}`}>
+                        {t(e.event === "deleted" ? "Moved to bin" : "Restored")}
+                      </span>
+                      <span className="font-medium">{t(e.event === "deleted" ? "Moved to the deleted-records bin" : "Restored from the bin")}</span>
+                    </div>
+                    {e.reason && <p className="mt-1 text-sm text-slate-700">“{e.reason}”</p>}
+                    <p className="mt-0.5 text-sm text-slate-600">
+                      {fmtDateTime(e.at)} · {e.actor ?? "—"}
+                    </p>
+                  </li>
+                ))}
                 <li className="mb-4 ml-4">
                   <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-brand-600" />
                   <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -314,7 +344,11 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               ))}
               {(files ?? []).length === 0 && <li className="text-slate-500">{t("No files attached.")}</li>}
             </ul>
-            {rec.status !== "archived" && !deleted && me.role !== "viewer" && <AttachForm recordId={rec.id} />}
+            {canAttach ? (
+              <AttachForm recordId={rec.id} />
+            ) : (
+              !deleted && rec.status !== "archived" && <p className="text-sm text-slate-500">{t("Only the office holding this record, the office that sent it, or the records desk can add files.")}</p>
+            )}
             <p className="mt-2 text-xs text-slate-500">
               {t(settings.watermarkDownloads ? "Files open through a link that expires in 60 seconds and are stamped with your name and the date. Each download is logged." : "Files open through a link that expires in 60 seconds. Each download is logged.")}
             </p>

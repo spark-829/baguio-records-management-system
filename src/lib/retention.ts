@@ -11,13 +11,18 @@ export function addYears(iso: string, years: number) {
   return d.toISOString();
 }
 
+/** Kinds of document kept for 50 years or more are permanent: they are never flagged for disposal. */
+export const PERMANENT_YEARS = 50;
+
 /**
  * Keep-until date and state for a finished record, counted from the day it was finished,
  * following the retention period of its document type. Ninety days before that date it is flagged for review.
+ * Permanent records have no keep-until date.
  */
 export function retention(finishedAt: string, years: number, today = new Date()) {
+  if (years >= PERMANENT_YEARS) return { keepUntil: null, days: null, state: "keep" as RetentionState, permanent: true };
   const keepUntil = addYears(finishedAt, years);
   const days = Math.floor((Date.parse(keepUntil) - today.getTime()) / 86_400_000);
   const state: RetentionState = days < 0 ? "review_now" : days <= 90 ? "review_soon" : "keep";
-  return { keepUntil, days, state };
+  return { keepUntil, days, state, permanent: false };
 }

@@ -42,10 +42,18 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           </p>
         </div>
         <div className="flex gap-2">
-          <a href={exportHref} className="btn-secondary" title={t("Opens in Excel")}>{t("Download list (Excel)")}</a>
+          <a href={exportHref} className="btn-secondary" title={t("Opens in Excel")}>{t("Download list (CSV, opens in Excel)")}</a>
           {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
         </div>
       </div>
+
+      {typeof sp.deleted === "string" && (
+        <p role="status" className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-emerald-900">
+          {sp.deleted === "1"
+            ? t("Record moved to the bin. An administrator can restore it.")
+            : t("{no} was moved to the bin. An administrator can restore it.", { no: sp.deleted.slice(0, 20) })}
+        </p>
+      )}
 
       <AiSearchBox />
       {aiNote && <p className="rounded-lg border border-l-4 border-brand-200 border-l-brand-700 bg-brand-50 px-4 py-3 text-sm text-brand-900">{t("Assistant applied:")} {aiNote}</p>}

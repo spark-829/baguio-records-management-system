@@ -17,7 +17,8 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      global: { headers: { "x-rms-client-ip": ip, "x-rms-user-agent": ua } },
+      // The database only trusts the IP and browser headers when they come with this server-held key (QA-005).
+      global: { headers: { "x-rms-client-ip": ip, "x-rms-user-agent": ua, ...(process.env.RMS_PROXY_KEY ? { "x-rms-proxy-key": process.env.RMS_PROXY_KEY } : {}) } },
       cookies: {
         getAll() {
           return cookieStore.getAll();

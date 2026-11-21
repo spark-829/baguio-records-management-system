@@ -12,4 +12,10 @@ describe("retention schedule", () => {
     expect(retention("2021-01-10T00:00:00Z", 5, today).state).toBe("review_now");
     expect(retention("2026-01-10T00:00:00Z", 0, today).state).toBe("review_now");
   });
+  it("never flags permanent kinds of document (50 years or more) for disposal", () => {
+    const r = retention("1970-01-10T00:00:00Z", 50, today);
+    expect(r.permanent).toBe(true);
+    expect(r.keepUntil).toBeNull();
+    expect(r.state).toBe("keep");
+  });
 });
