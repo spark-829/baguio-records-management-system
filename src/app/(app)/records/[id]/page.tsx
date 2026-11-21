@@ -1,9 +1,11 @@
+import { getT } from "@/lib/i18n/server";
+import { actionText } from "@/lib/i18n/core";
 import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProfile, getSettings, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { CONF_HELP, CONF_LABEL, PRIORITY_LABEL, dueText, fmtDate, fmtDateTime, officeName } from "@/lib/labels";
+import { CONF_HELP, CONF_LABEL, PRIORITY_LABEL, daysFromToday, dueText, fmtDate, fmtDateTime, officeName } from "@/lib/labels";
 import { allowedActions, isOverdue } from "@/lib/workflow";
 import type { Direction, Status, Priority, Confidentiality } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -54,6 +56,7 @@ type Route = {
 };
 
 export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string }> }) {
+  const { t } = await getT();
   const { id } = await params;
   const { new: isNew } = await searchParams;
   const [me, settings] = await Promise.all([getProfile(), getSettings()]);
@@ -104,21 +107,22 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const sinceArrival = arrival ? history.slice(0, history.indexOf(arrival)) : history;
   const latestNote = sinceArrival.find((r) => r.remarks || r.action_taken);
   const open = !["completed", "released", "archived"].includes(rec.status);
-  const due = open ? dueText(rec.due_date) : "";
+  const due = open ? dueText(rec.due_date, undefined, t) : "";
+  const isLate = open && Boolean(rec.due_date) && daysFromToday(rec.due_date!.slice(0, 10)) < 0;
 
   const facts: [string, React.ReactNode][] = [
-    ["Received or sent out", incoming ? "Received by the City" : "Sent out by the City"],
-    ["Document type", rec.doc_type?.name],
-    [incoming ? "From" : "To", [incoming ? rec.sender_name : rec.recipient_name, incoming ? rec.sender_org : rec.recipient_org].filter(Boolean).join(", ") || "—"],
-    ["Date on document", fmtDate(rec.document_date)],
-    ["How it arrived", rec.mode ? rec.mode[0].toUpperCase() + rec.mode.slice(1) : "—"],
-    ["Subject area", rec.category ?? "—"],
-    ["Search words", rec.keywords.length ? rec.keywords.join(", ") : "—"],
-    ["Priority", PRIORITY_LABEL[rec.priority]],
-    ["Who may see it", `${CONF_LABEL[rec.confidentiality]}: ${CONF_HELP[rec.confidentiality].toLowerCase()}`],
-    ["Started by office", officeName(rec.origin_office)],
-    ["Logged in", `${fmtDateTime(rec.created_at)} by ${rec.creator?.full_name ?? "—"}`],
-    ["Due date", rec.due_date ? `${fmtDate(rec.due_date)}${due ? ` (${due})` : ""}` : "—"],
+    [t("Received or sent out"), t(incoming ? "Received by the City" : "Sent out by the City")],
+    [t("Document type"), rec.doc_type?.name],
+    [t(incoming ? "From" : "To"), [incoming ? rec.sender_name : rec.recipient_name, incoming ? rec.sender_org : rec.recipient_org].filter(Boolean).join(", ") || "—"],
+    [t("Date on document"), fmtDate(rec.document_date)],
+    [t("How it arrived"), rec.mode ? t(rec.mode[0].toUpperCase() + rec.mode.slice(1)) : "—"],
+    [t("Subject area"), rec.category ?? "—"],
+    [t("Search words"), rec.keywords.length ? rec.keywords.join(", ") : "—"],
+    [t("Priority"), t(PRIORITY_LABEL[rec.priority])],
+    [t("Who may see it"), `${t(CONF_LABEL[rec.confidentiality])}: ${t(CONF_HELP[rec.confidentiality]).toLowerCase()}`],
+    [t("Started by office"), officeName(rec.origin_office)],
+    [t("Logged in"), t("{date} by {name}", { date: fmtDateTime(rec.created_at), name: rec.creator?.full_name ?? "—" })],
+    [t("Due date"), rec.due_date ? `${fmtDate(rec.due_date)}${due ? ` (${due})` : ""}` : "—"],
   ];
 
   return (
@@ -126,18 +130,18 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
       {deleted && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-l-4 border-red-300 border-l-red-700 bg-red-50 px-4 py-3 text-sm text-red-900">
           <span>
-            In the deleted-records bin since {fmtDateTime(rec.deleted_at)} by {rec.deleter?.full_name ?? "—"}. Reason: “{rec.delete_reason}”
+            {t("In the deleted-records bin since {date} by {name}. Reason:", { date: fmtDateTime(rec.deleted_at), name: rec.deleter?.full_name ?? "—" })} “{rec.delete_reason}”
           </span>
           <form action={restoreRecord}>
             <input type="hidden" name="record_id" value={rec.id} />
-            <button className="btn-secondary">Restore record</button>
+            <button className="btn-secondary">{t("Restore record")}</button>
           </form>
         </div>
       )}
       {isNew && (
         <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          Saved. Tracking number <strong>{rec.tracking_no}</strong> issued. Print the routing slip to attach to the paper copy
-          {incoming ? ", and the receipt to give the sender so they can track it online" : ""}.
+          {t("Saved. Tracking number")} <strong>{rec.tracking_no}</strong>.{" "}
+          {t(incoming ? "Print the routing slip to attach to the paper copy, and the receipt to give the sender so they can track it online." : "Print the routing slip to attach to the paper copy.")}
         </p>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -150,54 +154,54 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
             <ConfBadge level={rec.confidentiality} />
             {isOverdue(rec.due_date, rec.status) && <OverdueBadge />}
             <span className="text-sm text-slate-600">
-              Now at <strong>{rec.current_office?.name}</strong>
+              {t("Now at")} <strong>{rec.current_office?.name}</strong>
             </span>
           </div>
         </div>
         <div className="grid w-full gap-2 sm:flex sm:w-auto">
-          <Link href={`/records/${rec.id}/slip`} className="btn-secondary">Print routing slip</Link>
-          {incoming && <Link href={`/records/${rec.id}/receipt`} className="btn-secondary">Print receipt for the sender</Link>}
-          <Link href="/records" className="btn-secondary">Back to records</Link>
+          <Link href={`/records/${rec.id}/slip`} className="btn-secondary">{t("Print routing slip")}</Link>
+          {incoming && <Link href={`/records/${rec.id}/receipt`} className="btn-secondary">{t("Print receipt for the sender")}</Link>}
+          <Link href="/records" className="btn-secondary">{t("Back to records")}</Link>
         </div>
       </div>
 
       {!deleted && (
-        <section className="card border-l-4 border-l-brand-700 p-4" aria-label="Where this record is now">
+        <section className="card border-l-4 border-l-brand-700 p-4" aria-label={t("Where this record is now")}>
           <dl className="grid gap-3 sm:grid-cols-3">
             <div>
-              <dt className="text-sm text-slate-600">Now with</dt>
+              <dt className="text-sm text-slate-600">{t("Now with")}</dt>
               <dd className="text-lg font-semibold">{officeName(rec.current_office)}</dd>
               {latest && (
                 <dd className="text-sm text-slate-700">
-                  Last update by {latest.actor?.full_name ?? "—"} on {fmtDate(latest.created_at)}
+                  {t("Last update by {name} on {date}", { name: latest.actor?.full_name ?? "—", date: fmtDate(latest.created_at) })}
                 </dd>
               )}
             </div>
             <div>
-              <dt className="text-sm text-slate-600">What needs to be done</dt>
+              <dt className="text-sm text-slate-600">{t("What needs to be done")}</dt>
               <dd className="font-medium">
                 {!open
-                  ? "Nothing. This record is finished."
+                  ? t("Nothing. This record is finished.")
                   : instruction
                     ? `“${instruction}”`
                     : rec.status === "forwarded"
-                      ? `${officeName(rec.current_office)} should mark it as received when the paper arrives.`
-                      : "Act on the request, then add a note or send it on."}
+                      ? t("{office} should mark it as received when the paper arrives.", { office: officeName(rec.current_office) })
+                      : t("Act on the request, then add a note or send it on.")}
               </dd>
-              {arrival && open && <dd className="text-sm text-slate-700">Sent by {officeName(arrival.from_office)}</dd>}
+              {arrival && open && <dd className="text-sm text-slate-700">{t("Sent by {office}", { office: officeName(arrival.from_office) })}</dd>}
               {latestNote && open && latestNote !== arrival && (
                 <dd className="mt-2 rounded-md border-l-4 border-gold-500 bg-amber-50 px-3 py-2 text-sm text-slate-800">
-                  <span className="font-semibold">Latest note:</span> “{latestNote.remarks || latestNote.action_taken}”
+                  <span className="font-semibold">{t("Latest note:")}</span> “{latestNote.remarks || latestNote.action_taken}”
                   <span className="block text-slate-600">{latestNote.actor?.full_name ?? "—"}, {fmtDate(latestNote.created_at)}</span>
                 </dd>
               )}
             </div>
             <div>
-              <dt className="text-sm text-slate-600">Due</dt>
-              <dd className={`text-lg font-semibold ${due.endsWith("late") ? "text-red-700" : ""}`}>
-                {rec.due_date ? fmtDate(rec.due_date) : "No due date"}
+              <dt className="text-sm text-slate-600">{t("Due")}</dt>
+              <dd className={`text-lg font-semibold ${isLate ? "text-red-700" : ""}`}>
+                {rec.due_date ? fmtDate(rec.due_date) : t("No due date")}
               </dd>
-              {due && <dd className={`text-sm font-medium ${due.endsWith("late") ? "text-red-700" : "text-slate-700"}`}>{due[0].toUpperCase() + due.slice(1)}</dd>}
+              {due && <dd className={`text-sm font-medium ${isLate ? "text-red-700" : "text-slate-700"}`}>{due[0].toUpperCase() + due.slice(1)}</dd>}
             </div>
           </dl>
         </section>
@@ -208,7 +212,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           <SummaryBox recordId={rec.id} initial={rec.ai_summary} aiBlocked={rec.confidentiality === "confidential" && settings.aiExcludeConfidential} />
 
           <section className="card p-4">
-            <h2 className="mb-3 font-semibold">Details</h2>
+            <h2 className="mb-3 font-semibold">{t("Details")}</h2>
             {rec.description && <p className="mb-3 text-sm text-slate-700">{rec.description}</p>}
             <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
               {facts.map(([k, v]) => (
@@ -220,14 +224,14 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
             </dl>
             {rec.content_text && (
               <details className="mt-3 text-sm">
-                <summary className="cursor-pointer text-slate-600">Document text (read by the assistant)</summary>
+                <summary className="cursor-pointer text-slate-600">{t("Document text (read by the assistant)")}</summary>
                 <p className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-3 text-xs">{rec.content_text}</p>
               </details>
             )}
           </section>
 
           <section className="card p-4">
-            <h2 className="mb-3 font-semibold">History, actions and remarks</h2>
+            <h2 className="mb-3 font-semibold">{t("History, actions and remarks")}</h2>
             <ol className="relative ml-2 border-l-2 border-slate-200">
               {history.map((r, i, all) => (
                 <Fragment key={r.id}>
@@ -235,8 +239,8 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                   <li key={`f${f.id}`} className="mb-4 ml-4">
                     <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-gold-500" />
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="badge bg-amber-50 text-amber-900 ring-1 ring-amber-200">File</span>
-                      <span className="font-medium">Attached {f.file_name}{f.version > 1 ? ` (version ${f.version})` : ""}</span>
+                      <span className="badge bg-amber-50 text-amber-900 ring-1 ring-amber-200">{t("File")}</span>
+                      <span className="font-medium">{t("Attached {file}", { file: f.file_name })}{f.version > 1 ? ` (${t("version {n}", { n: f.version })})` : ""}</span>
                     </div>
                     <p className="mt-0.5 text-sm text-slate-600">
                       {fmtDateTime(f.uploaded_at)} · {f.uploader?.full_name ?? "—"}
@@ -249,11 +253,11 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                     {all[i + 1]?.status !== r.status || (r.status === "forwarded" && r.to_office?.code !== all[i + 1]?.to_office?.code) ? (
                       <StatusBadge status={r.status} />
                     ) : (
-                      <span className="badge bg-white text-slate-600 ring-1 ring-slate-200">Note</span>
+                      <span className="badge bg-white text-slate-600 ring-1 ring-slate-200">{t("Note")}</span>
                     )}
-                    <span className="font-medium">{r.action_taken}</span>
+                    <span className="font-medium">{actionText(r.action_taken, t)}</span>
                     {r.status === "forwarded" && r.from_office && r.to_office && r.from_office.code !== r.to_office.code && (
-                      <span className="text-slate-700">from {r.from_office.name} to {r.to_office.name}</span>
+                      <span className="text-slate-700">{t("from {a} to {b}", { a: r.from_office.name, b: r.to_office.name })}</span>
                     )}
                   </div>
                   {r.remarks && <p className="mt-1 text-sm text-slate-700">“{r.remarks}”</p>}
@@ -270,8 +274,8 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         {/* On narrow screens (phones, zoomed-in laptops) the action panel comes right after "Now with", not below the history */}
         <div className="order-first space-y-4 lg:order-none">
           <section className="card p-4">
-            <h2 className="mb-2 font-semibold">Take action</h2>
-            {actions.length > 0 && <p className="mb-2 text-sm text-slate-600">Nothing is saved until you press Save and then confirm.</p>}
+            <h2 className="mb-2 font-semibold">{t("Take action")}</h2>
+            {actions.length > 0 && <p className="mb-2 text-sm text-slate-600">{t("Nothing is saved until you press Save and then confirm.")}</p>}
             {actions.length ? (
               <ActionForm
                 recordId={rec.id}
@@ -283,18 +287,18 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
             ) : (
               <p className="text-sm text-slate-500">
                 {deleted
-                  ? "Deleted records are read-only until restored."
+                  ? t("Deleted records are read-only until restored.")
                   : me.role === "viewer"
-                    ? "Your account is read-only."
+                    ? t("Your account is read-only.")
                     : rec.status === "archived"
-                      ? "This record is archived and read-only."
-                      : "Only the office holding this record, or the records desk, can act on it."}
+                      ? t("This record is archived and read-only.")
+                      : t("Only the office holding this record, or the records desk, can act on it.")}
               </p>
             )}
           </section>
 
           <section className="card p-4">
-            <h2 className="mb-2 font-semibold">Attachments</h2>
+            <h2 className="mb-2 font-semibold">{t("Attachments")}</h2>
             <ul className="mb-3 space-y-2 text-sm">
               {(files ?? []).map((f) => (
                 <li key={f.id} className="flex items-center justify-between gap-2">
@@ -306,11 +310,11 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                   </span>
                 </li>
               ))}
-              {(files ?? []).length === 0 && <li className="text-slate-500">No files attached.</li>}
+              {(files ?? []).length === 0 && <li className="text-slate-500">{t("No files attached.")}</li>}
             </ul>
             {rec.status !== "archived" && !deleted && me.role !== "viewer" && <AttachForm recordId={rec.id} />}
             <p className="mt-2 text-xs text-slate-500">
-              Files open through a link that expires in 60 seconds{settings.watermarkDownloads ? " and are stamped with your name and the date" : ""}. Each download is logged.
+              {t(settings.watermarkDownloads ? "Files open through a link that expires in 60 seconds and are stamped with your name and the date. Each download is logged." : "Files open through a link that expires in 60 seconds. Each download is logged.")}
             </p>
           </section>
 

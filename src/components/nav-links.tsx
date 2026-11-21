@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/client";
 
 function isActive(path: string, href: string) {
   if (href === "/") return path === "/";
@@ -15,6 +16,7 @@ type NavLink = { href: string; label: string };
 
 export function NavLinks({ links, phoneOnly = [] }: { links: NavLink[]; phoneOnly?: NavLink[] }) {
   const path = usePathname();
+  const t = useT();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [path]);
   const current = [...links, ...phoneOnly].find((l) => isActive(path, l.href));
@@ -34,9 +36,9 @@ export function NavLinks({ links, phoneOnly = [] }: { links: NavLink[]; phoneOnl
   });
 
   return (
-    <nav aria-label="Main" className="text-base">
+    <nav aria-label={t("Main menu")} className="text-base">
       <div className="flex items-center justify-between md:hidden">
-        <span className="py-3 font-semibold text-brand-900">{current?.label ?? "Menu"}</span>
+        <span className="py-3 font-semibold text-brand-900">{current?.label ?? t("Menu")}</span>
         <button
           type="button"
           className="btn-secondary my-1"
@@ -44,7 +46,7 @@ export function NavLinks({ links, phoneOnly = [] }: { links: NavLink[]; phoneOnl
           aria-controls="main-menu"
           onClick={() => setOpen((o) => !o)}
         >
-          {open ? "Close menu" : "Menu"}
+          {open ? t("Close menu") : t("Menu")}
         </button>
       </div>
       <div id="main-menu" className={`${open ? "flex" : "hidden"} flex-col pb-2 md:flex md:flex-row md:flex-wrap md:gap-x-1 md:pb-0`}>

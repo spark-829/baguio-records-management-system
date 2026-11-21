@@ -1,3 +1,7 @@
+"use client";
+
+import { useT } from "@/lib/i18n/client";
+
 /*
  * Original wordmark for the demo: a simple hand-drawn pine glyph in a rounded
  * square plus the product name. Not the City seal or any official emblem.
@@ -13,6 +17,7 @@ export function PineMark({ className = "h-10 w-10" }: { className?: string }) {
 }
 
 export function SiteFooter({ className = "mt-10" }: { className?: string }) {
+  const t = useT();
   return (
     <footer className={`no-print ${className} border-t-4 border-gold-500 bg-brand-900 text-brand-100`}>
       <div className="on-dark mx-auto flex max-w-7xl flex-col gap-3 px-4 py-6 text-sm sm:flex-row sm:items-start sm:justify-between">
@@ -20,13 +25,13 @@ export function SiteFooter({ className = "mt-10" }: { className?: string }) {
           <PineMark className="h-9 w-9" />
           <div className="leading-snug">
             <div className="font-semibold text-white">Baguio RMS</div>
-            <div>Records Management System</div>
+            <div>{t("Records Management System")}</div>
           </div>
         </div>
         <p className="max-w-xl leading-relaxed sm:text-right">
-          <strong className="font-semibold text-white">Demo system — not an official City Government of Baguio service.</strong>{" "}
-          All names and records shown are fictional.{" "}
-          <a href="/developer" className="font-semibold text-white underline">About the developer</a>
+          <strong className="font-semibold text-white">{t("Demo system — not an official City Government of Baguio service.")}</strong>{" "}
+          {t("All names and records shown are fictional.")}{" "}
+          <a href="/developer" className="font-semibold text-white underline">{t("About the developer")}</a>
         </p>
       </div>
     </footer>

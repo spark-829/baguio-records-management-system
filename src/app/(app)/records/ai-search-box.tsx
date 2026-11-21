@@ -1,9 +1,12 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function AiSearchBox() {
+  const t = useT();
   const router = useRouter();
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,16 +35,16 @@ export function AiSearchBox() {
 
   return (
     <form onSubmit={run} className="card flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
-      <label htmlFor="ai-q" className="font-semibold text-ink">Ask in your own words</label>
+      <label htmlFor="ai-q" className="font-semibold text-ink">{t("Ask in your own words")}</label>
       <input
         id="ai-q"
         className="input flex-1"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder='e.g. "urgent road requests from barangays last month"'
+        placeholder={t("e.g. “urgent road requests from barangays last month”")}
       />
-      <button className="btn-primary" disabled={busy}>{busy ? "Looking…" : "Find"}</button>
-      {error && <p className="text-sm text-red-700">{error}</p>}
+      <button className="btn-primary" disabled={busy}>{t(busy ? "Looking…" : "Find")}</button>
+      {error && <p className="text-sm text-red-700">{t(error)}</p>}
     </form>
   );
 }

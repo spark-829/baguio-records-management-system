@@ -1,5 +1,8 @@
 "use client";
 
+import { useT } from "@/lib/i18n/client";
+import { Rich } from "@/components/rich";
+
 import { useEffect, useRef, useState } from "react";
 
 const KEY = "rms-last-activity";
@@ -11,6 +14,7 @@ const WARN_MS = 60_000;
  * A minute before, a large message with a countdown asks "Are you still there?" with one clear button.
  */
 export function IdleLogout({ minutes }: { minutes: number }) {
+  const t = useT();
   const [left, setLeft] = useState<number | null>(null);
   const button = useRef<HTMLButtonElement>(null);
   const lastRef = useRef(0);
@@ -78,13 +82,13 @@ export function IdleLogout({ minutes }: { minutes: number }) {
   return (
     <div className="no-print fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4">
       <div role="alertdialog" aria-modal="true" aria-labelledby="idle-title" aria-describedby="idle-text" className="w-full max-w-md rounded-2xl bg-white p-6 text-center shadow-xl">
-        <h2 id="idle-title" className="text-2xl font-bold">Are you still there?</h2>
+        <h2 id="idle-title" className="text-2xl font-bold">{t("Are you still there?")}</h2>
         <p id="idle-text" className="mt-3 text-lg text-slate-800">
-          To keep records safe, you will be signed out in <strong className="tabular-nums">{left}</strong> second{left === 1 ? "" : "s"}.
+          <Rich text={t(left === 1 ? "To keep records safe, you will be signed out in **{n}** second." : "To keep records safe, you will be signed out in **{n}** seconds.", { n: left })} />
         </p>
-        <p className="mt-1 text-slate-700">Anything you were typing and have not saved will be lost.</p>
+        <p className="mt-1 text-slate-700">{t("Anything you were typing and have not saved will be lost.")}</p>
         <button ref={button} type="button" onClick={stay} className="btn-primary mt-5 w-full py-3 text-lg">
-          Yes, keep me signed in
+          {t("Yes, keep me signed in")}
         </button>
       </div>
     </div>

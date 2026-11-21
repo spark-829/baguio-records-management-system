@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
@@ -23,6 +24,7 @@ const DAY = 86_400_000;
 
 /** Per office: what is waiting, being worked on and late, how long things sit there, and how fast work gets done. */
 export default async function OfficeWorkloadPage() {
+  const { t } = await getT();
   const me = await getProfile();
   if (me.role === "staff" || me.role === "viewer") redirect("/");
   const supabase = await createClient();
@@ -66,33 +68,32 @@ export default async function OfficeWorkloadPage() {
     };
   });
   stats.sort((a, b) => b.late - a.late || b.waiting + b.working - (a.waiting + a.working));
-  const fmtDays = (d: number | null) => (d === null ? "—" : d < 1 ? "less than a day" : `${Math.round(d)} day${Math.round(d) === 1 ? "" : "s"}`);
+  const fmtDays = (d: number | null) => (d === null ? "—" : d < 1 ? t("less than a day") : t(Math.round(d) === 1 ? "{n} day" : "{n} days", { n: Math.round(d) }));
 
   return (
     <div className="space-y-5">
       <div className="no-print flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p><Link href="/reports">← Reports</Link></p>
-          <h1 className="text-2xl font-bold">Office workload</h1>
+          <p><Link href="/reports">{t("← Reports")}</Link></p>
+          <h1 className="text-2xl font-bold">{t("Office workload")}</h1>
           <p className="max-w-3xl text-slate-700">
-            Which offices have documents waiting, which are late, and how quickly each office finishes its work. Offices with late
-            documents are listed first.
+            {t("Which offices have documents waiting, which are late, and how quickly each office finishes its work. Offices with late documents are listed first.")}
           </p>
         </div>
         <PrintButton label="Print report" />
       </div>
-      <h1 className="hidden text-xl font-bold print:block">Office workload, {fmtDate(new Date().toISOString())}</h1>
+      <h1 className="hidden text-xl font-bold print:block">{t("Office workload, {date}", { date: fmtDate(new Date().toISOString()) })}</h1>
 
       <section className="card overflow-x-auto">
         <table className="w-full">
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
             <tr>
-              <th className="px-4 py-2">Office</th>
-              <th className="px-4 py-2 text-right">Not yet received</th>
-              <th className="px-4 py-2 text-right">Being worked on</th>
-              <th className="px-4 py-2 text-right">Late</th>
-              <th className="px-4 py-2">Longest time in the office</th>
-              <th className="px-4 py-2">Average time to finish (last 90 days)</th>
+              <th className="px-4 py-2">{t("Office")}</th>
+              <th className="px-4 py-2 text-right">{t("Not yet received")}</th>
+              <th className="px-4 py-2 text-right">{t("Being worked on")}</th>
+              <th className="px-4 py-2 text-right">{t("Late")}</th>
+              <th className="px-4 py-2">{t("Longest time in the office")}</th>
+              <th className="px-4 py-2">{t("Average time to finish (last 90 days)")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -107,14 +108,14 @@ export default async function OfficeWorkloadPage() {
                   {s.late ? <Link className="text-red-700" href={`/records?office=${encodeURIComponent(s.code)}&overdue=1`}>{s.late}</Link> : 0}
                 </td>
                 <td className="px-4 py-2">{fmtDays(s.oldest)}</td>
-                <td className="px-4 py-2">{s.doneCount ? `${fmtDays(s.avgDone)} (${s.doneCount} finished)` : "—"}</td>
+                <td className="px-4 py-2">{s.doneCount ? `${fmtDays(s.avgDone)} (${t("{n} finished", { n: s.doneCount })})` : "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </section>
       <p className="text-sm text-slate-700">
-        Counts include only records your account may see. Click an office to see its records, or the late number to see only the late ones.
+        {t("Counts include only records your account may see. Click an office to see its records, or the late number to see only the late ones.")}
       </p>
     </div>
   );

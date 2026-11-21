@@ -1,3 +1,4 @@
+import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/session";
@@ -9,6 +10,7 @@ import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/component
 import { AiSearchBox } from "./ai-search-box";
 
 export default async function RecordsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const { t } = await getT();
   const sp = await searchParams;
   const f = filtersFromParams(sp);
   // "Open only" comes from the dashboard boxes: hide finished records
@@ -28,94 +30,94 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Records</h1>
+          <h1 className="text-2xl font-bold">{t("Records")}</h1>
           <p className="text-sm text-slate-600">
-            {rows.length} {onlyOpen ? "open " : ""}record{rows.length === 1 ? "" : "s"} found
+            {t(onlyOpen ? (rows.length === 1 ? "{n} open record found" : "{n} open records found") : rows.length === 1 ? "{n} record found" : "{n} records found", { n: rows.length })}
             {onlyOpen && (
               <>
                 {" · "}
-                <Link href={`/records?${filtersToParams({ ...f, open: false }).toString()}`}>Show finished ones too</Link>
+                <Link href={`/records?${filtersToParams({ ...f, open: false }).toString()}`}>{t("Show finished ones too")}</Link>
               </>
             )}
           </p>
         </div>
         <div className="flex gap-2">
-          <a href={exportHref} className="btn-secondary" title="Opens in Excel">Download list (Excel)</a>
-          {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">Register a record</Link>}
+          <a href={exportHref} className="btn-secondary" title={t("Opens in Excel")}>{t("Download list (Excel)")}</a>
+          {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
         </div>
       </div>
 
       <AiSearchBox />
-      {aiNote && <p className="rounded-lg border border-l-4 border-brand-200 border-l-brand-700 bg-brand-50 px-4 py-3 text-sm text-brand-900">Assistant applied: {aiNote}</p>}
+      {aiNote && <p className="rounded-lg border border-l-4 border-brand-200 border-l-brand-700 bg-brand-50 px-4 py-3 text-sm text-brand-900">{t("Assistant applied:")} {aiNote}</p>}
 
       <form className="card grid gap-4 p-5 md:grid-cols-4" method="get">
         <div className="md:col-span-3">
-          <label className="label" htmlFor="q">Search by word or tracking number</label>
-          <input className="input" id="q" name="q" defaultValue={f.q} placeholder="e.g. drainage, IN-2026-0001" />
+          <label className="label" htmlFor="q">{t("Search by word or tracking number")}</label>
+          <input className="input" id="q" name="q" defaultValue={f.q} placeholder={t("e.g. drainage, IN-2026-0001")} />
         </div>
         <div className="flex items-end gap-2">
-          <button className="btn-primary flex-1">Search</button>
-          <Link href="/records" className="btn-secondary">Clear</Link>
+          <button className="btn-primary flex-1">{t("Search")}</button>
+          <Link href="/records" className="btn-secondary">{t("Clear")}</Link>
         </div>
         <details className="md:col-span-4" open={Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here)}>
-          <summary className="cursor-pointer py-1 font-medium text-brand-700">More ways to narrow the list</summary>
+          <summary className="cursor-pointer py-1 font-medium text-brand-700">{t("More ways to narrow the list")}</summary>
           <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <label className="label" htmlFor="person">Person or organization</label>
-          <input className="input" id="person" name="person" defaultValue={f.person} placeholder="Sender, recipient or staff" />
+          <label className="label" htmlFor="person">{t("Person or organization")}</label>
+          <input className="input" id="person" name="person" defaultValue={f.person} placeholder={t("Sender, recipient or staff")} />
         </div>
         <div>
-          <label className="label" htmlFor="status">Status</label>
+          <label className="label" htmlFor="status">{t("Status")}</label>
           <select className="input" id="status" name="status" defaultValue={f.status ?? ""}>
-            <option value="">Any</option>
-            {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{STATUS_LABEL[s]}</option>)}
+            <option value="">{t("Any")}</option>
+            {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{t(STATUS_LABEL[s])}</option>)}
           </select>
         </div>
         <div>
-          <label className="label" htmlFor="direction">Received or sent out</label>
+          <label className="label" htmlFor="direction">{t("Received or sent out")}</label>
           <select className="input" id="direction" name="direction" defaultValue={f.direction ?? ""}>
-            <option value="">Both</option>
-            <option value="incoming">Received by the City</option>
-            <option value="outgoing">Sent out by the City</option>
+            <option value="">{t("Both")}</option>
+            <option value="incoming">{t("Received by the City")}</option>
+            <option value="outgoing">{t("Sent out by the City")}</option>
           </select>
         </div>
         <div>
-          <label className="label" htmlFor="office">Office</label>
+          <label className="label" htmlFor="office">{t("Office")}</label>
           <select className="input" id="office" name="office" defaultValue={f.office ?? ""}>
-            <option value="">Any</option>
+            <option value="">{t("Any")}</option>
             {(offices.data ?? []).map((o) => <option key={o.code} value={o.code}>{o.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="label" htmlFor="type">Document type</label>
+          <label className="label" htmlFor="type">{t("Document type")}</label>
           <select className="input" id="type" name="type" defaultValue={f.docType ?? ""}>
-            <option value="">Any</option>
+            <option value="">{t("Any")}</option>
             {(types.data ?? []).map((t) => <option key={t.name} value={t.name}>{t.name}</option>)}
           </select>
         </div>
         <div className="grid grid-cols-2 gap-3 md:col-span-2">
           <div>
-            <label className="label" htmlFor="from">Logged from</label>
+            <label className="label" htmlFor="from">{t("Logged from")}</label>
             <input className="input" id="from" name="from" type="date" defaultValue={f.from} />
           </div>
           <div>
-            <label className="label" htmlFor="to">Up to</label>
+            <label className="label" htmlFor="to">{t("Up to")}</label>
             <input className="input" id="to" name="to" type="date" defaultValue={f.to} />
           </div>
         </div>
         <div className="flex flex-wrap items-end gap-x-6 md:col-span-2 lg:col-span-4">
           <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
-            <input type="checkbox" className="checkbox" name="overdue" value="1" defaultChecked={f.overdue} /> Show only late (overdue) records
+            <input type="checkbox" className="checkbox" name="overdue" value="1" defaultChecked={f.overdue} /> {t("Show only late (overdue) records")}
           </label>
           <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
-            <input type="checkbox" className="checkbox" name="open" value="1" defaultChecked={f.open} /> Only ones still being handled
+            <input type="checkbox" className="checkbox" name="open" value="1" defaultChecked={f.open} /> {t("Only ones still being handled")}
           </label>
           <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
-            <input type="checkbox" className="checkbox" name="priority" value="urgent" defaultChecked={f.priority === "urgent"} /> Only urgent ones
+            <input type="checkbox" className="checkbox" name="priority" value="urgent" defaultChecked={f.priority === "urgent"} /> {t("Only urgent ones")}
           </label>
           {f.here && f.office && (
             <label className="flex min-h-11 cursor-pointer items-center gap-3 text-base">
-              <input type="checkbox" className="checkbox" name="here" value="1" defaultChecked /> Only ones that are in this office now
+              <input type="checkbox" className="checkbox" name="here" value="1" defaultChecked /> {t("Only ones that are in this office now")}
             </label>
           )}
         </div>
@@ -124,7 +126,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       </form>
 
       <p className="text-sm text-slate-600">
-        For privacy, people&apos;s names are shortened in this list (for example “J*** dela C***”). Open a record to see the full name.
+        {t("For privacy, people's names are shortened in this list (for example “J*** dela C***”). Open a record to see the full name.")}
       </p>
 
       {/* Phones: one card per record, the whole card is a link */}
@@ -141,25 +143,25 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
                 {isOverdue(r.due_date, r.status) && <OverdueBadge />}
               </span>
               <span className="mt-2 block text-sm text-slate-700">
-                Now with {officeNames.get(r.current_office) ?? r.current_office} · logged {fmtDate(r.created_at)}
+                {t("Now with {office} · logged {date}", { office: officeNames.get(r.current_office) ?? r.current_office, date: fmtDate(r.created_at) })}
               </span>
             </Link>
           </li>
         ))}
-        {rows.length === 0 && <li className="card p-6 text-center text-slate-600">No records match. Try fewer filters.</li>}
+        {rows.length === 0 && <li className="card p-6 text-center text-slate-600">{t("No records match. Try fewer filters.")}</li>}
       </ul>
 
       <div className="card hidden overflow-x-auto lg:block">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
             <tr>
-              <th className="px-4 py-2">Tracking no.</th>
-              <th className="px-4 py-2">Subject</th>
-              <th className="hidden px-4 py-2 lg:table-cell">Type</th>
-              <th className="px-4 py-2">From / To</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Office</th>
-              <th className="px-4 py-2">Logged on</th>
+              <th className="px-4 py-2">{t("Tracking no.")}</th>
+              <th className="px-4 py-2">{t("Subject")}</th>
+              <th className="hidden px-4 py-2 lg:table-cell">{t("Type")}</th>
+              <th className="px-4 py-2">{t("From / To")}</th>
+              <th className="px-4 py-2">{t("Status")}</th>
+              <th className="px-4 py-2">{t("Office")}</th>
+              <th className="px-4 py-2">{t("Logged on")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -184,7 +186,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">No records match. Try fewer filters.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">{t("No records match. Try fewer filters.")}</td></tr>
             )}
           </tbody>
         </table>
