@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { steps } from "@/components/barangay-map";
-import { BARANGAYS } from "@/lib/baguio-map";
+import { BARANGAYS, steps } from "../src/lib/baguio-map";
 
 describe("barangay map", () => {
   it("has every Baguio barangay once", () => {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BARANGAYS, MAP_HEIGHT, MAP_WIDTH } from "@/lib/baguio-map";
+import { BARANGAYS, MAP_HEIGHT, MAP_WIDTH, steps } from "@/lib/baguio-map";
 import { useT } from "@/lib/i18n/client";
 
 export type MapRecord = { id: string; tracking_no: string; subject: string; barangay: string; late: boolean; open: boolean };
@@ -17,11 +17,6 @@ const VIEWS = {
   center: "300 20 470 380",
 } as const;
 
-/** Five steps from 1 to the busiest barangay, so the legend always reads in whole numbers. */
-export function steps(max: number): [number, number][] {
-  const tops = [...new Set([0.2, 0.4, 0.6, 0.8, 1].map((f) => Math.max(1, Math.round(max * f))))];
-  return max < 1 ? [] : tops.map((hi, i) => [i === 0 ? 1 : tops[i - 1] + 1, hi]);
-}
 
 /**
  * Heat map of Baguio by barangay: how many records are addressed to or are about each one.

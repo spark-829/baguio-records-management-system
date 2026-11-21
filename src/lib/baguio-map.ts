@@ -6,6 +6,13 @@
 export const MAP_WIDTH = 1000;
 export const MAP_HEIGHT = 865;
 
+
+/** Five steps from 1 to the busiest barangay, so the legend always reads in whole numbers. */
+export function steps(max: number): [number, number][] {
+  const tops = [...new Set([0.2, 0.4, 0.6, 0.8, 1].map((f) => Math.max(1, Math.round(max * f))))];
+  return max < 1 ? [] : tops.map((hi, i) => [i === 0 ? 1 : tops[i - 1] + 1, hi]);
+}
+
 export type BarangayShape = { name: string; x: number; y: number; d: string };
 
 export const BARANGAYS: BarangayShape[] = [
