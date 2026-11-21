@@ -64,12 +64,16 @@ export function daysFromToday(date: string, today = new Date()) {
 }
 
 /** "2 days late", "due today", "due in 3 days". */
-export function dueText(date: string | null | undefined, today = new Date()) {
+export function dueText(date: string | null | undefined, today = new Date(), t: (s: string, v?: Record<string, number>) => string = fill) {
   if (!date) return "";
   const d = daysFromToday(date.slice(0, 10), today);
-  if (d < 0) return `${-d} day${d === -1 ? "" : "s"} late`;
-  if (d === 0) return "due today";
-  return `due in ${d} day${d === 1 ? "" : "s"}`;
+  if (d < 0) return t(d === -1 ? "{n} day late" : "{n} days late", { n: -d });
+  if (d === 0) return t("due today");
+  return t(d === 1 ? "due in {n} day" : "due in {n} days", { n: d });
+}
+
+function fill(s: string, v: Record<string, number> = {}) {
+  return s.replace(/\{(\w+)\}/g, (_, k) => String(v[k] ?? ""));
 }
 
 export const STATUS_TONE: Record<Status, string> = {
@@ -82,14 +86,14 @@ export const STATUS_TONE: Record<Status, string> = {
   archived: "bg-zinc-200 text-zinc-700",
 };
 
-export function fmtDate(value: string | null | undefined) {
+export function fmtDate(value: string | null | undefined, locale = "en-PH") {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeZone: MANILA }).format(new Date(value));
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: MANILA }).format(new Date(value));
 }
 
-export function fmtDateTime(value: string | null | undefined) {
+export function fmtDateTime(value: string | null | undefined, locale = "en-PH") {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeStyle: "short", timeZone: MANILA }).format(
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: MANILA }).format(
     new Date(value),
   );
 }
