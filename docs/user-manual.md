@@ -22,6 +22,11 @@ Shows open and overdue records, what is waiting in your office (with how many da
 
 Without a scan, fill the form by hand. Department staff can register outgoing documents from their own office.
 
+## Receipt and online tracking for the sender
+For an incoming document, open the record and click **Print receipt for the sender**. Give the receipt to the person who filed it. It shows the tracking number, a 6-character tracking code and a QR code.
+
+Anyone with both the number and the code can open **/track** (no account needed) and see the document's status, the office that has it and the dates. Names, the subject, remarks and files are never shown there. For Confidential records the page only says the document is being processed. After 10 wrong tries in 15 minutes from the same computer, the page asks the person to wait.
+
 ## Acting on a record
 Open the record. The box at the top shows who has it now, what needs to be done, and how many days are left or how late it is.
 
