@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh pr merge:*)",
+      "Bash(gh api -X PUT repos/spark-829/baguio-records-management-system/pulls/*/merge *)"
+    ]
+  }
+}
