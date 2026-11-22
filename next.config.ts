@@ -56,6 +56,8 @@ const nextConfig: NextConfig = {
       config.output.filename = clean(config.output.filename);
       if (typeof config.output.chunkFilename === "string") config.output.chunkFilename = clean(config.output.chunkFilename);
     }
+    // pdf.js only runs in the browser (reading office-scanner PDFs); keep it out of the Worker bundle.
+    if (isServer) config.resolve.alias = { ...config.resolve.alias, "pdfjs-dist": false };
     return config;
   },
 };

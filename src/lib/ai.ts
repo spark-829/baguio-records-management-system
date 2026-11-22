@@ -34,11 +34,11 @@ const limits = (f: keyof typeof AI_LIMITS) => ({
   timeoutMs: AI_LIMITS[f][2],
 });
 
-/* Smart intake: read a photo of a document and suggest the record fields */
+/* Smart intake: read a scan of a document and suggest the record fields */
 export function intakeRequest(dataUrl: string, docTypes: string[], offices: { code: string; name: string }[]): AiRequest<IntakeResult> {
   const system =
     "You help the records desk of a Philippine city government register documents. " +
-    "Read the attached photo of a document and fill in the registration fields. Use only what the document says; " +
+    "Read the attached scan of a document and fill in the registration fields. Use only what the document says; " +
     "use null when a field is not stated. Mark it confidential when it involves complaints, investigations, " +
     "medical, personnel or other personal information. Mark it urgent only when the document asks for urgent action " +
     "or sets a deadline within a week. Choose the office that should act on it from the list below.\n" +

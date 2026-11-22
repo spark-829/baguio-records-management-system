@@ -4,6 +4,8 @@ import { useT } from "@/lib/i18n/client";
 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
+import { PDF_NOTE } from "@/lib/image-size";
+import { pdfFirstPageToJpeg } from "@/lib/pdf-first-page";
 import { shrinkForAi } from "@/lib/shrink-image";
 import { registerRecord } from "./actions";
 
@@ -59,22 +61,38 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
   const [aiMsg, setAiMsg] = useState("");
   const [aiFilled, setAiFilled] = useState<Set<keyof Fields>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
+  const captureRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [scanName, setScanName] = useState<string | null>(null);
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
   function showPreview(file: File | undefined) {
     setPreview(file && file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
+    setScanName(file?.name ?? null);
   }
 
-  // The camera input copies its photo into the main file input, so the original is saved as the attachment.
-  function takePhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const photo = e.target.files?.[0];
-    if (!photo || !fileRef.current) return;
+  // The scan input copies its image into the main file input (memory only, never saved to the device), so the original is saved as the attachment.
+  function takeScan(e: React.ChangeEvent<HTMLInputElement>) {
+    const scan = e.target.files?.[0];
+    if (!scan || !fileRef.current) return;
     const dt = new DataTransfer();
-    dt.items.add(photo);
+    dt.items.add(scan);
     fileRef.current.files = dt.files;
-    showPreview(photo);
+    e.target.value = "";
+    showPreview(scan);
+  }
+
+  function clearScan() {
+    if (fileRef.current) fileRef.current.value = "";
+    if (captureRef.current) captureRef.current.value = "";
+    setPreview(null);
+    setScanName(null);
+  }
+  function retake() {
+    clearScan();
+    setAiState("idle");
+    setAiMsg("");
   }
 
   const set = <K extends keyof Fields>(k: K, v: Fields[K]) => {
@@ -99,7 +117,18 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     setAiState("reading");
     setAiMsg("Reading the document…");
     try {
-      const small = await shrinkForAi(file);
+      let toSend: File = file;
+      if (file.type === "application/pdf") {
+        const page = await pdfFirstPageToJpeg(file);
+        if (!page) {
+          setAiState("error");
+          setAiMsg(PDF_NOTE);
+          return;
+        }
+        setPreview(URL.createObjectURL(page)); // page preview, like scan apps
+        toSend = page;
+      }
+      const small = await shrinkForAi(toSend);
       const body = new FormData();
       body.append("file", small);
       const res = await fetch("/api/ai/intake", { method: "POST", body });
@@ -143,30 +172,38 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
   const incoming = f.direction === "incoming";
 
   return (
-    <form action={action} className="grid gap-4 lg:grid-cols-3">
+    <form action={action} onReset={clearScan} className="grid gap-4 lg:grid-cols-3">
       <section className="card space-y-4 p-5 lg:col-span-1">
         <h2 className="text-lg font-bold">{t("1. Scanned copy (optional)")}</h2>
         <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-800">
           <strong>{t("No scan?")}</strong> {t("That is fine. Just fill in the form and press Save.")}
         </p>
-        <label htmlFor="photo" className="btn-primary flex w-full cursor-pointer items-center justify-center text-center">{t("Take a photo of the document")}</label>
-        <input id="photo" type="file" accept="image/*" capture="environment" className="sr-only" onChange={takePhoto} />
-        <label htmlFor="file" className="label">{t("Choose the scanned file")}</label>
+        <label htmlFor="scan" className="btn-primary flex w-full cursor-pointer items-center justify-center text-center">{t("Scan document")}</label>
+        <input id="scan" ref={captureRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={takeScan} />
+        <p className="text-sm text-slate-600">{t("Scans go straight to the secure record and aren't kept on this device.")}</p>
+        <label htmlFor="file" className="label">{t("Or upload a file from the office scanner")}</label>
         <input id="file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" onChange={(e) => showPreview(e.target.files?.[0])} />
-        <p className="text-sm text-slate-600">{t("A PDF or a photo, up to 10 MB. The file is kept with the record.")}</p>
+        <p className="text-sm text-slate-600">{t("PDF, JPG or PNG from a scanner, up to 10 MB. The file is kept with the record.")}</p>
         <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="checkbox mt-0.5" />
           <span>{t("Sensitive document: do not send it to the AI. Fill the form by hand.")}</span>
         </label>
         <button type="button" onClick={readWithAi} className="btn-secondary w-full" disabled={aiState === "reading" || noAi}>
-          {t(aiState === "reading" ? "Reading…" : "Fill in the form for me from this file")}
+          {t(aiState === "reading" ? "Reading…" : "Read scan with AI")}
         </button>
         {aiMsg && (
           <p role="status" className={`rounded-lg p-3 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{t(aiMsg)}</p>
         )}
-        {preview && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt={t("Preview of the chosen photo")} className="max-h-64 w-full rounded-lg border border-slate-200 object-contain" />
+        {scanName && (
+          <div className="space-y-2">
+            {preview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={preview} alt={t("Preview of the scanned page")} className="max-h-64 w-full rounded-lg border border-slate-200 object-contain" />
+            ) : (
+              <p className="truncate text-sm text-slate-700">{scanName}</p>
+            )}
+            <button type="button" onClick={retake} className="btn-secondary w-full" disabled={aiState === "reading"}>{t("Retake")}</button>
+          </div>
         )}
         <input type="hidden" name="from_scan" value={aiState === "done" ? "1" : ""} />
         {f.content_text && (
