@@ -11,7 +11,8 @@
   "observability": { "enabled": true },
   "vars": {
     "NEXT_PUBLIC_SUPABASE_URL": "https://zocbkfargjtueqnqgumf.supabase.co",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_x4J0KnJdLGi1oQR92DfNCQ_8iV0frG3"
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_x4J0KnJdLGi1oQR92DfNCQ_8iV0frG3",
+    "DEEPSEEK_MODEL": "deepseek-flash"
   }
-  // ANTHROPIC_API_KEY is a secret: `npx wrangler secret put ANTHROPIC_API_KEY`
+  // SPARK_DEEPSEEK_API is a secret: `npx wrangler secret put SPARK_DEEPSEEK_API`
 }

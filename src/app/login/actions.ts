@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
+import { safeNextPath } from "@/lib/safe-next";
 
 type LoginState = { error?: string; email?: string } | undefined;
 
@@ -35,8 +36,9 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
 
   // Admins who turned on two-step sign-in must enter their authenticator code next.
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-  if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") redirect("/mfa");
-  redirect("/");
+  const next = safeNextPath(formData.get("next"));
+  if (aal && aal.nextLevel === "aal2" && aal.currentLevel !== "aal2") redirect(next ? `/mfa?next=${encodeURIComponent(next)}` : "/mfa");
+  redirect(next ?? "/");
 }
 
 export async function signOut() {

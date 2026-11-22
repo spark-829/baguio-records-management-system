@@ -7,6 +7,7 @@ import { STATUS_LABEL, fmtDate, partyLabel } from "@/lib/labels";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
+import { ScanQrButton } from "@/components/scan-qr-button";
 import { AiSearchBox } from "./ai-search-box";
 
 export default async function RecordsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -41,7 +42,8 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             )}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <ScanQrButton />
           <a href={exportHref} className="btn-secondary" title={t("Opens in Excel")}>{t("Download list (CSV, opens in Excel)")}</a>
           {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
         </div>

@@ -1,19 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { IntakeResult } from "./ai";
+import type { IntakeResult } from "./ai-schemas";
 import { searchRecords } from "./search";
 import { STATUS_LABEL, partyLabel } from "./labels";
 import type { SearchFilters } from "./types";
 
 /**
- * Demo mode: used when no ANTHROPIC_API_KEY is set (or AI_DEMO_MODE=1).
+ * Demo mode: used when no SPARK_DEEPSEEK_API key is set (or AI_DEMO_MODE=1).
  * Every AI feature keeps working with prepared or rule-based output, clearly labeled,
  * and still runs through the signed-in user's session, so access rules and audit logging are unchanged.
- * Adding the key switches to real Claude Haiku with no code changes.
+ * Adding the key switches to real DeepSeek with no code changes.
  */
 export const DEMO_LABEL = "Practice version";
 
 export function isAiDemo() {
-  return process.env.AI_DEMO_MODE === "1" || !process.env.ANTHROPIC_API_KEY;
+  return process.env.AI_DEMO_MODE === "1" || !process.env.SPARK_DEEPSEEK_API;
 }
 
 /* ------------------------------ scan-to-prefill ------------------------------ */

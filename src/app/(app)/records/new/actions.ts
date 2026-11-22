@@ -101,5 +101,5 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
       acted_by: me.id,
     });
   }
-  redirect(`/records/${rec.id}?new=1`);
+  redirect(`/records/${rec.id}?new=1${form.get("from_scan") === "1" ? "&scan=1" : ""}`);
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { AI_MODEL, summarize } from "@/lib/ai";
+import { aiModel, summaryRequest } from "@/lib/ai";
+import { runAi } from "@/lib/ai-gate";
 import { demoSummary, isAiDemo } from "@/lib/ai-demo";
 import { aiError, aiExcludesConfidential, apiContext } from "@/lib/api";
 
@@ -25,16 +26,27 @@ export async function POST(req: Request) {
     .order("created_at");
 
   try {
-    const demo = isAiDemo();
-    const summary = demo
-      ? `Demo summary: ${demoSummary(rec, routes ?? [])}`
-      : await summarize(
-          { ...rec, confidentiality: undefined, content_text: rec.content_text ? String(rec.content_text).slice(0, 8000) : null },
+    let demo = isAiDemo();
+    let note: string | undefined;
+    let summary = "";
+    if (!demo) {
+      const out = await runAi(
+        supabase,
+        summaryRequest(
+          { ...rec, confidentiality: undefined },
           (routes ?? []).map((r) => `${r.created_at} ${r.status} ${r.action_taken ?? ""} ${r.remarks ?? ""}`).join("\n"),
-        );
+        ),
+      );
+      if (out.mode === "ai") summary = out.data.summary;
+      else {
+        demo = true;
+        note = out.note;
+      }
+    }
+    if (demo) summary = `Demo summary: ${demoSummary(rec, routes ?? [])}`;
     const { error } = await supabase.from("rms_records").update({ ai_summary: summary }).eq("id", recordId);
-    await supabase.rpc("rms_log_event", { p_table: "ai_summary", p_row_id: recordId, p_data: { model: demo ? "demo" : AI_MODEL, summary, saved: !error } });
-    return NextResponse.json({ summary, saved: !error, demo });
+    await supabase.rpc("rms_log_event", { p_table: "ai_summary", p_row_id: recordId, p_data: { model: demo ? "demo" : aiModel(), summary, saved: !error } });
+    return NextResponse.json({ summary, saved: !error, demo, note });
   } catch (err) {
     return aiError(err);
   }

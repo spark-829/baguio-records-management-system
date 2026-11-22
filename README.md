@@ -1,6 +1,6 @@
 # Baguio RMS: Records Management System (demo)
 
-A working demo of a city government Records Management System: register incoming and outgoing documents, classify and index them, attach scans, route them between offices, see each document's status and history, record actions and remarks, manage user access, and produce reports. A Claude Haiku assistant reads scanned documents to pre-fill the registration form, turns plain-language searches into filters, and answers questions about records.
+A working demo of a city government Records Management System: register incoming and outgoing documents, classify and index them, attach scans, route them between offices, see each document's status and history, record actions and remarks, manage user access, and produce reports. A DeepSeek assistant reads scanned documents to pre-fill the registration form, turns plain-language searches into filters, and answers questions about records.
 
 > Portfolio project by Vic. It is not an official City Government of Baguio system, and all data in it is fictional.
 
@@ -50,7 +50,7 @@ Sign in as Treasury staff and as the Records Officer to see the access rules at 
 - **Access control in the database.** Row-level security on every table, keyed on the user's role and office. The app talks to the database as the signed-in user, never with a service key, so a bug in a screen cannot leak another office's records.
 - **Audit trail in the database.** Triggers write every insert, update, delete and download to `rms_audit_log` with old and new values, actor and IP. Each entry carries a SHA-256 fingerprint of the one before, so any edit outside the app breaks the chain and the Audit log page flags it.
 - **Sign-in protection in the database.** Lockout after 5 failed attempts, locked or deactivated users lose access even with an open session, and admins with two-step sign-in get no admin rights until they enter the code.
-- **Claude Haiku 5.5** (`claude-haiku-5-5`) for AI features, called from the server only. The assistant's search tools run as the signed-in user, so it obeys the same access rules. A person always confirms AI-filled fields before saving. For fully on-premise use, the same calls can point to a locally hosted open-weight model.
+- **DeepSeek** (`deepseek-flash`, plain `fetch`) for AI features, called from the server only. Every call reserves budget in the database first (hard cap 0.33 USD, per-user rate limits, cached results); when the cap is reached or a call fails, the app falls back to the labeled demo output. The assistant's searches run as the signed-in user, so it obeys the same access rules. A person always confirms AI-filled fields before saving. For fully on-premise use, the same calls can point to a locally hosted open-weight model.
 
 ```
 src/app/(app)/        screens: dashboard, records, register, record detail, slip, assistant, reports, admin
@@ -69,7 +69,7 @@ docs/                 system analysis and design
 
 ```bash
 npm install
-cp .env.example .env.local      # fill in your Supabase URL, publishable key, and Anthropic key
+cp .env.example .env.local      # fill in your Supabase URL, publishable key, and DeepSeek key (`SPARK_DEEPSEEK_API`)
 npm run dev
 ```
 
@@ -86,7 +86,7 @@ npm test                         # workflow rules
 
 ```bash
 npx wrangler login
-npx wrangler secret put ANTHROPIC_API_KEY
+npx wrangler secret put SPARK_DEEPSEEK_API
 npm run deploy
 ```
 
@@ -94,10 +94,10 @@ The Supabase URL and publishable key are public values set in `wrangler.jsonc`.
 
 ### AI demo mode
 
-Without `ANTHROPIC_API_KEY` the app runs its AI features in **demo mode**, labeled "Demo mode: sample AI output" on screen:
+Without `SPARK_DEEPSEEK_API` the app runs its AI features in **demo mode**, labeled "Demo mode: sample AI output" on screen:
 
 - **Scan-to-prefill** fills the form from one of three prepared sample letters (the uploaded file is not read).
 - **Plain-language search** and the **records assistant** use a rule-based parser (names after "by/from", offices, document types, overdue, dates) and then run the normal search under the signed-in user's access rights, so the answers are live records.
 - **Summaries** are built from the record's fields and latest action.
 
-Audit logging and access control are the same in both modes (`model: "demo"` in the audit log). Add the secret to switch to Claude Haiku with no code change; set `AI_DEMO_MODE=1` to force demo mode even with a key.
+Audit logging and access control are the same in both modes (`model: "demo"` in the audit log). Add the secret to switch to DeepSeek with no code change (spend is capped at 0.33 USD; past the cap the demo output is used); set `AI_DEMO_MODE=1` to force demo mode even with a key.

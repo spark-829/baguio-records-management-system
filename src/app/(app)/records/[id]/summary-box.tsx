@@ -9,6 +9,7 @@ export function SummaryBox({ recordId, initial, aiBlocked = false }: { recordId:
   const [summary, setSummary] = useState(initial);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
 
   async function generate() {
     setBusy(true);
@@ -22,6 +23,7 @@ export function SummaryBox({ recordId, initial, aiBlocked = false }: { recordId:
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Could not summarize");
       setSummary(json.summary);
+      setNote(typeof json.note === "string" ? json.note : null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not summarize");
     } finally {
@@ -54,6 +56,7 @@ export function SummaryBox({ recordId, initial, aiBlocked = false }: { recordId:
       ) : (
         <p className="mt-2 text-sm text-slate-700">{summary ?? t("No summary yet.")}</p>
       )}
+      {note && <p className="mt-1 text-xs text-amber-800">{t(note)}</p>}
       {error && <p className="mt-1 text-sm text-red-700">{t(error)}</p>}
     </section>
   );

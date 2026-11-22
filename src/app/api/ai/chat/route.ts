@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { aiError, aiExcludesConfidential, apiContext } from "@/lib/api";
 import { askAssistant, type ChatTurn } from "@/lib/assistant";
-import { AI_MODEL } from "@/lib/ai";
+import { aiModel } from "@/lib/ai";
 import { demoChat, isAiDemo } from "@/lib/ai-demo";
 
 export async function POST(req: Request) {
@@ -16,16 +16,32 @@ export async function POST(req: Request) {
   }
   try {
     const exclude = await aiExcludesConfidential(ctx.supabase);
-    const demo = isAiDemo();
-    const result = demo
-      ? await demoChat(ctx.supabase, history.at(-1)!.content, exclude, ctx.me.office?.code)
-      : await askAssistant(ctx.supabase, ctx.me, history, exclude);
+    const question = history.at(-1)!.content;
+    const [{ data: offices }, { data: types }] = await Promise.all([
+      ctx.supabase.from("rms_offices").select("code, name").eq("is_active", true),
+      ctx.supabase.from("rms_document_types").select("name").eq("is_active", true),
+    ]);
+    let demo = isAiDemo();
+    let note: string | undefined;
+    let result: { answer: string; records: { id: string; tracking_no: string }[] };
+    if (demo) {
+      result = await demoChat(ctx.supabase, question, exclude, ctx.me.office?.code);
+    } else {
+      const out = await askAssistant(ctx.supabase, ctx.me, history, exclude, offices ?? [], (types ?? []).map((t) => t.name));
+      if (out.mode === "ai") {
+        result = out.data;
+      } else {
+        demo = true;
+        note = out.note;
+        result = await demoChat(ctx.supabase, question, exclude, ctx.me.office?.code);
+      }
+    }
     await ctx.supabase.rpc("rms_log_event", {
       p_table: "ai_chat",
       p_row_id: ctx.me.id,
-      p_data: { model: demo ? "demo" : AI_MODEL, question: history.at(-1)!.content, records: result.records.map((r) => r.tracking_no) },
+      p_data: { model: demo ? "demo" : aiModel(), question, records: result.records.map((r) => r.tracking_no) },
     });
-    return NextResponse.json({ ...result, demo });
+    return NextResponse.json({ ...result, demo, note });
   } catch (err) {
     return aiError(err);
   }

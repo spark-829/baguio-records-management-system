@@ -5,11 +5,12 @@ import { useT } from "@/lib/i18n/client";
 import { useActionState } from "react";
 import { signIn } from "./actions";
 
-export function LoginForm() {
+export function LoginForm({ next = "" }: { next?: string }) {
   const t = useT();
   const [state, action, pending] = useActionState(signIn, undefined);
   return (
     <form action={action} className="mt-5 space-y-5">
+      <input type="hidden" name="next" value={next} />
       <div>
         <label className="label" htmlFor="email">{t("Email")}</label>
         <input key={state?.email ?? "default"} className="input" id="email" name="email" type="email" autoComplete="username" defaultValue={state?.email ?? ""} placeholder="e.g. records@rms-demo.test" required />

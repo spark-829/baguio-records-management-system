@@ -1,6 +1,7 @@
 import { getT } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 import { getProfile, getSettings } from "@/lib/session";
+import { createClient } from "@/lib/supabase/server";
 import { saveSettings } from "./actions";
 
 export default async function SettingsPage() {
@@ -8,12 +9,20 @@ export default async function SettingsPage() {
   const me = await getProfile();
   if (me.role !== "admin") redirect("/");
   const s = await getSettings();
+  // Hidden when the database update for the AI budget has not been run yet
+  const { data: spend } = await (await createClient()).rpc("rms_ai_spend_summary");
   return (
     <div className="max-w-2xl space-y-4">
       <div>
         <h1 className="text-2xl font-bold">{t("Security settings")}</h1>
         <p className="text-sm text-slate-600">{t("Changes apply right away and are recorded in the audit log.")}</p>
       </div>
+      {spend && (
+        <section className="card space-y-1 p-4">
+          <h2 className="font-semibold">{t("AI spend: ${spent} of ${cap}", { spent: Number(spend.spent).toFixed(4), cap: Number(spend.cap).toFixed(2) })}</h2>
+          <p className="text-sm text-slate-600">{t("{n} AI calls so far. When the budget is used up, AI features switch to the practice version.", { n: Number(spend.calls ?? 0) })}</p>
+        </section>
+      )}
       <form action={saveSettings} className="card space-y-5 p-4">
         <fieldset className="grid gap-3 sm:grid-cols-3">
           <legend className="mb-2 font-semibold">{t("Sign-in")}</legend>

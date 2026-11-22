@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MfaChallenge } from "./challenge";
 
-export default async function MfaPage() {
+export default async function MfaPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { t } = await getT();
+  const { next } = await searchParams;
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) redirect("/login");
@@ -15,7 +16,7 @@ export default async function MfaPage() {
       <div className="card w-full max-w-sm p-6">
         <h1 className="text-lg font-semibold">{t("Two-step sign-in")}</h1>
         <p className="mt-1 text-sm text-slate-600">{t("Enter the 6-digit code from your authenticator app.")}</p>
-        <MfaChallenge />
+        <MfaChallenge next={next} />
       </div>
     </main>
   );

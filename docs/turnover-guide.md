@@ -7,7 +7,7 @@ For the person who will run and maintain the system.
 | --- | --- | --- |
 | Web app | Cloudflare Workers (`baguio-rms`) | Next.js 15 built with OpenNext; `npm run deploy` |
 | Database, logins, files | Supabase project | Tables, functions and policies prefixed `rms_` |
-| AI | Anthropic API, model `claude-haiku-5-5` | Key stored as the Cloudflare secret `ANTHROPIC_API_KEY` |
+| AI | DeepSeek API, model `deepseek-flash` | Key stored as the Cloudflare secret `SPARK_DEEPSEEK_API`; spend capped at 0.33 USD in the database |
 | Source code | GitHub repository | `supabase/migrations` is the database's source of truth |
 
 ## Configuration
@@ -15,9 +15,9 @@ For the person who will run and maintain the system.
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | `wrangler.jsonc` vars | No |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` (publishable key) | `wrangler.jsonc` vars | No, protected by row-level security |
-| `ANTHROPIC_API_KEY` | `wrangler secret put` | Yes |
+| `SPARK_DEEPSEEK_API` | `wrangler secret put` | Yes |
 
-The app has no service-role key. Without `ANTHROPIC_API_KEY`, AI features run in demo mode (prepared or rule-based output, labeled on screen); everything else is unaffected. Set `AI_DEMO_MODE=1` to force demo mode.
+The app has no service-role key. Without `SPARK_DEEPSEEK_API`, or when the 0.33 USD cap or a rate limit is reached, AI features run in demo mode (prepared or rule-based output, labeled on screen); everything else is unaffected. Set `AI_DEMO_MODE=1` to force demo mode.
 
 ## Routine tasks
 - **Add an office or document type:** insert a row in `rms_offices` / `rms_document_types` (admin role in the app, or SQL editor).

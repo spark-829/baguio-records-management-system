@@ -5,15 +5,18 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
+import { scanUrl } from "@/lib/qr";
 import { CONF_LABEL, PRIORITY_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import { PrintButton } from "./print-button";
 
 const shortStamp = (iso: string) =>
   new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "Asia/Manila" }).format(new Date(iso));
 
-export default async function SlipPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function SlipPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ size?: string }> }) {
   const { t } = await getT();
   const { id } = await params;
+  const { size } = await searchParams;
+  const sticker = size === "sticker";
   const supabase = await createClient();
   const { data: rec } = await supabase
     .from("rms_records")
@@ -34,7 +37,7 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
   const done = (steps ?? []) as unknown as { created_at: string; action_taken: string | null; remarks: string | null; from_office: { code: string } | null; to_office: { code: string } | null }[];
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
-  const qr = await QRCode.toString(`${origin}/records/${rec.id}`, { type: "svg", margin: 0, width: 132 });
+  const qr = await QRCode.toString(scanUrl(origin, rec.tracking_no), { type: "svg", margin: 0, width: sticker ? 150 : 132 });
   const r = rec as unknown as {
     tracking_no: string; direction: string; subject: string; priority: "low" | "normal" | "urgent"; confidentiality: "public" | "internal" | "confidential";
     sender_name: string | null; sender_org: string | null; recipient_name: string | null; recipient_org: string | null;
@@ -43,11 +46,39 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
   };
   const party = r.direction === "incoming" ? [r.sender_name, r.sender_org] : [r.recipient_name, r.recipient_org];
 
+  const toggle = (
+    <Link href={sticker ? `/records/${id}/slip` : `/records/${id}/slip?size=sticker`} className="btn-secondary">
+      {t(sticker ? "Full slip" : "Sticker size")}
+    </Link>
+  );
+
+  if (sticker) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <style>{"@media print{@page{size:70mm 50mm;margin:3mm}}"}</style>
+        <div className="no-print mb-4 flex justify-between gap-2">
+          <Link href={`/records/${id}`} className="btn-secondary">{t("Back to record")}</Link>
+          <div className="flex gap-2">{toggle}<PrintButton /></div>
+        </div>
+        <div className="mx-auto flex w-fit items-center gap-3 border-2 border-slate-900 bg-white p-2 text-slate-900">
+          <div className="text-center">
+            <div dangerouslySetInnerHTML={{ __html: qr }} />
+            <p className="mt-1 text-[9px]">{t("Scan to log receipt")}</p>
+          </div>
+          <div className="w-40">
+            <p className="font-mono text-sm font-bold">{r.tracking_no}</p>
+            <p className="line-clamp-2 text-xs">{r.subject}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="no-print mb-4 flex justify-between gap-2">
         <Link href={`/records/${id}`} className="btn-secondary">{t("Back to record")}</Link>
-        <PrintButton />
+        <div className="flex gap-2">{toggle}<PrintButton /></div>
       </div>
       <div className="border-2 border-slate-900 bg-white p-6 text-slate-900">
         <div className="flex items-start justify-between gap-6 border-b-2 border-slate-900 pb-4">
@@ -59,7 +90,7 @@ export default async function SlipPage({ params }: { params: Promise<{ id: strin
           </div>
           <div className="shrink-0 text-center">
             <div dangerouslySetInnerHTML={{ __html: qr }} />
-            <p className="mt-1 text-[10px]">{t("Scan to open the record")}</p>
+            <p className="mt-1 text-[10px]">{t("Scan to log receipt")}</p>
           </div>
         </div>
         <dl className="grid grid-cols-3 gap-y-1 py-3 text-sm">
