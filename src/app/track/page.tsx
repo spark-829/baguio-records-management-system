@@ -5,6 +5,7 @@ import { PineMark, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
 import { Rich } from "@/components/rich";
 import { fmtDate, fmtDateTime } from "@/lib/labels";
+import { collapseSteps } from "@/lib/history";
 import type { Status } from "@/lib/types";
 
 export const metadata = { title: "Track a document" };
@@ -120,7 +121,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
                 <div>
                   <h2 className="font-semibold">{t("Progress")}</h2>
                   <ol className="mt-2 space-y-2">
-                    {result.steps.map((s, i) => (
+                    {collapseSteps(result.steps).map((s, i) => (
                       <li key={i} className="flex flex-wrap gap-x-3 border-b border-slate-100 pb-2">
                         <span className="w-48 shrink-0 text-slate-600">{fmtDateTime(s.at)}</span>
                         <span>

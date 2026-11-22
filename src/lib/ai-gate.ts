@@ -46,6 +46,12 @@ async function finalize(
 export async function runAi<T>(supabase: SupabaseClient, req: AiRequest<T>): Promise<AiOutcome<T>> {
   const cfg = deepseekConfig();
   if (!cfg.apiKey) throw new AiUnavailableError("AI is not configured on this server (SPARK_DEEPSEEK_API is missing).");
+  // The database accepts budget calls only with the server-held proxy key (QA-015).
+  // Until RMS_PROXY_KEY is set on the worker, AI falls back to the demo suggestion.
+  if (!process.env.RMS_PROXY_KEY) {
+    console.error("AI skipped: RMS_PROXY_KEY is not set on this server");
+    return demo("error");
+  }
   const estimate = estimateMaxCostUsd({
     inputTokens: estimateInputTokens(req.messages),
     maxTokens: req.maxTokens,
@@ -60,7 +66,7 @@ export async function runAi<T>(supabase: SupabaseClient, req: AiRequest<T>): Pro
     console.error("AI reserve failed:", error?.message ?? "no result");
     return demo("error");
   }
-  if (!r.ok) return demo(r.reason === "rate_limited" ? "rate_limited" : "budget");
+  if (!r.ok) return demo(r.reason === "rate_limited" ? "rate_limited" : r.reason === "budget" ? "budget" : "error");
 
   const startedAt = new Date();
   try {

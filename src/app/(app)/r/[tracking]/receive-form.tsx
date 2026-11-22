@@ -13,8 +13,8 @@ export function ReceiveForm({ recordId, trackingNo, officeName, onBehalf }: { re
   const [state, action, pending] = useActionState(recordAction, undefined);
 
   useEffect(() => {
-    if (state?.ok) router.refresh();
-  }, [state, router]);
+    if (state?.ok) router.replace(`/r/${encodeURIComponent(trackingNo)}?received=1`, { scroll: false });
+  }, [state, router, trackingNo]);
 
   if (state?.ok) {
     return (

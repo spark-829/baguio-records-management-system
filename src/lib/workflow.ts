@@ -74,3 +74,10 @@ export function isOverdue(due: string | null, status: Status, today = new Date()
   const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(today);
   return due < todayStr;
 }
+
+/** The record already sits received (or in progress) at an office this user acts for, so another "receive" changes nothing (QA-017). */
+export function isAlreadyReceived(o: { status: Status; role: Role; userOfficeId: string | null; currentOfficeId: string }): boolean {
+  if (o.status !== "received" && o.status !== "under_action") return false;
+  if (o.role === "admin" || o.role === "records_officer") return true;
+  return o.role !== "viewer" && o.userOfficeId !== null && o.userOfficeId === o.currentOfficeId;
+}

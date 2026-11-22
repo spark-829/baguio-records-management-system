@@ -4,11 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { ACTIONS, allowedActions, doneText, nextStatus, type ActionKind } from "@/lib/workflow";
+import { ACTIONS, allowedActions, doneText, isAlreadyReceived, nextStatus, type ActionKind } from "@/lib/workflow";
 import type { Direction, Status } from "@/lib/types";
 
 const NO_ATTACH = "Only the office holding this record, the office that sent it, or the records desk can add files.";
 const ATTACHMENT_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
+const ALREADY_RECEIVED = "Already received.";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type ActState = { error?: string; ok?: string } | undefined;
@@ -29,6 +30,8 @@ export async function recordAction(_prev: ActState, form: FormData): Promise<Act
     .eq("id", recordId)
     .maybeSingle();
   if (!rec) return { error: "Record not found" };
+  const here = { status: rec.status as Status, role: me.role, userOfficeId: me.office_id, currentOfficeId: rec.current_office_id };
+  if (kind === "receive" && isAlreadyReceived(here)) return { ok: ALREADY_RECEIVED };
 
   const allowed = allowedActions({
     status: rec.status as Status,
@@ -54,7 +57,16 @@ export async function recordAction(_prev: ActState, form: FormData): Promise<Act
     remarks: remarks || null,
     acted_by: me.id,
   });
-  if (error) return { error: error.message };
+  if (error) {
+    if (kind === "receive") {
+      const { data: now } = await supabase.from("rms_records").select("status, current_office_id").eq("id", rec.id).maybeSingle();
+      if (now && isAlreadyReceived({ ...here, status: now.status as Status, currentOfficeId: now.current_office_id })) {
+        revalidatePath(`/records/${rec.id}`);
+        return { ok: ALREADY_RECEIVED };
+      }
+    }
+    return { error: error.message };
+  }
   revalidatePath(`/records/${rec.id}`);
   return { ok: "Saved." };
 }
