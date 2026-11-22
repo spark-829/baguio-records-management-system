@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { ROLE_LABEL, STATUS_LABEL, fmtDateTime } from "@/lib/labels";
+import { routeText, type RouteLookups } from "@/lib/audit-text";
 import type { Role, Status } from "@/lib/types";
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const st = (s: unknown) => STATUS_LABEL[s as Status] ?? String(s ?? "");
 
@@ -23,7 +26,7 @@ const TABLE_LABEL: Record<string, string> = {
   rms_settings: "Security setting",
 };
 
-function describe(table: string, action: string, data: Record<string, unknown> | null, old: Record<string, unknown> | null) {
+function describe(table: string, action: string, data: Record<string, unknown> | null, old: Record<string, unknown> | null, lk: RouteLookups) {
   const d = data ?? old ?? {};
   switch (table) {
     case "rms_records":
@@ -33,7 +36,7 @@ function describe(table: string, action: string, data: Record<string, unknown> |
         ? `${d.tracking_no}: ${st(old.status)} → ${st(data.status)}`
         : `${d.tracking_no ?? ""} ${d.subject ?? ""}`;
     case "rms_routes":
-      return `${st(d.status)}: ${d.action_taken ?? ""}${d.remarks ? ` (“${d.remarks}”)` : ""}`;
+      return routeText(d, lk);
     case "rms_attachments":
       return String(d.file_name ?? "");
     case "rms_profiles":
@@ -55,10 +58,12 @@ function describe(table: string, action: string, data: Record<string, unknown> |
   }
 }
 
-export default async function AuditPage({ searchParams }: { searchParams: Promise<{ t?: string; more?: string }> }) {
+export default async function AuditPage({ searchParams }: { searchParams: Promise<{ t?: string; table?: string; more?: string }> }) {
   const me = await getProfile();
   if (me.role !== "admin") redirect("/");
-  const { t: table, more } = await searchParams;
+  const sp = await searchParams;
+  const table = sp.table ?? sp.t;
+  const more = sp.more;
   const { t } = await getT();
   const limit = more ? 500 : 50;
   const supabase = await createClient();
@@ -70,6 +75,26 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
     supabase.rpc("rms_verify_audit_chain"),
   ]);
   const names = new Map((people ?? []).map((p) => [p.id, p.full_name]));
+
+  // Routing rows only hold ids; look up tracking numbers and office names in batches.
+  const routeRows = (rows ?? []).filter((r) => r.table_name === "rms_routes");
+  const recordIds = [
+    ...new Set(
+      routeRows
+        .map((r) => String(((r.new_data ?? r.old_data) as Record<string, unknown> | null)?.record_id ?? ""))
+        .filter((id) => UUID_RE.test(id)),
+    ),
+  ];
+  const chunks: string[][] = [];
+  for (let i = 0; i < recordIds.length; i += 100) chunks.push(recordIds.slice(i, i + 100));
+  const [recordLookups, officeLookup] = await Promise.all([
+    Promise.all(chunks.map((c) => supabase.from("rms_records").select("id, tracking_no").in("id", c))),
+    routeRows.length > 0 ? supabase.from("rms_offices").select("id, name") : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+  ]);
+  const lk: RouteLookups = {
+    tracking: new Map(recordLookups.flatMap((res) => (res.data ?? []).map((x) => [x.id, x.tracking_no] as [string, string]))),
+    offices: new Map((officeLookup.data ?? []).map((o) => [o.id, o.name] as [string, string])),
+  };
 
   return (
     <div className="space-y-4">
@@ -110,7 +135,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                 <td className="px-3 py-2">{r.actor_id ? names.get(r.actor_id) ?? "—" : t("System")}</td>
                 <td className="px-3 py-2">{t(TABLE_LABEL[r.table_name] ?? r.table_name)}</td>
                 <td className="px-3 py-2">{t(r.action === "INSERT" ? "Added" : r.action === "UPDATE" ? "Changed" : "Removed")}</td>
-                <td className="px-3 py-2 text-slate-700">{describe(r.table_name, r.action, r.new_data, r.old_data)}</td>
+                <td className="px-3 py-2 text-slate-700">{describe(r.table_name, r.action, r.new_data, r.old_data, lk)}</td>
                 <td className="px-3 py-2 font-mono text-xs text-slate-500">{r.ip || "—"}</td>
               </tr>
             ))}

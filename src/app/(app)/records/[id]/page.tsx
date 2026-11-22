@@ -7,6 +7,7 @@ import { getProfile, getSettings, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { CONF_HELP, CONF_LABEL, PRIORITY_LABEL, daysFromToday, dueText, fmtDate, fmtDateTime, officeName } from "@/lib/labels";
 import { allowedActions, isOverdue } from "@/lib/workflow";
+import { newestFirst } from "@/lib/history";
 import type { Direction, Status, Priority, Confidentiality } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
 import { ActionForm, AttachForm, DeleteForm } from "./forms";
@@ -105,12 +106,12 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const history = (routes ?? []) as unknown as Route[];
   type FileRow = { id: string; file_name: string; version: number; uploaded_at: string; uploader: { full_name: string } | null };
   // Uploaded files appear in the history too, placed just above the step they came after (history is newest first).
-  const fileEvents = ((files ?? []) as unknown as FileRow[]).map((f) => ({
+  const fileEvents = newestFirst((files ?? []) as unknown as FileRow[], (f) => f.uploaded_at).map((f) => ({
     ...f,
     before: (history.find((h) => h.created_at <= f.uploaded_at) ?? history.at(-1))?.id,
   }));
   type BinRow = { at: string; event: "deleted" | "restored"; actor: string | null; reason: string | null };
-  const binEvents = ((binRows ?? []) as BinRow[]).map((e, i) => ({
+  const binEvents = newestFirst((binRows ?? []) as BinRow[], (e) => e.at).map((e, i) => ({
     ...e,
     key: `b${i}`,
     before: (history.find((h) => h.created_at <= e.at) ?? history.at(-1))?.id,

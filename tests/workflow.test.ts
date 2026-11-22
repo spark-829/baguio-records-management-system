@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allowedActions, isOverdue, nextStatus } from "../src/lib/workflow";
+import { allowedActions, isAlreadyReceived, isOverdue, nextStatus } from "../src/lib/workflow";
 
 const base = { direction: "incoming" as const, userOfficeId: "ceo", currentOfficeId: "ceo" };
 
@@ -75,5 +75,25 @@ describe("privacy masking", () => {
 describe("viewer role", () => {
   it("has no actions even on records in its office", () => {
     expect(allowedActions({ status: "received", direction: "incoming", role: "viewer", userOfficeId: "a", currentOfficeId: "a" })).toEqual([]);
+  });
+});
+
+describe("isAlreadyReceived", () => {
+  const o = { role: "staff" as const, userOfficeId: "ceo", currentOfficeId: "ceo" };
+  it("is true for staff at the holding office", () => {
+    expect(isAlreadyReceived({ ...o, status: "received" })).toBe(true);
+    expect(isAlreadyReceived({ ...o, status: "under_action" })).toBe(true);
+  });
+  it("is false for another office", () => {
+    expect(isAlreadyReceived({ ...o, status: "received", userOfficeId: "cto" })).toBe(false);
+  });
+  it("is true for the records desk", () => {
+    expect(isAlreadyReceived({ ...o, status: "received", role: "records_officer", userOfficeId: "cmo" })).toBe(true);
+  });
+  it("is false for a viewer", () => {
+    expect(isAlreadyReceived({ ...o, status: "received", role: "viewer" })).toBe(false);
+  });
+  it("is false for a forwarded record", () => {
+    expect(isAlreadyReceived({ ...o, status: "forwarded" })).toBe(false);
   });
 });

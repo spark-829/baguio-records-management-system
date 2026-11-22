@@ -709,6 +709,8 @@ export const FIL: Record<string, string> = {
   "(records desk, on behalf of that office)": "(records desk, para sa opisinang iyon)",
   "Where is the paper now, or a note (optional)": "Nasaan na ang papel ngayon, o isang tala (opsyonal)",
   "e.g. Front desk, tray 2": "hal. Front desk, tray 2",
+  "Already received.": "Natanggap na.",
+  "Recorded by the records desk on behalf of {office}.": "Itinala ng records desk para sa {office}.",
   "Received. {tn} is now logged at {office}.": "Natanggap. Naka-log na ang {tn} sa {office}.",
   "AI spend: ${spent} of ${cap}": "Gastos sa AI: ${spent} sa ${cap}",
   "{n} AI calls so far. When the budget is used up, AI features switch to the practice version.": "{n} tawag sa AI sa ngayon. Kapag naubos ang badyet, lilipat ang mga AI feature sa practice na bersyon.",

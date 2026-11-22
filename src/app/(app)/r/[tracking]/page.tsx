@@ -30,9 +30,10 @@ type Rec = {
 
 type Step = { created_at: string; action_taken: string | null; actor: { full_name: string } | null; from_office: { name: string } | null };
 
-export default async function ScanReceivePage({ params }: { params: Promise<{ tracking: string }> }) {
+export default async function ScanReceivePage({ params, searchParams }: { params: Promise<{ tracking: string }>; searchParams: Promise<{ received?: string }> }) {
   const { t } = await getT();
   const { tracking: raw } = await params;
+  const { received } = await searchParams;
   let tn = "";
   try {
     tn = decodeURIComponent(raw).trim().toUpperCase();
@@ -90,6 +91,9 @@ export default async function ScanReceivePage({ params }: { params: Promise<{ tr
   else if ((rec.status === "received" || rec.status === "under_action") && me.office_id === rec.current_office_id) info = t("Already received at {office}.", { office });
   else info = t("Now at {office}.", { office });
 
+  const onBehalf = isCentral(me) && me.office_id !== rec.current_office_id;
+  const justReceived = received === "1" && (rec.status === "received" || rec.status === "under_action");
+
   return (
     <div className="mx-auto max-w-md space-y-4">
       <p className="font-mono text-3xl font-bold">{rec.tracking_no}</p>
@@ -110,7 +114,12 @@ export default async function ScanReceivePage({ params }: { params: Promise<{ tr
         </p>
       )}
       {actions.includes("receive") ? (
-        <ReceiveForm recordId={rec.id} trackingNo={rec.tracking_no} officeName={office} onBehalf={isCentral(me) && me.office_id !== rec.current_office_id} />
+        <ReceiveForm recordId={rec.id} trackingNo={rec.tracking_no} officeName={office} onBehalf={onBehalf} />
+      ) : justReceived ? (
+        <div role="status" className="space-y-1 rounded-xl border border-emerald-300 bg-emerald-50 p-4 text-emerald-900">
+          <p className="text-lg font-semibold">{t("Received. {tn} is now logged at {office}.", { tn: rec.tracking_no, office })}</p>
+          {onBehalf && <p className="text-sm">{t("Recorded by the records desk on behalf of {office}.", { office })}</p>}
+        </div>
       ) : (
         <p className="rounded-lg bg-slate-50 p-3 text-slate-800">{info}</p>
       )}
