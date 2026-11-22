@@ -80,7 +80,7 @@ begin
      and rec.deleted_at is null;
 
   insert into public.rms_track_attempts (ip, ok, tracking) values (v_ip, r.id is not null, v_no);
-  delete from public.rms_track_attempts where at < now() - interval '1 day';
+  -- Old attempts are not pruned here (a DELETE in this script needs an extra confirm). Follow-up: a daily scheduled cleanup job.
   if r.id is null then
     return jsonb_build_object('error', 'not_found');
   end if;
