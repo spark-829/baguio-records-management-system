@@ -3,7 +3,8 @@
 import { useT } from "@/lib/i18n/client";
 
 import Link from "next/link";
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
+import { shrinkForAi } from "@/lib/shrink-image";
 import { registerRecord } from "./actions";
 
 type Opt = { id: string; name: string };
@@ -58,6 +59,23 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
   const [aiMsg, setAiMsg] = useState("");
   const [aiFilled, setAiFilled] = useState<Set<keyof Fields>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+
+  function showPreview(file: File | undefined) {
+    setPreview(file && file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
+  }
+
+  // The camera input copies its photo into the main file input, so the original is saved as the attachment.
+  function takePhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const photo = e.target.files?.[0];
+    if (!photo || !fileRef.current) return;
+    const dt = new DataTransfer();
+    dt.items.add(photo);
+    fileRef.current.files = dt.files;
+    showPreview(photo);
+  }
 
   const set = <K extends keyof Fields>(k: K, v: Fields[K]) => {
     setF((p) => ({ ...p, [k]: v }));
@@ -81,8 +99,9 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     setAiState("reading");
     setAiMsg("Reading the document…");
     try {
+      const small = await shrinkForAi(file);
       const body = new FormData();
-      body.append("file", file);
+      body.append("file", small);
       const res = await fetch("/api/ai/intake", { method: "POST", body });
       const r = await res.json();
       if (!res.ok) throw new Error(r.error ?? "Could not read the document");
@@ -108,12 +127,12 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
       };
       setF((p) => ({ ...p, ...next }));
       setAiFilled(new Set(Object.keys(next).filter((k) => next[k as keyof Fields]) as (keyof Fields)[]));
+      const filled = Object.keys(next).filter((k) => next[k as keyof Fields]).length;
       setAiState("done");
-      setAiMsg(
-        r.demo
-          ? "Practice version: the fields below come from a prepared sample letter, not your file. Highlighted fields show what the assistant fills in. Check them before saving."
-          : "Fields filled from the document. Highlighted fields came from the assistant; check them before saving.",
-      );
+      const base = r.demo
+        ? t("Practice version: the fields below come from a prepared sample letter, not your file. Highlighted fields show what the assistant fills in. Check them before saving.")
+        : t("{n} fields were filled by the assistant and are highlighted. Please check them before saving.", { n: filled });
+      setAiMsg(r.note ? `${t(r.note)} ${base}` : base);
     } catch (err) {
       setAiState("error");
       setAiMsg(err instanceof Error ? err.message : "Could not read the document");
@@ -130,8 +149,10 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-800">
           <strong>{t("No scan?")}</strong> {t("That is fine. Just fill in the form and press Save.")}
         </p>
+        <label htmlFor="photo" className="btn-primary flex w-full cursor-pointer items-center justify-center text-center">{t("Take a photo of the document")}</label>
+        <input id="photo" type="file" accept="image/*" capture="environment" className="sr-only" onChange={takePhoto} />
         <label htmlFor="file" className="label">{t("Choose the scanned file")}</label>
-        <input id="file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" />
+        <input id="file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" onChange={(e) => showPreview(e.target.files?.[0])} />
         <p className="text-sm text-slate-600">{t("A PDF or a photo, up to 10 MB. The file is kept with the record.")}</p>
         <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="checkbox mt-0.5" />
@@ -143,6 +164,11 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         {aiMsg && (
           <p role="status" className={`rounded-lg p-3 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{t(aiMsg)}</p>
         )}
+        {preview && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={preview} alt={t("Preview of the chosen photo")} className="max-h-64 w-full rounded-lg border border-slate-200 object-contain" />
+        )}
+        <input type="hidden" name="from_scan" value={aiState === "done" ? "1" : ""} />
         {f.content_text && (
           <details className="text-sm">
             <summary className="cursor-pointer text-slate-600">{t("Text read from the document")}</summary>

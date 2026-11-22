@@ -5,7 +5,7 @@ import { useT } from "@/lib/i18n/client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-type Turn = { role: "user" | "assistant"; content: string; demo?: boolean };
+type Turn = { role: "user" | "assistant"; content: string; demo?: boolean; note?: string };
 
 const EXAMPLES = [
   "What documents came from the Punong Barangay?",
@@ -62,7 +62,7 @@ export function Chat() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "The assistant is unavailable");
-      setTurns([...next, { role: "assistant", content: json.answer, demo: Boolean(json.demo) }]);
+      setTurns([...next, { role: "assistant", content: json.answer, demo: Boolean(json.demo), note: typeof json.note === "string" ? json.note : undefined }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "The assistant is unavailable");
     } finally {
@@ -89,6 +89,7 @@ export function Chat() {
               {turn.role === "assistant" && turn.demo && (
                 <span className="badge mb-1 bg-amber-100 text-amber-900">{t("Practice answer")}</span>
               )}
+              {turn.role === "assistant" && turn.note && <p className="mb-1 text-xs text-amber-800">{t(turn.note)}</p>}
               {turn.role === "assistant" ? <Rich text={turn.content} /> : turn.content}
             </div>
           </div>

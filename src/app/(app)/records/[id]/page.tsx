@@ -57,10 +57,10 @@ type Route = {
   actor: { full_name: string } | null;
 };
 
-export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string }> }) {
+export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string }> }) {
   const { t } = await getT();
   const { id } = await params;
-  const { new: isNew } = await searchParams;
+  const { new: isNew, scan } = await searchParams;
   const [me, settings] = await Promise.all([getProfile(), getSettings()]);
   const supabase = await createClient();
   const { data } = await supabase
@@ -156,10 +156,17 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         </div>
       )}
       {isNew && (
-        <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <div className="space-y-3 rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <p>
+          {scan === "1" && <>{t("Created from your scan.")}{" "}</>}
           {t("Saved. Tracking number")} <strong>{rec.tracking_no}</strong>.{" "}
           {t(incoming ? "Print the routing slip to attach to the paper copy, and the receipt to give the sender so they can track it online." : "Print the routing slip to attach to the paper copy.")}
         </p>
+        <div className="flex flex-wrap gap-2">
+          <Link href={`/records/${rec.id}/slip`} className="btn-primary">{t("Print QR routing slip")}</Link>
+          <Link href={`/records/${rec.id}/slip?size=sticker`} className="btn-secondary">{t("Print QR sticker")}</Link>
+        </div>
+        </div>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>

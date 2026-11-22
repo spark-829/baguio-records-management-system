@@ -6,7 +6,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { mfaVerified } from "./actions";
 
-export function MfaChallenge() {
+export function MfaChallenge({ next }: { next?: string }) {
   const t = useT();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export function MfaChallenge() {
       setBusy(false);
       return;
     }
-    await mfaVerified();
+    await mfaVerified(next);
   }
 
   return (

@@ -1,4 +1,5 @@
 import { getT } from "@/lib/i18n/server";
+import { safeNextPath } from "@/lib/safe-next";
 import { LoginForm } from "./login-form";
 import { PineMark, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
@@ -19,9 +20,9 @@ const NOTICES: Record<string, string> = {
   "signed-out": "You have signed out safely.",
 };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {
   const { t } = await getT();
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
   return (
     <div className="flex min-h-screen flex-col bg-brand-800">
       <main className="on-dark flex flex-1 items-center justify-center border-t-4 border-gold-500 bg-[linear-gradient(160deg,var(--color-brand-900),var(--color-brand-700))] px-4 py-10">
@@ -66,7 +67,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                 {t(NOTICES[error])}
               </p>
             )}
-            <LoginForm />
+            <LoginForm next={safeNextPath(next) ?? ""} />
           </div>
         </div>
       </main>

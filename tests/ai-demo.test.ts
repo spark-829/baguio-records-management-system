@@ -11,13 +11,19 @@ const TYPES = ["Letter", "Memorandum", "Disbursement Voucher", "Purchase Request
 
 describe("demo mode switch", () => {
   it("is on without a key and off with one", () => {
-    const old = process.env.ANTHROPIC_API_KEY;
-    delete process.env.ANTHROPIC_API_KEY;
+    const old = process.env.SPARK_DEEPSEEK_API;
+    const oldMode = process.env.AI_DEMO_MODE;
+    delete process.env.AI_DEMO_MODE;
+    delete process.env.SPARK_DEEPSEEK_API;
     expect(isAiDemo()).toBe(true);
-    process.env.ANTHROPIC_API_KEY = "sk-test";
+    process.env.SPARK_DEEPSEEK_API = "sk-test";
     expect(isAiDemo()).toBe(false);
-    if (old === undefined) delete process.env.ANTHROPIC_API_KEY;
-    else process.env.ANTHROPIC_API_KEY = old;
+    process.env.AI_DEMO_MODE = "1";
+    expect(isAiDemo()).toBe(true);
+    if (old === undefined) delete process.env.SPARK_DEEPSEEK_API;
+    else process.env.SPARK_DEEPSEEK_API = old;
+    if (oldMode === undefined) delete process.env.AI_DEMO_MODE;
+    else process.env.AI_DEMO_MODE = oldMode;
   });
 });
 
