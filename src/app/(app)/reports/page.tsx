@@ -106,12 +106,12 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               </p>
               <ul className="space-y-2">
                 {onTime.offices.map((o) => (
-                  <li key={o.id} className="grid grid-cols-[minmax(7rem,14rem)_1fr_6rem] items-center gap-2 text-sm">
+                  <li key={o.id} className="grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-1 text-sm sm:grid-cols-[minmax(7rem,14rem)_1fr_7rem]">
                     <span className="text-slate-700">{o.name}</span>
-                    <span className="h-3 rounded bg-slate-100">
+                    <span className="col-span-2 row-start-2 h-3 rounded bg-slate-100 sm:col-span-1 sm:col-start-2 sm:row-start-1">
                       <span className={`block h-3 rounded ${o.pct < 50 ? "bg-red-600" : "bg-emerald-600"}`} style={{ width: `${o.pct}%` }} />
                     </span>
-                    <span className="text-right font-semibold tabular-nums">{o.pct}% ({o.on_time}/{o.finished})</span>
+                    <span className="whitespace-nowrap text-right font-semibold tabular-nums sm:col-start-3 sm:row-start-1">{o.pct}% ({o.on_time}/{o.finished})</span>
                   </li>
                 ))}
               </ul>
