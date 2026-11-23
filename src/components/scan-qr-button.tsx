@@ -91,7 +91,7 @@ export function ScanQrButton({ label }: { label?: string } = {}) {
     e.preventDefault();
     const v = typed.trim();
     if (!TRACKING_RE.test(v)) {
-      setMsg("This QR code is not a Baguio RMS routing slip.");
+      setMsg("That is not a tracking number. It looks like IN-2026-0001.");
       return;
     }
     setOpen(false);
