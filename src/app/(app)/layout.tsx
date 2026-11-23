@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getProfile, getSettings } from "@/lib/session";
 import { IdleLogout } from "@/components/idle-logout";
+import { AssistantLauncher } from "@/components/assistant-launcher";
 import { ROLE_LABEL } from "@/lib/labels";
 import { signOut } from "../login/actions";
 import { NavLinks } from "@/components/nav-links";
@@ -64,8 +65,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </div>
       <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">{children}</main>
-      <SiteFooter />
+      <SiteFooter className="mt-10 pb-20" />
       <IdleLogout minutes={settings.idleTimeoutMinutes} />
+      <AssistantLauncher />
     </div>
   );
 }
