@@ -156,7 +156,7 @@ export function AttachForm({ recordId }: { recordId: string }) {
   return (
     <form action={action} className="space-y-2">
       <input type="hidden" name="record_id" value={recordId} />
-      <label className="label" htmlFor="attach-file">{t("Add a scanned file (PDF or photo)")}</label>
+      <label className="label" htmlFor="attach-file">{t("Add a scanned file (PDF, JPG or PNG)")}</label>
       <input id="attach-file" name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" required />
       {state?.error && <p className="text-sm text-red-700">{t(state.error)}</p>}
       {state?.ok && <p className="text-sm text-emerald-700">{t(state.ok)}</p>}

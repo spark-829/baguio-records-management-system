@@ -1,6 +1,6 @@
 import { AI_IMAGE_QUALITY, fitWithin } from "./image-size";
 
-/** Client only: shrink a photo to a small JPEG before sending it to AI. Non-images and failures return the original. */
+/** Client only: shrink a scanned image to a small JPEG before sending it to AI. Non-images and failures return the original. */
 export async function shrinkForAi(file: File): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
   try {
@@ -18,7 +18,7 @@ export async function shrinkForAi(file: File): Promise<File> {
     bitmap.close?.();
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", AI_IMAGE_QUALITY));
     if (!blob) return file;
-    const base = file.name.replace(/\.[^.]+$/, "") || "photo";
+    const base = file.name.replace(/\.[^.]+$/, "") || "scan";
     return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
   } catch {
     return file;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fitWithin, imageDimensions } from "../src/lib/image-size";
+import { fitWithin, imageDimensions, pdfRenderScale } from "../src/lib/image-size";
 
 describe("fitWithin", () => {
   it("shrinks large images to the longest side", () => {
@@ -43,5 +43,22 @@ describe("imageDimensions", () => {
     expect(imageDimensions(bytes())).toBeNull();
     expect(imageDimensions(bytes(1, 2, 3, 4, 5))).toBeNull();
     expect(imageDimensions(bytes(0xff, 0xd8, 0xff, 0xe0, 0, 4, 1, 2))).toBeNull();
+  });
+});
+
+describe("pdfRenderScale", () => {
+  it("enlarges small pages to the longest side", () => {
+    expect(pdfRenderScale(612, 792)).toBeCloseTo(1280 / 792);
+    expect(pdfRenderScale(792, 612)).toBeCloseTo(1280 / 792);
+  });
+  it("shrinks big pages", () => {
+    expect(pdfRenderScale(2550, 3300)).toBeCloseTo(1280 / 3300);
+  });
+  it("returns 0 for bad sizes", () => {
+    expect(pdfRenderScale(0, 100)).toBe(0);
+    expect(pdfRenderScale(-1, 5)).toBe(0);
+  });
+  it("accepts a custom max", () => {
+    expect(pdfRenderScale(100, 50, 200)).toBe(2);
   });
 });

@@ -12,7 +12,7 @@ export const DEMO_NOTES: Record<DemoReason, string> = {
   rate_limited: "You have reached the AI limit for now (20 an hour, 60 a day); showing demo suggestion.",
   error: "The AI service is not available right now; showing demo suggestion.",
 };
-export const PDF_NOTE = "AI reading works on photos; for PDFs fill in manually or upload a photo.";
+export { PDF_NOTE } from "./image-size";
 
 export type AiOutcome<T> =
   | { mode: "ai"; data: T; cached?: boolean }

@@ -8,7 +8,7 @@ export function fitWithin(w: number, h: number, max = AI_IMAGE_MAX_SIDE) {
   return { width: Math.max(1, Math.round(w * s)), height: Math.max(1, Math.round(h * s)) };
 }
 
-/** Largest width or height the intake route accepts (client photos are shrunk to AI_IMAGE_MAX_SIDE first). */
+/** Largest width or height the intake route accepts (client scans are shrunk to AI_IMAGE_MAX_SIDE first). */
 export const AI_IMAGE_MAX_DIMENSION = 1600;
 
 /** Reads width and height from a PNG, JPEG or WEBP header. Returns null when it cannot tell. */
@@ -51,4 +51,13 @@ export function imageDimensions(b: Uint8Array): { width: number; height: number 
     }
   }
   return null;
+}
+
+/** Shown when a PDF cannot be read by the AI (client render failed, or a PDF was posted to the intake route). */
+export const PDF_NOTE =
+  "The AI could not read this PDF. Fill in the form by hand, or upload the scan as JPG or PNG. The PDF is still saved with the record.";
+
+/** Scale that makes a PDF page's longest side exactly `max` pixels (can enlarge small pages). 0 for bad sizes. */
+export function pdfRenderScale(w: number, h: number, max = AI_IMAGE_MAX_SIDE) {
+  return w > 0 && h > 0 ? max / Math.max(w, h) : 0;
 }

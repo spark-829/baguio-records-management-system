@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   if (!ALLOWED.includes(file.type)) return NextResponse.json({ error: "Use a PDF, PNG, JPG or WEBP file" }, { status: 400 });
   if (file.size > 10 * 1024 * 1024) return NextResponse.json({ error: "File is larger than 10 MB" }, { status: 400 });
   if (file.type.startsWith("image/") && file.size > AI_IMAGE_MAX_BYTES)
-    return NextResponse.json({ error: "This photo is too large for AI reading. Use a smaller photo or fill in the form by hand." }, { status: 413 });
+    return NextResponse.json({ error: "This scan is too large for AI reading. Scan again at a lower resolution or fill in the form by hand." }, { status: 413 });
 
   const [{ data: types }, { data: offices }] = await Promise.all([
     supabase.from("rms_document_types").select("name").eq("is_active", true).order("name"),
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const dims = imageDimensions(bytes);
       if (!dims || dims.width > AI_IMAGE_MAX_DIMENSION || dims.height > AI_IMAGE_MAX_DIMENSION)
-        return NextResponse.json({ error: "This photo is too large for AI reading. Use a smaller photo or fill in the form by hand." }, { status: 413 });
+        return NextResponse.json({ error: "This scan is too large for AI reading. Scan again at a lower resolution or fill in the form by hand." }, { status: 413 });
       const key = await cacheKey(deepseekConfig().apiKey, "intake", bytes);
       const hit = await cacheGet(supabase, key, intakeModelSchema(typeNames, (offices ?? []).map((o) => o.code)));
       if (hit) {
