@@ -25,16 +25,22 @@ export default async function Dashboard() {
   const { t } = await getT();
   const me = await getProfile();
   const supabase = await createClient();
-  const { data } = await supabase
+  const [{ data }, { data: totalsData, error: totalsError }] = await Promise.all([
+    supabase
     .from("rms_records")
     .select("id, tracking_no, subject, status, priority, direction, due_date, created_at, current_office_id, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
-    .limit(500);
+    .limit(500),
+    supabase.rpc("rms_dashboard_totals"),
+  ]);
+  if (totalsError) console.error("rms_dashboard_totals failed", totalsError.message);
   const rows = (data ?? []) as unknown as Row[];
+  const totals = (totalsData ?? {}) as { open?: number; overdue?: number; in_my_office?: number; this_month?: number; by_status?: Record<string, number> };
 
   const open = rows.filter((r) => !["completed", "released", "archived"].includes(r.status));
   const overdue = open.filter((r) => isOverdue(r.due_date, r.status));
+  const overdueTotal = Number(totals.overdue) || 0;
   // Due within the next 7 days (not yet late), soonest first: what to work on this week
   const dueSoon = open
     .filter((r) => r.due_date && !isOverdue(r.due_date, r.status) && daysFromToday(r.due_date) <= 7)
@@ -44,18 +50,16 @@ export default async function Dashboard() {
   );
   // First day of this month in Manila time, whatever the server's clock zone is
   const monthFrom = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date()).slice(0, 8) + "01";
-  const monthStart = new Date(`${monthFrom}T00:00:00+08:00`);
-  const thisMonth = rows.filter((r) => new Date(r.created_at) >= monthStart);
 
-  const counts = (Object.keys(STATUS_LABEL) as Status[]).map((s) => ({ s, n: rows.filter((r) => r.status === s).length }));
+  const counts = (Object.keys(STATUS_LABEL) as Status[]).map((s) => ({ s, n: Number(totals.by_status?.[s]) || 0 }));
 
   const stats = [
-    { label: t("Open records"), value: open.length, href: "/records?open=1", hint: t("See the open ones") },
-    { label: t(isCentral(me) ? "Overdue" : "Overdue (all you can see)"), value: overdue.length, alert: overdue.length > 0, href: "/records?overdue=1", hint: t("See the late ones") },
+    { label: t("Open records"), value: Number(totals.open) || 0, href: "/records?open=1", hint: t("See the open ones") },
+    { label: t(isCentral(me) ? "Overdue" : "Overdue (all you can see)"), value: overdueTotal, alert: overdueTotal > 0, href: "/records?overdue=1", hint: t("See the late ones") },
     ...(me.office
-      ? [{ label: t("In my office"), value: inbox.length, href: `/records?office=${encodeURIComponent(me.office.code)}&here=1&open=1`, hint: t("See my office's open records") }]
+      ? [{ label: t("In my office"), value: Number(totals.in_my_office) || 0, href: `/records?office=${encodeURIComponent(me.office.code)}&here=1&open=1`, hint: t("See my office's open records") }]
       : []),
-    { label: t("Logged this month"), value: thisMonth.length, href: `/records?from=${monthFrom}`, hint: t("See this month's records") },
+    { label: t("Logged this month"), value: Number(totals.this_month) || 0, href: `/records?from=${monthFrom}`, hint: t("See this month's records") },
   ];
 
   return (
