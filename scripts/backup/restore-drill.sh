@@ -81,7 +81,7 @@ chain_ok="yes"
 
 want_id="$(jq -r '.latest_audit.id // empty' "$manifest")"
 want_hash="$(jq -r '.latest_audit.row_hash // empty' "$manifest")"
-got_hash="$(psql "$local_db" -X -A -t -q -v ON_ERROR_STOP=1 -v id="${want_id:-0}" -c "select row_hash from public.rms_audit_log where id = :id")"
+got_hash="$(psql "$local_db" -X -A -t -q -v ON_ERROR_STOP=1 -v id="${want_id:-0}" <<<"select row_hash from public.rms_audit_log where id = :id")"
 hash_ok="yes"
 [[ -n "$want_hash" && "$got_hash" == "$want_hash" ]] || { hash_ok="NO"; failed=1; }
 
