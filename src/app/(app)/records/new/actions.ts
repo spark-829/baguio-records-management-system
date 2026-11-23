@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { BARANGAYS } from "@/lib/baguio-map";
 import { saveAttachment } from "@/lib/save-attachment";
 import { checkUpload } from "@/lib/upload-policy";
+import { artaDue, manilaDay } from "@/lib/arta";
+import { parseReplyTo } from "@/lib/reply-to";
 
 const RecordInput = z.object({
   direction: z.enum(["incoming", "outgoing"]),
@@ -24,6 +26,8 @@ const RecordInput = z.object({
   mode: z.enum(["walk-in", "courier", "mail", "email", "internal"]).optional(),
   document_date: z.string().optional(),
   due_date: z.string().optional(),
+  arta_class: z.enum(["simple", "complex", "highly_technical", "none"]).optional(),
+  in_reply_to: z.string().trim().max(40).optional(),
   forward_to: z.string().optional(),
   content_text: z.string().max(200000).optional(),
   ai_summary: z.string().max(2000).optional(),
@@ -53,6 +57,15 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
   }
 
   const supabase = await createClient();
+  let replyTo: string | null = null;
+  if (v.direction === "outgoing" && v.in_reply_to) {
+    const tn = parseReplyTo(v.in_reply_to);
+    if (!tn) return { error: "Type the tracking number of the received letter, for example IN-2026-0001." };
+    const { data: parent } = await supabase.from("rms_records").select("id, direction").eq("tracking_no", tn).is("deleted_at", null).maybeSingle();
+    if (!parent || parent.direction !== "incoming") return { error: "No received record with that tracking number that you can open. Check the number." };
+    replyTo = parent.id;
+  }
+  const dueDate = v.due_date ?? (v.arta_class ? artaDue(v.arta_class, manilaDay()) : null);
   const { data: rec, error } = await supabase
     .from("rms_records")
     .insert({
@@ -70,12 +83,14 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
       recipient_org: v.recipient_org ?? null,
       mode: v.mode ?? null,
       document_date: v.document_date ?? null,
-      due_date: v.due_date ?? null,
+      due_date: dueDate,
       origin_office_id: me.office_id,
       current_office_id: me.office_id,
       content_text: v.content_text ?? null,
       ai_summary: v.ai_summary ?? null,
       ...(v.barangay ? { barangay: v.barangay } : {}),
+      ...(v.arta_class ? { arta_class: v.arta_class } : {}),
+      ...(replyTo ? { in_reply_to: replyTo } : {}),
       created_by: me.id,
       tracking_no: "pending",
     })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { monthLabel, parseRetention, parseSummary, reportBounds, toBars } from "../src/lib/reports";
+import { monthLabel, onTimeSummary, parseOnTime, parseRetention, parseSummary, percent, reportBounds, toBars } from "../src/lib/reports";
 import { fetchPages } from "../src/lib/fetch-pages";
 
 describe("reportBounds", () => {
@@ -75,5 +75,24 @@ describe("fetchPages", () => {
     const r = await fetchPages<number>(async () => ({ data: null, error: new Error("x") }));
     expect(r.error).toBeTruthy();
     expect(r.data).toEqual([]);
+  });
+});
+
+describe("on-time report", () => {
+  it("drops junk and zero rows", () => {
+    expect(parseOnTime(null)).toEqual([]);
+    expect(parseOnTime([{ id: "a", name: "A", finished: "4", on_time: "3" }, { id: "b", name: "B", finished: 0, on_time: 0 }, null])).toEqual([{ id: "a", name: "A", finished: 4, on_time: 3 }]);
+  });
+  it("computes percentages", () => {
+    expect(percent(1, 3)).toBe(33);
+    expect(percent(0, 0)).toBeNull();
+  });
+  it("totals and sorts lowest first", () => {
+    const s = onTimeSummary([
+      { id: "a", name: "Zeta", finished: 4, on_time: 4 },
+      { id: "b", name: "Alpha", finished: 4, on_time: 1 },
+    ]);
+    expect(s).toMatchObject({ finished: 8, on_time: 5, pct: 63 });
+    expect(s.offices.map((o) => o.name)).toEqual(["Alpha", "Zeta"]);
   });
 });

@@ -89,3 +89,25 @@ export function parseRetention(data: unknown): { counts: Record<RetentionState, 
     rows: arr<RetentionRow>(d.rows),
   };
 }
+
+export type OnTimeRow = { id: string; name: string; finished: number; on_time: number };
+
+export function parseOnTime(data: unknown): OnTimeRow[] {
+  return arr<Record<string, unknown>>(data)
+    .filter((r) => r && typeof r === "object")
+    .map((r) => ({ id: String(r.id ?? ""), name: String(r.name ?? ""), finished: num(r.finished), on_time: num(r.on_time) }))
+    .filter((r) => r.finished > 0);
+}
+
+export function percent(part: number, whole: number): number | null {
+  return whole > 0 ? Math.round((part / whole) * 100) : null;
+}
+
+export function onTimeSummary(rows: OnTimeRow[]) {
+  const finished = rows.reduce((s, r) => s + r.finished, 0);
+  const on_time = rows.reduce((s, r) => s + r.on_time, 0);
+  const offices = rows
+    .map((r) => ({ ...r, pct: percent(r.on_time, r.finished) ?? 0 }))
+    .sort((a, b) => a.pct - b.pct || a.name.localeCompare(b.name));
+  return { finished, on_time, pct: percent(on_time, finished), offices };
+}

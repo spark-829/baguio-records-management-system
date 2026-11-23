@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CONF_HELP, CONF_LABEL, PRIORITY_LABEL, daysFromToday, dueText, fmtDate, fmtDateTime, officeName } from "@/lib/labels";
 import { allowedActions, isOverdue } from "@/lib/workflow";
 import { newestFirst } from "@/lib/history";
+import { ARTA_LABEL, artaProgress, artaText, isArtaClass, manilaDay } from "@/lib/arta";
 import type { Direction, Status, Priority, Confidentiality } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
 import { ActionForm, AttachForm, DeleteForm } from "./forms";
@@ -36,6 +37,8 @@ type Rec = {
   ai_summary: string | null;
   content_text: string | null;
   barangay?: string | null;
+  arta_class?: string | null;
+  in_reply_to?: string | null;
   current_office_id: string;
   origin_office_id: string;
   deleted_at: string | null;
@@ -75,7 +78,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const rec = data as unknown as Rec;
   const deleted = Boolean(rec.deleted_at);
 
-  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }] = await Promise.all([
+  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }, { data: parent }, { data: replyRows }] = await Promise.all([
     // Access history: every opened record is logged with who, when and from which IP (in parallel with the reads below).
     supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: rec.id }),
     supabase
@@ -87,7 +90,13 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     supabase.from("rms_offices").select("id, code, name").eq("is_active", true).order("code"),
     // Moved to the bin and restored (QA-013). Empty until the database update for it is run.
     supabase.rpc("rms_record_bin_history", { p_record_id: rec.id }),
+    // Reply links (empty until the database update for them is run)
+    rec.in_reply_to
+      ? supabase.from("rms_records").select("id, tracking_no").eq("id", rec.in_reply_to).is("deleted_at", null).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("rms_records").select("id, tracking_no").eq("in_reply_to", id).is("deleted_at", null).order("created_at"),
   ]);
+  const replies = (replyRows ?? []) as { id: string; tracking_no: string }[];
 
   // Same rule as rms_can_attach in the database, so the form only shows when the upload will be allowed (QA-010).
   const canAttach =
@@ -126,6 +135,13 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const open = !["completed", "released", "archived"].includes(rec.status);
   const due = open ? dueText(rec.due_date, undefined, t) : "";
   const isLate = open && Boolean(rec.due_date) && daysFromToday(rec.due_date!.slice(0, 10)) < 0;
+  const arta = isArtaClass(rec.arta_class) ? rec.arta_class : null;
+  // History is newest first, so the last finishing step is the oldest one.
+  const finStep = history.filter((r) => ["completed", "released", "archived"].includes(r.status)).at(-1);
+  const artaLine =
+    arta && arta !== "none" && rec.due_date
+      ? artaText(artaProgress({ registered: manilaDay(rec.created_at), due: rec.due_date.slice(0, 10), asOf: open ? manilaDay() : manilaDay(finStep?.created_at ?? new Date()), finished: !open }), t)
+      : "";
 
   const facts: [string, React.ReactNode][] = [
     [t("Received or sent out"), t(incoming ? "Received by the City" : "Sent out by the City")],
@@ -187,10 +203,34 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               {t("Now at")} <strong>{rec.current_office?.name}</strong>
             </span>
           </div>
+          {(parent || replies.length > 0) && (
+            <p className="mt-2 text-sm">
+              {parent && (
+                <>
+                  {t("In reply to")} <Link href={`/records/${parent.id}`} className="font-mono">{parent.tracking_no}</Link>
+                </>
+              )}
+              {parent && replies.length > 0 && " · "}
+              {replies.length > 0 && (
+                <>
+                  {t("Replies:")}{" "}
+                  {replies.map((r, i) => (
+                    <Fragment key={r.id}>
+                      {i > 0 && ", "}
+                      <Link href={`/records/${r.id}`} className="font-mono">{r.tracking_no}</Link>
+                    </Fragment>
+                  ))}
+                </>
+              )}
+            </p>
+          )}
         </div>
         <div className="grid w-full gap-2 sm:flex sm:w-auto">
           <Link href={`/records/${rec.id}/slip`} className="btn-secondary">{t("Print routing slip")}</Link>
           {incoming && <Link href={`/records/${rec.id}/receipt`} className="btn-secondary">{t("Print receipt for the sender")}</Link>}
+          {incoming && !deleted && me.role !== "viewer" && (
+            <Link href={`/records/new?reply_to=${encodeURIComponent(rec.tracking_no)}`} className="btn-secondary">{t("Write a reply")}</Link>
+          )}
           <Link href="/records" className="btn-secondary">{t("Back to records")}</Link>
         </div>
       </div>
@@ -232,6 +272,11 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                 {rec.due_date ? fmtDate(rec.due_date) : t("No due date")}
               </dd>
               {due && <dd className={`text-sm font-medium ${isLate ? "text-red-700" : "text-slate-700"}`}>{due[0].toUpperCase() + due.slice(1)}</dd>}
+              {arta && (
+                <dd className={`text-sm ${isLate ? "font-medium text-red-700" : "text-slate-700"}`}>
+                  {t(ARTA_LABEL[arta])}{artaLine ? ` · ${artaLine}` : ""}
+                </dd>
+              )}
             </div>
           </dl>
         </section>
