@@ -37,6 +37,8 @@ manifest="$work/x/manifest.json"
 (cd "$stack_dir" && supabase init --force </dev/null >/dev/null \
   && supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta >/dev/null)
 local_db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+# Superuser of the throwaway local stack: needed to load data into tables owned by Supabase's own roles.
+admin_db="postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres"
 
 # Roles often exist already in a fresh stack, so errors from roles.sql are tolerated.
 psql "$local_db" -X -q --file "$work/x/roles.sql" >/dev/null 2>&1 || echo "roles.sql reported errors (expected when roles already exist)."
@@ -60,7 +62,7 @@ if [[ -s "$work/skipped.txt" ]]; then
   grep -q '^public\.rms_' "$work/skipped.txt" && fail "RMS tables are missing after the schema restore: $(grep '^public\.rms_' "$work/skipped.txt" | tr '\n' ' ')"
   notice "Skipped data for tables the local stack does not have: $(tr '\n' ' ' <"$work/skipped.txt")"
 fi
-psql "$local_db" -X -q --single-transaction --variable ON_ERROR_STOP=1 \
+psql "$admin_db" -X -q --single-transaction --variable ON_ERROR_STOP=1 \
   --command 'SET session_replication_role = replica' --file "$work/data.filtered.sql" >/dev/null \
   || fail "Restoring the data into the local database failed."
 
