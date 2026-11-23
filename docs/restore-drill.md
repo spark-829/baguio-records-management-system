@@ -48,4 +48,4 @@ Use this when the live project is lost. Allow about 1 hour.
 
 | Date | Backup used | Duration | Rows match | Audit chain OK | Notes |
 | --- | --- | --- | --- | --- | --- |
-|  |  |  |  |  |  |
+| 2026-11-23 | `daily/rms-2026-11-23.tar.gz.gpg` | 51 s (download, decrypt, start database, restore, check) | Yes, every `rms_` table | Yes, and latest seal matches | First drill. Fixed on the way: auth tables only in the newer live Auth, data loaded as the local superuser, psql variables. |
