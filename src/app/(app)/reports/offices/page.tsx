@@ -33,6 +33,7 @@ export default async function OfficeWorkloadPage() {
       .from("rms_records")
       .select("id, status, due_date, created_at, current_office_id, routes:rms_routes(status, created_at, to_office_id)")
       .is("deleted_at", null)
+      .order("created_at", { ascending: false })
       .limit(5000),
     supabase.from("rms_offices").select("id, code, name").eq("is_active", true).order("name"),
   ]);
