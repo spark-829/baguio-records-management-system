@@ -1,6 +1,17 @@
 import type { Confidentiality, Priority, Role, Status } from "./types";
 
 const MANILA = "Asia/Manila";
+const DAY_FMT = new Intl.DateTimeFormat("en-CA", { timeZone: MANILA });
+const FMT = new Map<string, Intl.DateTimeFormat>();
+function fmt(kind: "d" | "dt", locale: string) {
+  const k = `${kind}|${locale}`;
+  let f = FMT.get(k);
+  if (!f) {
+    f = new Intl.DateTimeFormat(locale, kind === "d" ? { dateStyle: "medium", timeZone: MANILA } : { dateStyle: "medium", timeStyle: "short", timeZone: MANILA });
+    FMT.set(k, f);
+  }
+  return f;
+}
 
 export const STATUS_LABEL: Record<Status, string> = {
   registered: "Registered",
@@ -59,7 +70,7 @@ export function officeName(o: { code: string; name: string } | null | undefined)
 
 /** Whole days from today (Manila) to a date: negative when the date has passed. */
 export function daysFromToday(date: string, today = new Date()) {
-  const t = new Intl.DateTimeFormat("en-CA", { timeZone: MANILA }).format(today);
+  const t = DAY_FMT.format(today);
   return Math.round((Date.parse(date) - Date.parse(t)) / 86_400_000);
 }
 
@@ -88,12 +99,10 @@ export const STATUS_TONE: Record<Status, string> = {
 
 export function fmtDate(value: string | null | undefined, locale = "en-PH") {
   if (!value) return "—";
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: MANILA }).format(new Date(value));
+  return fmt("d", locale).format(new Date(value));
 }
 
 export function fmtDateTime(value: string | null | undefined, locale = "en-PH") {
   if (!value) return "—";
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short", timeZone: MANILA }).format(
-    new Date(value),
-  );
+  return fmt("dt", locale).format(new Date(value));
 }

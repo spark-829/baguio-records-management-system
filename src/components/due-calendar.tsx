@@ -140,7 +140,7 @@ export function DueCalendar({ items, today }: { items: DueItem[]; today: string 
               <h3 className="mt-4 text-base font-bold text-red-800">{t("Still late from earlier days ({n})", { n: stillLate.length })}</h3>
               <Items list={stillLate.slice(0, 5)} today={today} showDate />
               {stillLate.length > 5 && (
-                <Link href="/records?overdue=1" className="mt-1 inline-block py-2 font-medium text-brand-700 underline">
+                <Link prefetch={false} href="/records?overdue=1" className="mt-1 inline-block py-2 font-medium text-brand-700 underline">
                   {t("See all {n} late records", { n: stillLate.length })}
                 </Link>
               )}
@@ -162,7 +162,7 @@ function Items({ list, today, showDate = false }: { list: DueItem[]; today: stri
         const tone = toneOf(it.due_date, today);
         return (
           <li key={it.id}>
-            <Link href={`/records/${it.id}`} className="flex min-h-12 items-start gap-2 py-2 hover:bg-brand-50">
+            <Link prefetch={false} href={`/records/${it.id}`} className="flex min-h-12 items-start gap-2 py-2 hover:bg-brand-50">
               <span className={`mt-1.5 h-3 w-3 shrink-0 rounded-full ${TONE[tone].dot}`} aria-hidden />
               <span className="min-w-0">
                 <span className="block font-medium">{it.subject}</span>

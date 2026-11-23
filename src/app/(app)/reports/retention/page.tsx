@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABEL, fmtDate } from "@/lib/labels";
 import { PERMANENT_YEARS, type RetentionState } from "@/lib/retention";
 import { parseRetention } from "@/lib/reports";
+import { listSize } from "@/lib/list-size";
 import type { Status } from "@/lib/types";
 import { PrintButton } from "../../records/[id]/slip/print-button";
 
@@ -21,14 +22,15 @@ const STATE: Record<RetentionState, { label: string; tone: string }> = {
  * Retention schedule: how long each finished record must be kept, by document type,
  * counted from the day it was finished. Nothing is ever deleted from here; it only tells the records desk what to review.
  */
-export default async function RetentionPage({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
+export default async function RetentionPage({ searchParams }: { searchParams: Promise<{ show?: string; n?: string }> }) {
   const { t } = await getT();
   const me = await getProfile();
   if (me.role !== "admin" && me.role !== "records_officer") redirect("/reports");
-  const { show } = await searchParams;
+  const { show, n } = await searchParams;
+  const limit = listSize(n, 100, 500);
   const supabase = await createClient();
   const [{ data, error }, { data: types }] = await Promise.all([
-    supabase.rpc("rms_report_retention", { p_show: show && show in STATE ? show : null, p_limit: 500 }),
+    supabase.rpc("rms_report_retention", { p_show: show && show in STATE ? show : null, p_limit: limit }),
     supabase.from("rms_document_types").select("name, retention_years").eq("is_active", true).order("retention_years", { ascending: false }),
   ]);
   if (error) throw new Error("Retention totals failed");
@@ -39,7 +41,7 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
     <div className="space-y-5">
       <div className="no-print flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p><Link href="/reports">{t("← Reports")}</Link></p>
+          <p><Link prefetch={false} href="/reports">{t("← Reports")}</Link></p>
           <h1 className="text-2xl font-bold">{t("Retention schedule")}</h1>
           <p className="max-w-3xl text-slate-700">
             {t("How long each finished record must be kept, by kind of document, counted from the day it was finished. This page never deletes anything. It only lists what the records desk should review with the Records Officer and the disposal authority.")}
@@ -51,7 +53,7 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
 
       <div className="grid gap-3 sm:grid-cols-3">
         {(Object.keys(STATE) as RetentionState[]).map((k) => (
-          <Link key={k} href={show === k ? "/reports/retention" : `/reports/retention?show=${k}`} className={`card block border-l-4 p-4 no-underline ${STATE[k].tone} ${show === k ? "ring-2 ring-brand-700" : ""}`}>
+          <Link prefetch={false} key={k} href={show === k ? "/reports/retention" : `/reports/retention?show=${k}`} className={`card block border-l-4 p-4 no-underline ${STATE[k].tone} ${show === k ? "ring-2 ring-brand-700" : ""}`}>
             <div className="font-semibold">{t(STATE[k].label)}</div>
             <div className="text-3xl font-bold tabular-nums">{counts[k]}</div>
             <div className="text-sm underline">{t(show === k ? "Show all" : "Show only these")}</div>
@@ -61,6 +63,13 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
 
       {total > rows.length && (
         <p className="text-sm text-slate-600">{t("Showing the first {n} of {total}.", { n: rows.length, total })}</p>
+      )}
+      {total > rows.length && limit < 500 && (
+        <p className="no-print">
+          <Link prefetch={false} className="btn-secondary" href={`/reports/retention?${new URLSearchParams({ ...(show && show in STATE ? { show } : {}), n: String(limit + 100) })}`}>
+            {t("Show {n} more", { n: Math.min(100, total - rows.length) })}
+          </Link>
+        </p>
       )}
 
       <section className="card overflow-x-auto">
@@ -80,7 +89,7 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
               const permanent = r.years >= PERMANENT_YEARS;
               return (
               <tr key={r.id}>
-                <td className="whitespace-nowrap px-4 py-2 font-mono text-sm"><Link href={`/records/${r.id}`}>{r.tracking_no}</Link></td>
+                <td className="whitespace-nowrap px-4 py-2 font-mono text-sm"><Link prefetch={false} href={`/records/${r.id}`}>{r.tracking_no}</Link></td>
                 <td className="px-4 py-2">{r.subject}<div className="text-sm text-slate-600">{STATUS_LABEL[r.status as Status]} · {r.office_name}</div></td>
                 <td className="px-4 py-2 text-slate-700">{r.type_name}<div className="text-sm text-slate-600">{permanent ? t("Permanent") : r.years === 0 ? t("No keep period") : t("{n} years", { n: r.years })}</div></td>
                 <td className="whitespace-nowrap px-4 py-2">{fmtDate(r.finished_at)}</td>

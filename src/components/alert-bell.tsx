@@ -86,7 +86,7 @@ export function AlertBell({ officeCode }: { officeCode: string | null }) {
             <ul className="divide-y divide-slate-100">
               {data.rows.map((r) => (
                 <li key={r.id}>
-                  <Link href={`/records/${r.id}`} className="block min-h-12 px-4 py-2 no-underline hover:bg-brand-50">
+                  <Link prefetch={false} href={`/records/${r.id}`} className="block min-h-12 px-4 py-2 no-underline hover:bg-brand-50">
                     <span className="block font-mono text-xs text-slate-600">{r.tracking_no}</span>
                     <span className="block truncate text-sm font-medium">{r.subject}</span>
                     <span className="mt-1 flex flex-wrap gap-1">
@@ -100,9 +100,9 @@ export function AlertBell({ officeCode }: { officeCode: string | null }) {
           )}
           {base && (
             <div className="flex flex-wrap gap-x-4 border-t border-slate-200 px-4 text-sm">
-              <Link href={`${base}&open=1`} className="inline-flex min-h-11 items-center font-semibold">{t("See all in my office")}</Link>
+              <Link prefetch={false} href={`${base}&open=1`} className="inline-flex min-h-11 items-center font-semibold">{t("See all in my office")}</Link>
               {data && data.late > 0 && (
-                <Link href={`${base}&overdue=1`} className="inline-flex min-h-11 items-center font-semibold">{t("See the late ones")}</Link>
+                <Link prefetch={false} href={`${base}&overdue=1`} className="inline-flex min-h-11 items-center font-semibold">{t("See the late ones")}</Link>
               )}
             </div>
           )}

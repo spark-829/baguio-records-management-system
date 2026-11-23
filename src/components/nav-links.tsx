@@ -25,6 +25,7 @@ export function NavLinks({ links, phoneOnly = [] }: { links: NavLink[]; phoneOnl
     const active = isActive(path, l.href);
     return (
       <Link
+        prefetch={false}
         key={l.href}
         href={l.href}
         aria-current={active ? "page" : undefined}

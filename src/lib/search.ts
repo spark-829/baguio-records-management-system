@@ -38,7 +38,7 @@ async function rpc(supabase: SupabaseClient, f: SearchFilters, limit: number, ex
 }
 
 /** Runs the records search as the calling user (row-level security applies inside the database). */
-export async function searchRecords(supabase: SupabaseClient, f: SearchFilters, limit = 50, excludeConfidential = false) {
+export async function searchRecordsPage(supabase: SupabaseClient, f: SearchFilters, limit = 50, excludeConfidential = false) {
   const guesses = trackingGuesses(f.q);
   let rows = guesses
     ? (await Promise.all(guesses.map((q) => rpc(supabase, { ...f, q }, limit, excludeConfidential)))).flat()
@@ -52,7 +52,9 @@ export async function searchRecords(supabase: SupabaseClient, f: SearchFilters, 
   if (!guesses && rows.length === 0 && words.length > 1 && !/\b(or|OR)\b|"/.test(f.q!)) {
     rows = await rpc(supabase, { ...f, q: words.join(" or ") }, limit, excludeConfidential);
   }
-  return rows.filter((r) => {
+  // More may exist in the database when it returned a full page, even if the filters below drop rows
+  const more = rows.length >= limit;
+  const kept = rows.filter((r) => {
     const day = manilaDay(r.created_at);
     if (f.from && day < f.from) return false;
     if (f.to && day > f.to) return false;
@@ -61,6 +63,11 @@ export async function searchRecords(supabase: SupabaseClient, f: SearchFilters, 
     if (f.here && f.office && r.current_office.toUpperCase() !== f.office.toUpperCase()) return false;
     return true;
   });
+  return { rows: kept, more };
+}
+
+export async function searchRecords(supabase: SupabaseClient, f: SearchFilters, limit = 50, excludeConfidential = false) {
+  return (await searchRecordsPage(supabase, f, limit, excludeConfidential)).rows;
 }
 
 export function filtersFromParams(sp: Record<string, string | string[] | undefined>): SearchFilters {
