@@ -190,7 +190,7 @@ export function AttachForm({ recordId }: { recordId: string }) {
       {prep.fields}
       {state?.error && <p className="text-sm text-red-700">{t(state.error, state.vars)}</p>}
       {state?.ok && <p className="text-sm text-emerald-700">{t(state.ok)}</p>}
-      <button className="btn-secondary w-full" disabled={pending || prep.busy}>{t(pending ? "Uploading…" : "Attach file")}</button>
+      <button className="btn-secondary w-full" disabled={pending || prep.busy || prep.tooBig}>{t(pending ? "Uploading…" : "Attach file")}</button>
     </form>
   );
 }

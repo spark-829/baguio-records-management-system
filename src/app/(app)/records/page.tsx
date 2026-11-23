@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/session";
 import { filtersFromParams, filtersToParams, searchRecordsPage } from "@/lib/search";
 import { STATUS_LABEL, fmtDate, partyLabel } from "@/lib/labels";
-import { listSize } from "@/lib/list-size";
+import { foundText, listSize } from "@/lib/list-size";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -36,7 +36,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         <div>
           <h1 className="text-2xl font-bold">{t("Records")}</h1>
           <p className="text-sm text-slate-600">
-            {t(onlyOpen ? (rows.length === 1 ? "{n} open record found" : "{n} open records found") : rows.length === 1 ? "{n} record found" : "{n} records found", { n: rows.length })}
+            {t(foundText(rows.length, page.more, onlyOpen), { n: rows.length })}
             {onlyOpen && (
               <>
                 {" · "}

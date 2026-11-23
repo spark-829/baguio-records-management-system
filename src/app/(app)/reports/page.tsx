@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { STATUS_LABEL, fmtDate } from "@/lib/labels";
+import { STATUS_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import type { Status } from "@/lib/types";
 import { monthLabel, onTimeSummary, parseOnTime, parseSummary, reportBounds, toBars } from "@/lib/reports";
 import { PrintButton } from "../records/[id]/slip/print-button";
@@ -45,7 +45,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const s = parseSummary(data);
   const onTime = onErr ? null : onTimeSummary(parseOnTime(onData));
   const months = s.by_month.map((m) => ({ label: monthLabel(m.key), n: m.n }));
-  const printedAt = new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Manila" }).format(new Date());
+  const printedAt = fmtDateTime(new Date().toISOString());
 
   return (
     <div className="space-y-4">

@@ -97,12 +97,15 @@ export const STATUS_TONE: Record<Status, string> = {
   archived: "bg-zinc-200 text-zinc-700",
 };
 
+/** ICU versions differ on the space before AM/PM (U+202F or U+00A0); the server and the browser can disagree, so use a plain space. */
+const plainSpaces = (s: string) => s.replace(/[\u202F\u00A0]/g, " ");
+
 export function fmtDate(value: string | null | undefined, locale = "en-PH") {
   if (!value) return "—";
-  return fmt("d", locale).format(new Date(value));
+  return plainSpaces(fmt("d", locale).format(new Date(value)));
 }
 
 export function fmtDateTime(value: string | null | undefined, locale = "en-PH") {
   if (!value) return "—";
-  return fmt("dt", locale).format(new Date(value));
+  return plainSpaces(fmt("dt", locale).format(new Date(value)));
 }

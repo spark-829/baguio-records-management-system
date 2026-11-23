@@ -110,10 +110,12 @@ export function useUploadPrep(fileRef: RefObject<HTMLInputElement | null>) {
         <p className="text-sm text-slate-600">{t("Compressed {from} → {to}", { from: formatBytes(info.from), to: formatBytes(info.to) })}</p>
       )}
       {info && info.to > MAX_UPLOAD_BYTES && (
-        <p role="alert" className="text-sm text-red-700">{t("This file is larger than 10 MB. Choose a smaller file, or untick “Keep full quality”.")}</p>
+        <p role="alert" className="text-sm text-red-700">{t("This file is larger than 10 MB. Please upload a smaller file or a scan at a lower resolution.")}</p>
       )}
     </>
   );
 
-  return { prepare, reset, busy, fields, controls };
+  // Size after compression: this is what would be sent, so block the submit when it is over the limit.
+  const tooBig = Boolean(info && info.to > MAX_UPLOAD_BYTES);
+  return { prepare, reset, busy, tooBig, fields, controls };
 }
