@@ -13,7 +13,7 @@ const fmt = new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeStyle: "
  * When the admin setting is on, PDFs and images are returned stamped "Viewed by <name>, <date>";
  * otherwise the user gets a link that expires in 60 seconds.
  */
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await apiContext();
   if ("error" in ctx) return ctx.error;
   const { supabase, me } = ctx;
@@ -21,10 +21,26 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!UUID.test(id)) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const { data: att } = await supabase
     .from("rms_attachments")
-    .select("id, record_id, file_path, file_name, mime_type")
+    .select("id, record_id, file_path, file_name, mime_type, thumb_path")
     .eq("id", id)
     .maybeSingle();
   if (!att) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // Thumbnail for the record page. Not logged here: the record page already logs view_record (page.tsx:80).
+  if (new URL(req.url).searchParams.get("thumb") === "1") {
+    if (!att.thumb_path) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    const { data: tb, error: tErr } = await supabase.storage.from("rms-attachments").download(att.thumb_path);
+    if (tErr || !tb) return NextResponse.json({ error: "Could not open file" }, { status: 500 });
+    return new NextResponse(await tb.arrayBuffer(), {
+      headers: {
+        "content-type": "image/jpeg",
+        "content-disposition": "inline",
+        "cache-control": "private, max-age=300",
+        "x-content-type-options": "nosniff",
+        "content-security-policy": "default-src 'none'; sandbox",
+      },
+    });
+  }
 
   const { data: setting } = await supabase.from("rms_settings").select("value").eq("key", "watermark_downloads").maybeSingle();
   const stamp = setting?.value !== false;

@@ -7,6 +7,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { PDF_NOTE } from "@/lib/image-size";
 import { pdfFirstPageToJpeg } from "@/lib/pdf-first-page";
 import { shrinkForAi } from "@/lib/shrink-image";
+import { useUploadPrep } from "@/components/use-upload-prep";
 import { registerRecord } from "./actions";
 
 type Opt = { id: string; name: string };
@@ -65,6 +66,14 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
   const [preview, setPreview] = useState<string | null>(null);
   const [scanName, setScanName] = useState<string | null>(null);
 
+  const prep = useUploadPrep(fileRef);
+
+  // React 19 resets uncontrolled inputs after an action that returns an error, so drop the stale preview too.
+  useEffect(() => {
+    if (state && !fileRef.current?.files?.length) clearScan();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
   function showPreview(file: File | undefined) {
@@ -81,9 +90,11 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     fileRef.current.files = dt.files;
     e.target.value = "";
     showPreview(scan);
+    void prep.prepare(scan);
   }
 
   function clearScan() {
+    prep.reset();
     if (fileRef.current) fileRef.current.value = "";
     if (captureRef.current) captureRef.current.value = "";
     setPreview(null);
@@ -182,7 +193,9 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         <input id="scan" ref={captureRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={takeScan} />
         <p className="text-sm text-slate-600">{t("Scans go straight to the secure record and aren't kept on this device.")}</p>
         <label htmlFor="file" className="label">{t("Or upload a file from the office scanner")}</label>
-        <input id="file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" onChange={(e) => showPreview(e.target.files?.[0])} />
+        <input id="file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" onChange={(e) => { const f = e.target.files?.[0]; showPreview(f); void prep.prepare(f); }} />
+        {prep.controls}
+        {prep.fields}
         <p className="text-sm text-slate-600">{t("PDF, JPG or PNG from a scanner, up to 10 MB. The file is kept with the record.")}</p>
         <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="checkbox mt-0.5" />
@@ -331,7 +344,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-xl border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
           {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{t(state.error)}</p>}
           <Link href="/records" className="btn-secondary">{t("Cancel")}<span className="hidden sm:inline">{t(" (nothing is saved)")}</span></Link>
-          <button className="btn-primary" disabled={pending}>{pending ? t("Saving…") : <>{t("Save")}<span className="hidden sm:inline">{t(" and get tracking number")}</span></>}</button>
+          <button className="btn-primary" disabled={pending || prep.busy}>{pending ? t("Saving…") : <>{t("Save")}<span className="hidden sm:inline">{t(" and get tracking number")}</span></>}</button>
         </div>
       </section>
     </form>

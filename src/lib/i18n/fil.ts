@@ -722,4 +722,10 @@ export const FIL: Record<string, string> = {
   "Showing the {n} oldest of {total}.": "Ipinapakita ang {n} pinakamatagal sa {total}.",
   "See all late records": "Tingnan lahat ng huling record",
   "Showing the first {n} of {total}.": "Ipinapakita ang unang {n} sa {total}.",
+  "Keep full quality (larger file)": "Panatilihin ang buong kalidad (mas malaking file)",
+  "Preparing the file…": "Inihahanda ang file…",
+  "Compressed {from} → {to}": "Pinaliit mula {from} → {to}",
+  "This file is larger than 10 MB. Choose a smaller file, or untick “Keep full quality”.": "Lampas sa 10 MB ang file na ito. Pumili ng mas maliit na file, o alisin ang check sa “Panatilihin ang buong kalidad”.",
+  "This file is already attached as {name}.": "Nakakabit na ang file na ito bilang {name}.",
+  "The record was saved, but the file could not be attached. Attach it again under Attachments below.": "Na-save ang record, pero hindi naikabit ang file. Ikabit itong muli sa Attachments sa ibaba.",
 };

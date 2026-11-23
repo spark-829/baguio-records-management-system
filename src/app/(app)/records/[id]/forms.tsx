@@ -3,6 +3,7 @@
 import { useT } from "@/lib/i18n/client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { useUploadPrep } from "@/components/use-upload-prep";
 import { ACTIONS, type ActionKind } from "@/lib/workflow";
 import { addAttachment, deleteRecord, recordAction } from "./actions";
 
@@ -153,14 +154,22 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
 export function AttachForm({ recordId }: { recordId: string }) {
   const t = useT();
   const [state, action, pending] = useActionState(addAttachment, undefined);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const prep = useUploadPrep(fileRef);
+  useEffect(() => {
+    if (state) prep.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
   return (
     <form action={action} className="space-y-2">
       <input type="hidden" name="record_id" value={recordId} />
       <label className="label" htmlFor="attach-file">{t("Add a scanned file (PDF, JPG or PNG)")}</label>
-      <input id="attach-file" name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" required />
-      {state?.error && <p className="text-sm text-red-700">{t(state.error)}</p>}
+      <input id="attach-file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" required onChange={(e) => void prep.prepare(e.target.files?.[0])} />
+      {prep.controls}
+      {prep.fields}
+      {state?.error && <p className="text-sm text-red-700">{t(state.error, state.vars)}</p>}
       {state?.ok && <p className="text-sm text-emerald-700">{t(state.ok)}</p>}
-      <button className="btn-secondary w-full" disabled={pending}>{t(pending ? "Uploading…" : "Attach file")}</button>
+      <button className="btn-secondary w-full" disabled={pending || prep.busy}>{t(pending ? "Uploading…" : "Attach file")}</button>
     </form>
   );
 }
