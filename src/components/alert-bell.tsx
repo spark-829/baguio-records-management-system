@@ -78,7 +78,9 @@ export function AlertBell({ officeCode }: { officeCode: string | null }) {
       {open && (
         <div id="alert-panel" className="card absolute right-0 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] text-left text-slate-900">
           <h2 className="border-b border-slate-200 px-4 py-3 text-base font-bold">{t("Needs your office's attention")}</h2>
-          {!data || data.rows.length === 0 ? (
+          {!data ? (
+            <p className="px-4 py-3 text-sm text-slate-700" role="status">{t("Loading…")}</p>
+          ) : data.rows.length === 0 ? (
             <p className="px-4 py-3 text-sm text-slate-700">{t("Nothing new. You are all caught up.")}</p>
           ) : (
             <ul className="divide-y divide-slate-100">
