@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { aiError, aiExcludesConfidential, apiContext } from "@/lib/api";
-import { askAssistant, type ChatTurn } from "@/lib/assistant";
+import { askAssistant, chatSources, type ChatTurn } from "@/lib/assistant";
 import { aiModel } from "@/lib/ai";
+import { citedRecords, stripRecordLinks } from "@/lib/chat-refs";
 import { demoChat, isAiDemo } from "@/lib/ai-demo";
 
 export async function POST(req: Request) {
@@ -36,12 +37,14 @@ export async function POST(req: Request) {
         result = await demoChat(ctx.supabase, question, exclude, ctx.me.office?.code);
       }
     }
+    const answer = stripRecordLinks(result.answer);
+    const sources = await chatSources(ctx.supabase, citedRecords(answer, result.records), exclude);
     await ctx.supabase.rpc("rms_log_event", {
       p_table: "ai_chat",
       p_row_id: ctx.me.id,
-      p_data: { model: demo ? "demo" : aiModel(), question, records: result.records.map((r) => r.tracking_no) },
+      p_data: { model: demo ? "demo" : aiModel(), question, records: result.records.map((r) => r.tracking_no), cited: sources.map((s) => s.tracking_no) },
     });
-    return NextResponse.json({ ...result, demo, note });
+    return NextResponse.json({ answer, sources, demo, note });
   } catch (err) {
     return aiError(err);
   }

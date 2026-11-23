@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { chatAnswerRequest } from "./ai";
+import type { ChatSource } from "./chat-refs";
 import { getSearchFilters, runAi, type AiOutcome } from "./ai-gate";
 import { partyLabel } from "./labels";
 import { searchRecords } from "./search";
@@ -50,7 +51,6 @@ export async function askAssistant(
 
   const context: Record<string, unknown>[] = rows.slice(0, 10).map((r) => ({
     tracking_no: r.tracking_no,
-    link: `/records/${r.id}`,
     subject: r.subject,
     status: r.status,
     current_office: r.current_office,
@@ -78,7 +78,6 @@ export async function askAssistant(
       used.set(rec.id, rec.tracking_no);
       context.unshift({
         tracking_no: rec.tracking_no,
-        link: `/records/${rec.id}`,
         subject: rec.subject,
         description: rec.description,
         status: rec.status,
@@ -95,4 +94,21 @@ export async function askAssistant(
   const out = await runAi(supabase, chatAnswerRequest(me, turns, question, JSON.stringify(context), excludeConfidential));
   if (out.mode === "demo") return out;
   return { mode: "ai", data: { answer: out.data.answer, records: [...used].map(([id, tracking_no]) => ({ id, tracking_no })) } };
+}
+
+/** Cards for the Sources panel. Re-read through the user's own client so RLS decides what is shown. */
+export async function chatSources(supabase: SupabaseClient, cited: { id: string }[], excludeConfidential: boolean): Promise<ChatSource[]> {
+  if (cited.length === 0) return [];
+  const { data } = await supabase
+    .from("rms_records")
+    .select("id, tracking_no, subject, status, due_date, confidentiality, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
+    .in("id", cited.slice(0, 10).map((c) => c.id))
+    .is("deleted_at", null);
+  const byId = new Map((data ?? []).map((r) => [r.id as string, r]));
+  return cited.flatMap((c) => {
+    const r = byId.get(c.id);
+    if (!r || (excludeConfidential && r.confidentiality === "confidential")) return [];
+    const o = Array.isArray(r.current_office) ? r.current_office[0] : r.current_office;
+    return [{ id: r.id, tracking_no: r.tracking_no, subject: r.subject, status: r.status, due_date: r.due_date, office: o?.name ?? null }];
+  }).map((s, i) => ({ ...s, n: i + 1 }));
 }
