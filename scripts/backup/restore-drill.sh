@@ -37,12 +37,34 @@ manifest="$work/x/manifest.json"
 (cd "$stack_dir" && supabase init --force </dev/null >/dev/null \
   && supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta >/dev/null)
 local_db="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+# Superuser of the throwaway local stack: needed to load data into tables owned by Supabase's own roles.
+admin_db="postgresql://supabase_admin:postgres@127.0.0.1:54322/postgres"
 
 # Roles often exist already in a fresh stack, so errors from roles.sql are tolerated.
 psql "$local_db" -X -q --file "$work/x/roles.sql" >/dev/null 2>&1 || echo "roles.sql reported errors (expected when roles already exist)."
-psql "$local_db" -X -q --single-transaction --variable ON_ERROR_STOP=1 \
-  --file "$work/x/schema.sql" --command 'SET session_replication_role = replica' --file "$work/x/data.sql" >/dev/null \
-  || fail "Restore into the local database failed."
+psql "$local_db" -X -q --single-transaction --variable ON_ERROR_STOP=1 --file "$work/x/schema.sql" >/dev/null \
+  || fail "Restoring the schema into the local database failed."
+
+# The live project can run a newer Supabase Auth than the local stack, with internal auth tables the
+# local stack does not have yet. Skip data for tables that do not exist locally and list them.
+psql "$local_db" -X -A -t -q -v ON_ERROR_STOP=1 -c \
+  "select table_schema || '.' || table_name from information_schema.tables where table_type = 'BASE TABLE'" >"$work/tables.txt"
+awk -v skipped="$work/skipped.txt" '
+  NR == FNR { have[$0] = 1; next }
+  /^COPY / && / FROM stdin;$/ {
+    t = $2; gsub(/"/, "", t)
+    if (!(t in have)) { drop = 1; print t >> skipped; next }
+  }
+  drop { if ($0 == "\\.") drop = 0; next }
+  { print }
+' "$work/tables.txt" "$work/x/data.sql" >"$work/data.filtered.sql"
+if [[ -s "$work/skipped.txt" ]]; then
+  grep -q '^public\.rms_' "$work/skipped.txt" && fail "RMS tables are missing after the schema restore: $(grep '^public\.rms_' "$work/skipped.txt" | tr '\n' ' ')"
+  notice "Skipped data for tables the local stack does not have: $(tr '\n' ' ' <"$work/skipped.txt")"
+fi
+psql "$admin_db" -X -q --single-transaction --variable ON_ERROR_STOP=1 \
+  --command 'SET session_replication_role = replica' --file "$work/data.filtered.sql" >/dev/null \
+  || fail "Restoring the data into the local database failed."
 
 failed=0
 rows=""
@@ -59,7 +81,7 @@ chain_ok="yes"
 
 want_id="$(jq -r '.latest_audit.id // empty' "$manifest")"
 want_hash="$(jq -r '.latest_audit.row_hash // empty' "$manifest")"
-got_hash="$(psql "$local_db" -X -A -t -q -v ON_ERROR_STOP=1 -v id="${want_id:-0}" -c "select row_hash from public.rms_audit_log where id = :id")"
+got_hash="$(psql "$local_db" -X -A -t -q -v ON_ERROR_STOP=1 -v id="${want_id:-0}" <<<"select row_hash from public.rms_audit_log where id = :id")"
 hash_ok="yes"
 [[ -n "$want_hash" && "$got_hash" == "$want_hash" ]] || { hash_ok="NO"; failed=1; }
 

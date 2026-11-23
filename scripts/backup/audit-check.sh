@@ -29,7 +29,7 @@ if r2_configured; then
     old_hash="$(jq -r '.row_hash' "$tmp/latest.json")"
     [[ "$old_id" =~ ^[0-9]+$ ]] || fail "Saved fingerprint has a bad id."
     now_hash="$(psql "$db" -X -A -t -q -v ON_ERROR_STOP=1 -v id="$old_id" \
-      -c "select row_hash from public.rms_audit_log where id = :id")"
+      <<<"select row_hash from public.rms_audit_log where id = :id")"
     if [[ -z "$now_hash" ]]; then
       fail "History was rewritten: audit entry $old_id (saved off-site) no longer exists."
     elif [[ "$now_hash" != "$old_hash" ]]; then
