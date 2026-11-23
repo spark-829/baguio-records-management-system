@@ -42,6 +42,7 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
       .select("id, tracking_no, subject, status, doc_type:rms_document_types(name, retention_years), current_office:rms_offices!rms_records_current_office_id_fkey(name), routes:rms_routes(status, created_at)")
       .is("deleted_at", null)
       .in("status", FINISHED)
+      .order("created_at")
       .limit(5000),
     supabase.from("rms_document_types").select("name, retention_years").eq("is_active", true).order("retention_years", { ascending: false }),
   ]);

@@ -58,7 +58,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
     .from("rms_records")
     .select("id, status, direction, created_at, due_date, tracking_no, subject, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
     .is("deleted_at", null)
-    .order("created_at");
+    .order("created_at", { ascending: false });
   if (from) query = query.gte("created_at", from);
   if (to) query = query.lt("created_at", new Date(new Date(to).getTime() + 864e5).toISOString());
   const { data } = await query.limit(5000);
