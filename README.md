@@ -22,6 +22,10 @@ A working demo of a city government Records Management System: register incoming
 | Extra: security | Access history, account lockout, idle sign-out, optional two-step sign-in, Public/Internal/Confidential levels, Viewer role, deleted-records bin, "Viewed by" stamped downloads |
 | Extra: Data Privacy Act | Privacy notice at sign-in, masked names in lists, "who accessed this person's records" report, Confidential kept out of AI |
 
+## Resilience
+
+Nightly encrypted backups to Cloudflare R2, a monthly restore drill, a daily audit-log check, and an uptime check every 15 minutes. See [backups](docs/backups.md), [restore drill](docs/restore-drill.md), [recovery runbook](docs/recovery-runbook.md) and [paper fallback](docs/paper-fallback.md).
+
 ## Demo accounts
 
 All use the password `Demo@2026`.

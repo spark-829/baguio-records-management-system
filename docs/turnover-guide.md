@@ -27,7 +27,7 @@ The app has no service-role key. Without `SPARK_DEEPSEEK_API`, or when the 0.33 
 - **Admin lost their authenticator phone:** in Supabase, Authentication > Users, remove the user's MFA factor, then have them set it up again on the Security page.
 - **Data Privacy Act request:** Access history > "Who accessed this person's records?". Export by printing the page.
 - **Audit integrity alert (red bar on Audit log):** someone changed the log directly in the database. Note the entry number, compare with the latest backup and report to the DPO.
-- **Backups:** Supabase daily backups; download a CSV export monthly for paper filing if required.
+- **Backups:** the free Supabase plan has no downloadable backups. The system makes its own nightly encrypted backups. See `docs/backups.md` (setup), `docs/recovery-runbook.md` (what to do when something fails) and `docs/paper-fallback.md` (working during an outage).
 - **Change the database:** add a new file in `supabase/migrations/`, apply it, then run `supabase/tests/access_rules.sql` to confirm access rules still hold.
 
 ## Checks before each release

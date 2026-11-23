@@ -1,0 +1,31 @@
+name: Uptime check
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      BASE: https://baguio-rms.vicsonyaris29.workers.dev
+    steps:
+      - name: Check health and tracking page
+        run: |
+          check() { # url, expected body text (optional)
+            for i in 1 2 3; do
+              body="$(curl -sS --max-time 20 -w '\n%{http_code}' "$1" 2>/dev/null)" || body=$'\n000'
+              code="${body##*$'\n'}"
+              if [ "$code" = "200" ] && { [ -z "${2:-}" ] || grep -q "$2" <<<"$body"; }; then
+                echo "OK $1"; return 0
+              fi
+              echo "Try $i failed for $1 (HTTP $code)"; sleep $((i * 10))
+            done
+            return 1
+          }
+          fail=0
+          check "$BASE/api/health" '"ok":true' || fail=1
+          check "$BASE/track" || fail=1
+          exit $fail

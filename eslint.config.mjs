@@ -20,6 +20,7 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "supabase/tools/**", // one-off Node helper scripts, not app code
     ],
   },
 ];
