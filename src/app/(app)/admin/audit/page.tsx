@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { ROLE_LABEL, STATUS_LABEL, fmtDateTime } from "@/lib/labels";
-import { routeText, type RouteLookups } from "@/lib/audit-text";
+import { routeText, checkCoverageText, type CheckInfo, type RouteLookups } from "@/lib/audit-text";
 import type { Role, Status } from "@/lib/types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -75,6 +75,12 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
     supabase.rpc("rms_verify_audit_chain"),
   ]);
   const names = new Map((people ?? []).map((p) => [p.id, p.full_name]));
+  // After the verify call, so the coverage numbers include what it just checked. Left out if it fails.
+  let coverage: ReturnType<typeof checkCoverageText> | null = null;
+  if (!chain.error && chain.data === null) {
+    const { data: info, error: infoErr } = await supabase.rpc("rms_audit_check_info");
+    if (!infoErr && info) coverage = checkCoverageText(info as CheckInfo, fmtDateTime);
+  }
 
   // Routing rows only hold ids; look up tracking numbers and office names in batches.
   const routeRows = (rows ?? []).filter((r) => r.table_name === "rms_routes");
@@ -116,7 +122,8 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         <p className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-900">{t("Could not check the log's integrity:")} {chain.error.message}</p>
       ) : chain.data === null ? (
         <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          {t("Integrity check passed. Each entry is sealed with a digital fingerprint of the one before it, and every seal still matches, so no entry has been changed or removed.")}
+          {t("Integrity check passed. Each entry is sealed with a digital fingerprint of the one before it, and the chain has no gaps, so no entry has been removed.")}
+          {coverage && <> {t(coverage.key, coverage.vars)}</>}
         </p>
       ) : (
         <p className="rounded-lg border border-l-4 border-red-300 border-l-red-700 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
