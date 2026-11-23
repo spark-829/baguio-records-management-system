@@ -25,7 +25,7 @@ export async function recordAction(_prev: ActState, form: FormData): Promise<Act
   const supabase = await createClient();
   const { data: rec } = await supabase
     .from("rms_records")
-    .select("id, status, direction, current_office_id")
+    .select("id, tracking_no, status, direction, current_office_id")
     .eq("id", recordId)
     .maybeSingle();
   if (!rec) return { error: "Record not found" };
@@ -67,6 +67,11 @@ export async function recordAction(_prev: ActState, form: FormData): Promise<Act
     return { error: error.message };
   }
   revalidatePath(`/records/${rec.id}`);
+  // QR receive: redirect on the server after the save so the page shows the confirmation (no client race).
+  if (kind === "receive" && form.get("from") === "qr") {
+    revalidatePath(`/r/${rec.tracking_no}`);
+    redirect(`/r/${encodeURIComponent(rec.tracking_no)}?received=1`);
+  }
   return { ok: "Saved." };
 }
 

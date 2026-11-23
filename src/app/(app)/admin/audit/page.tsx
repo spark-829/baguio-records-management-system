@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { ROLE_LABEL, STATUS_LABEL, fmtDateTime } from "@/lib/labels";
-import { routeText, type RouteLookups } from "@/lib/audit-text";
+import { integrityErrorText, routeText, type RouteLookups } from "@/lib/audit-text";
 import type { Role, Status } from "@/lib/types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -74,6 +74,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
     supabase.from("rms_profiles").select("id, full_name"),
     supabase.rpc("rms_verify_audit_chain"),
   ]);
+  if (chain.error) console.error("rms_verify_audit_chain failed:", chain.error);
   const names = new Map((people ?? []).map((p) => [p.id, p.full_name]));
 
   // Routing rows only hold ids; look up tracking numbers and office names in batches.
@@ -113,7 +114,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         </form>
       </div>
       {chain.error ? (
-        <p className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-900">{t("Could not check the log's integrity:")} {chain.error.message}</p>
+        <p className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-900">{t(integrityErrorText(chain.error))}</p>
       ) : chain.data === null ? (
         <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           {t("Integrity check passed. Each entry is sealed with a digital fingerprint of the one before it, and every seal still matches, so no entry has been changed or removed.")}

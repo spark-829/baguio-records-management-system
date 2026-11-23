@@ -368,7 +368,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-xl border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
           {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{t(state.error)}</p>}
           <Link href="/records" className="btn-secondary">{t("Cancel")}<span className="hidden sm:inline">{t(" (nothing is saved)")}</span></Link>
-          <button className="btn-primary" disabled={pending || prep.busy}>{pending ? t("Saving…") : <>{t("Save")}<span className="hidden sm:inline">{t(" and get tracking number")}</span></>}</button>
+          <button className="btn-primary" disabled={pending || prep.busy || prep.tooBig}>{pending ? t("Saving…") : <>{t("Save")}<span className="hidden sm:inline">{t(" and get tracking number")}</span></>}</button>
         </div>
       </section>
     </form>

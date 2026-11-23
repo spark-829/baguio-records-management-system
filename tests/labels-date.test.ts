@@ -19,4 +19,11 @@ describe("date formatting", () => {
   it("includes the time", () => {
     expect(fmtDateTime("2026-11-23T20:00:00Z")).toMatch(/\d:\d\d/);
   });
+  it("uses plain spaces only, so server and browser text match", () => {
+    expect(fmtDateTime("2026-11-23T20:00:00Z")).not.toMatch(/[\u202F\u00A0]/);
+  });
+  it("does not depend on the machine time zone", () => {
+    // 16:30 UTC is already the next day in Manila (UTC+8)
+    expect(fmtDateTime("2026-11-23T16:30:00Z")).toContain("Nov 24, 2026");
+  });
 });

@@ -1,20 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState } from "react";
 import { useT } from "@/lib/i18n/client";
 import { ScanQrButton } from "@/components/scan-qr-button";
 import { recordAction } from "../../records/[id]/actions";
 
 export function ReceiveForm({ recordId, trackingNo, officeName, onBehalf }: { recordId: string; trackingNo: string; officeName: string; onBehalf: boolean }) {
   const t = useT();
-  const router = useRouter();
   const [state, action, pending] = useActionState(recordAction, undefined);
-
-  useEffect(() => {
-    if (state?.ok) router.replace(`/r/${encodeURIComponent(trackingNo)}?received=1`, { scroll: false });
-  }, [state, router, trackingNo]);
 
   if (state?.ok) {
     return (
@@ -32,6 +26,7 @@ export function ReceiveForm({ recordId, trackingNo, officeName, onBehalf }: { re
     <form action={action} className="space-y-3">
       <input type="hidden" name="record_id" value={recordId} />
       <input type="hidden" name="kind" value="receive" />
+      <input type="hidden" name="from" value="qr" />
       <input type="hidden" name="action_taken" value="Received (QR scan)" />
       <div>
         <label htmlFor="remarks" className="label">{t("Where is the paper now, or a note (optional)")}</label>
