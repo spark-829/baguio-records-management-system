@@ -362,7 +362,7 @@ export async function demoChat(
     }
     const { data: steps } = await supabase.from("rms_routes").select("status, action_taken, remarks").eq("record_id", rec.id).order("created_at");
     return {
-      answer: `Summary of [${rec.tracking_no}](/records/${rec.id}):\n${demoSummary({ ...rec, sender_name: null, recipient_name: null, sender_org: rec.sender_name || rec.sender_org ? partyLabel(rec.sender_name, rec.sender_org) : null, recipient_org: rec.recipient_name || rec.recipient_org ? partyLabel(rec.recipient_name, rec.recipient_org) : null }, steps ?? [])}`,
+      answer: `Summary of ${rec.tracking_no}:\n${demoSummary({ ...rec, sender_name: null, recipient_name: null, sender_org: rec.sender_name || rec.sender_org ? partyLabel(rec.sender_name, rec.sender_org) : null, recipient_org: rec.recipient_name || rec.recipient_org ? partyLabel(rec.recipient_name, rec.recipient_org) : null }, steps ?? [])}`,
       records: [{ id: rec.id, tracking_no: rec.tracking_no }],
     };
   }
@@ -395,7 +395,7 @@ export async function demoChat(
     };
   }
   const line = (r: (typeof rows)[number]) =>
-    `- [${r.tracking_no}](/records/${r.id}) ${r.subject}: ${STATUS_TEXT[r.status] ?? r.status} at the ${officeName.get(r.current_office) ?? r.current_office}` +
+    `- ${r.tracking_no} ${r.subject}: ${STATUS_TEXT[r.status] ?? r.status} at the ${officeName.get(r.current_office) ?? r.current_office}` +
     // Names are shortened here as in every list (Data Privacy Act); the record page shows them in full.
     (r.direction === "incoming" && (r.sender_name || r.sender_org)
       ? `, from ${partyLabel(r.sender_name, r.sender_org)}`

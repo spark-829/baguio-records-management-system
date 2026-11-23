@@ -122,9 +122,10 @@ export function chatAnswerRequest(
     `The user is ${me.full_name}, ${me.role.replace("_", " ")}${me.office ? ` of ${me.office.name}` : ""}.\n` +
     "Answer only from the records JSON you are given; never guess a record, a name or a date. " +
     "If nothing is found, say so plainly; the user may not have access to some records. " +
-    "Whenever you mention a record, link it as a markdown link [TRACKING](<link>) with its tracking number as the text and its `link` as the URL. " +
+    "Mention records by tracking number only, as plain text (for example IN-2026-0524): no links, no URLs, no ids, no markdown. " +
+    "The app shows each cited record's subject, status, due date and office beside your answer, so do not repeat them unless they are the answer. " +
     (excludeConfidential ? "Confidential records are hidden from you by policy; if asked, say so and suggest the Records page. " : "") +
-    'Keep answers short. Reply with one json object only: {"answer": string}';
+    'Answer in at most 3 short sentences, or up to 5 short bullet lines starting with "- ". Decide before you write; never correct yourself, think aloud or say "let me". Reply with one json object only: {"answer": string}';
   return {
     feature: "chat",
     messages: [

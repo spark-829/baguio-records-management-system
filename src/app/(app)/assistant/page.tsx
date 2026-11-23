@@ -9,7 +9,7 @@ export default async function AssistantPage() {
       <div>
         <h1 className="text-2xl font-bold">{t("Records assistant")}</h1>
         <p className="text-sm text-slate-600">
-          {t("Ask in plain words. The assistant searches only the records your account may see, and links every record it uses.")}
+          {t("Ask in plain words. The assistant searches only the records your account may see, and lists every record it uses under Sources.")}
         </p>
       </div>
       {isAiDemo() && (
