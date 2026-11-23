@@ -21,7 +21,7 @@ const EXAMPLES = [
 ];
 
 /** Assistant text with every mentioned record shown as a tracking number plus a numbered chip linking to it. */
-function Answer({ text, sources }: { text: string; sources: ChatSource[] }) {
+function Answer({ text, sources, onNavigate }: { text: string; sources: ChatSource[]; onNavigate?: () => void }) {
   const t = useT();
   return (
     <p className="whitespace-pre-wrap">
@@ -29,7 +29,7 @@ function Answer({ text, sources }: { text: string; sources: ChatSource[] }) {
         "text" in p ? (
           <span key={i}>{p.text}</span>
         ) : (
-          <Link key={i} href={`/records/${p.id}`} aria-label={t("Source {n}: {tn}", { n: p.ref, tn: p.tracking_no })}
+          <Link key={i} href={`/records/${p.id}`} onClick={onNavigate} aria-label={t("Source {n}: {tn}", { n: p.ref, tn: p.tracking_no })}
             className="rounded font-mono font-semibold text-brand-700 underline decoration-brand-300 underline-offset-4 hover:text-brand-900">
             {p.tracking_no}<span aria-hidden="true" className="ml-1 inline-flex h-6 min-w-6 -translate-y-1 items-center justify-center rounded-full bg-brand-100 px-1.5 font-sans text-xs font-bold text-brand-800 no-underline">{p.ref}</span>
           </Link>
@@ -39,7 +39,7 @@ function Answer({ text, sources }: { text: string; sources: ChatSource[] }) {
   );
 }
 
-function Sources({ sources }: { sources: ChatSource[] }) {
+function Sources({ sources, onNavigate }: { sources: ChatSource[]; onNavigate?: () => void }) {
   const t = useT();
   if (sources.length === 0) return null;
   return (
@@ -51,7 +51,7 @@ function Sources({ sources }: { sources: ChatSource[] }) {
           const showDue = s.due_date && s.status !== "completed" && s.status !== "released" && s.status !== "archived";
           return (
             <li key={s.id}>
-              <Link href={`/records/${s.id}`} className="block min-h-11 rounded-xl border border-slate-200 p-3 hover:border-brand-700 hover:bg-brand-50">
+              <Link href={`/records/${s.id}`} onClick={onNavigate} className="block min-h-11 rounded-xl border border-slate-200 p-3 hover:border-brand-700 hover:bg-brand-50">
                 <div className="flex items-center gap-2">
                   <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-brand-700 px-2 text-sm font-bold text-white">{s.n}</span>
                   <span className="font-mono font-semibold text-brand-800">{s.tracking_no}</span>
@@ -71,7 +71,7 @@ function Sources({ sources }: { sources: ChatSource[] }) {
   );
 }
 
-export function Chat() {
+export function Chat({ compact = false, inputId = "ask", onNavigate }: { compact?: boolean; inputId?: string; onNavigate?: () => void }) {
   const t = useT();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [text, setText] = useState("");
@@ -109,13 +109,13 @@ export function Chat() {
   }
 
   return (
-    <div className="card flex h-[70vh] flex-col">
+    <div className={compact ? "flex h-full min-h-0 flex-col" : "card flex h-[70vh] flex-col"}>
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
         {turns.length === 0 && (
           <div className="space-y-2">
             <p className="text-sm text-slate-600">{t("Try one of these:")}</p>
             <div className="flex flex-wrap gap-2">
-              {EXAMPLES.map((e) => (
+              {(compact ? EXAMPLES.slice(0, 3) : EXAMPLES).map((e) => (
                 <button key={e} onClick={() => send(e)} className="min-h-11 rounded-full border-2 border-brand-200 bg-white px-4 py-1.5 text-left text-sm font-medium text-brand-900 hover:border-brand-700 hover:bg-brand-50">{e}</button>
               ))}
             </div>
@@ -127,13 +127,13 @@ export function Chat() {
               <div className="max-w-[85%] rounded-2xl bg-brand-700 px-4 py-3 text-lg text-white">{turn.content}</div>
             </div>
           ) : (
-            <div key={i} className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+            <div key={i} className={compact ? "grid gap-3" : "grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start"}>
               <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-lg leading-relaxed">
                 {turn.demo && <span className="badge mb-1 bg-amber-100 text-amber-900">{t("Practice answer")}</span>}
                 {turn.note && <p className="mb-1 text-xs text-amber-800">{t(turn.note)}</p>}
-                <Answer text={turn.content} sources={turn.sources ?? []} />
+                <Answer text={turn.content} sources={turn.sources ?? []} onNavigate={onNavigate} />
               </div>
-              {turn.sources && turn.sources.length > 0 && <Sources sources={turn.sources} />}
+              {turn.sources && turn.sources.length > 0 && <Sources sources={turn.sources} onNavigate={onNavigate} />}
             </div>
           ),
         )}
@@ -148,8 +148,8 @@ export function Chat() {
         }}
         className="flex gap-2 border-t border-slate-200 p-3"
       >
-        <label htmlFor="ask" className="sr-only">{t("Your question")}</label>
-        <input id="ask" className="input flex-1" value={text} onChange={(e) => setText(e.target.value)} placeholder={t("Type your question")} />
+        <label htmlFor={inputId} className="sr-only">{t("Your question")}</label>
+        <input id={inputId} className="input flex-1" value={text} onChange={(e) => setText(e.target.value)} placeholder={t("Type your question")} />
         <button className="btn-primary" disabled={busy}>{t("Send")}</button>
       </form>
     </div>
