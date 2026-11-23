@@ -58,10 +58,10 @@ type Route = {
   actor: { full_name: string } | null;
 };
 
-export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string }> }) {
+export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string }> }) {
   const { t } = await getT();
   const { id } = await params;
-  const { new: isNew, scan } = await searchParams;
+  const { new: isNew, scan, file } = await searchParams;
   const [me, settings] = await Promise.all([getProfile(), getSettings()]);
   const supabase = await createClient();
   const { data } = await supabase
@@ -83,7 +83,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
       .select("id, status, action_taken, remarks, created_at, from_office:rms_offices!rms_routes_from_office_id_fkey(id, code, name), to_office:rms_offices!rms_routes_to_office_id_fkey(id, code, name), actor:rms_profiles(full_name)")
       .eq("record_id", id)
       .order("created_at", { ascending: false }),
-    supabase.from("rms_attachments").select("id, file_name, mime_type, size_bytes, version, uploaded_at, uploader:rms_profiles(full_name)").eq("record_id", id).order("uploaded_at"),
+    supabase.from("rms_attachments").select("id, file_name, mime_type, size_bytes, version, thumb_path, uploaded_at, uploader:rms_profiles(full_name)").eq("record_id", id).order("uploaded_at"),
     supabase.from("rms_offices").select("id, code, name").eq("is_active", true).order("code"),
     // Moved to the bin and restored (QA-013). Empty until the database update for it is run.
     supabase.rpc("rms_record_bin_history", { p_record_id: rec.id }),
@@ -167,6 +167,11 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           <Link href={`/records/${rec.id}/slip`} className="btn-primary">{t("Print QR routing slip")}</Link>
           <Link href={`/records/${rec.id}/slip?size=sticker`} className="btn-secondary">{t("Print QR sticker")}</Link>
         </div>
+        </div>
+      )}
+      {file === "failed" && (
+        <div className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {t("The record was saved, but the file could not be attached. Attach it again under Attachments below.")}
         </div>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -342,8 +347,16 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
             <ul className="mb-3 space-y-2 text-sm">
               {(files ?? []).map((f) => (
                 <li key={f.id} className="flex items-center justify-between gap-2">
-                  <a href={`/api/attachments/${f.id}`} target="_blank" className="truncate text-brand-700 hover:underline">
-                    {f.file_name}
+                  <a href={`/api/attachments/${f.id}`} target="_blank" className="flex min-w-0 items-center gap-2 text-brand-700 hover:underline">
+                    {f.thumb_path ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={`/api/attachments/${f.id}?thumb=1`} alt="" loading="lazy" width={40} height={40} className="h-10 w-10 shrink-0 rounded border border-slate-200 object-cover" />
+                    ) : (
+                      <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-500">
+                        {f.mime_type === "application/pdf" ? "PDF" : "IMG"}
+                      </span>
+                    )}
+                    <span className="truncate">{f.file_name}</span>
                   </a>
                   <span className="shrink-0 text-xs text-slate-500">
                     v{f.version} · {Math.max(1, Math.round(f.size_bytes / 1024))} KB

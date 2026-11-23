@@ -5,6 +5,8 @@ import { z } from "zod";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { BARANGAYS } from "@/lib/baguio-map";
+import { saveAttachment } from "@/lib/save-attachment";
+import { checkUpload } from "@/lib/upload-policy";
 
 const RecordInput = z.object({
   direction: z.enum(["incoming", "outgoing"]),
@@ -43,6 +45,13 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
   if (v.direction === "incoming" && !isCentral(me)) return { error: "Only the records desk registers incoming documents." };
   if (!me.office_id) return { error: "Your account has no office. Ask an administrator." };
 
+  const file = form.get("file");
+  const hasFile = file instanceof File && file.size > 0;
+  if (hasFile) {
+    const bad = checkUpload(file.type, file.size);
+    if (bad) return { error: bad };
+  }
+
   const supabase = await createClient();
   const { data: rec, error } = await supabase
     .from("rms_records")
@@ -74,21 +83,19 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
     .single();
   if (error || !rec) return { error: error?.message ?? "Could not save the record" };
 
-  const file = form.get("file");
-  if (file instanceof File && file.size > 0 && ["application/pdf", "image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-    const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-120);
-    const path = `${rec.id}/${crypto.randomUUID()}-${safeName}`;
-    const up = await supabase.storage.from("rms-attachments").upload(path, file, { contentType: file.type });
-    if (!up.error) {
-      await supabase.from("rms_attachments").insert({
-        record_id: rec.id,
-        file_path: path,
-        file_name: file.name,
-        mime_type: file.type,
-        size_bytes: file.size,
-        uploaded_by: me.id,
-      });
-    }
+  let fileFailed = false;
+  if (hasFile) {
+    fileFailed =
+      "error" in
+      (await saveAttachment(supabase, {
+        recordId: rec.id,
+        userId: me.id,
+        file,
+        thumb: form.get("thumb"),
+        originalShaHint: form.get("original_sha256"),
+        originalSize: form.get("original_size"),
+        withVersion: false,
+      }));
   }
 
   if (v.forward_to && v.forward_to !== me.office_id) {
@@ -101,5 +108,5 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
       acted_by: me.id,
     });
   }
-  redirect(`/records/${rec.id}?new=1${form.get("from_scan") === "1" ? "&scan=1" : ""}`);
+  redirect(`/records/${rec.id}?new=1${form.get("from_scan") === "1" ? "&scan=1" : ""}${fileFailed ? "&file=failed" : ""}`);
 }

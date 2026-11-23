@@ -4,15 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
+import { saveAttachment } from "@/lib/save-attachment";
 import { ACTIONS, allowedActions, doneText, isAlreadyReceived, nextStatus, type ActionKind } from "@/lib/workflow";
 import type { Direction, Status } from "@/lib/types";
 
-const NO_ATTACH = "Only the office holding this record, the office that sent it, or the records desk can add files.";
-const ATTACHMENT_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/webp"];
 const ALREADY_RECEIVED = "Already received.";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export type ActState = { error?: string; ok?: string } | undefined;
+export type ActState = { error?: string; ok?: string; vars?: Record<string, string> } | undefined;
 
 export async function recordAction(_prev: ActState, form: FormData): Promise<ActState> {
   const me = await getProfile();
@@ -76,30 +75,18 @@ export async function addAttachment(_prev: ActState, form: FormData): Promise<Ac
   const recordId = String(form.get("record_id") ?? "");
   const file = form.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "Choose a file" };
-  if (file.size > 10 * 1024 * 1024) return { error: "File is larger than 10 MB" };
-  if (!ATTACHMENT_TYPES.includes(file.type)) return { error: "Use a PDF, PNG, JPG or WEBP file" };
   if (!UUID.test(recordId)) return { error: "Record not found" };
   const supabase = await createClient();
-  const { count } = await supabase
-    .from("rms_attachments")
-    .select("id", { count: "exact", head: true })
-    .eq("record_id", recordId)
-    .eq("file_name", file.name);
-  const safeName = file.name.replace(/[^\w.\-]+/g, "_").slice(-120);
-  const path = `${recordId}/${crypto.randomUUID()}-${safeName}`;
-  const up = await supabase.storage.from("rms-attachments").upload(path, file, { contentType: file.type });
-  // Raw storage and row-security messages mean nothing to staff, so they get a plain sentence (QA-010).
-  if (up.error) return { error: /row-level security|unauthorized|403/i.test(up.error.message) ? NO_ATTACH : "The file could not be uploaded. Please try again." };
-  const { error } = await supabase.from("rms_attachments").insert({
-    record_id: recordId,
-    file_path: path,
-    file_name: file.name,
-    mime_type: file.type,
-    size_bytes: file.size,
-    version: (count ?? 0) + 1,
-    uploaded_by: me.id,
+  const saved = await saveAttachment(supabase, {
+    recordId,
+    userId: me.id,
+    file,
+    thumb: form.get("thumb"),
+    originalShaHint: form.get("original_sha256"),
+    originalSize: form.get("original_size"),
+    withVersion: true,
   });
-  if (error) return { error: /row-level security/i.test(error.message) ? NO_ATTACH : "The file could not be saved. Please try again." };
+  if ("error" in saved) return saved;
   revalidatePath(`/records/${recordId}`);
   return { ok: "File attached." };
 }
