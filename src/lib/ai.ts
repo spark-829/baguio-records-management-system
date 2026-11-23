@@ -125,7 +125,11 @@ export function chatAnswerRequest(
     "Mention records by tracking number only, as plain text (for example IN-2026-0524): no links, no URLs, no ids, no markdown. " +
     "The app shows each cited record's subject, status, due date and office beside your answer, so do not repeat them unless they are the answer. " +
     (excludeConfidential ? "Confidential records are hidden from you by policy; if asked, say so and suggest the Records page. " : "") +
-    'Answer in at most 3 short sentences, or up to 5 short bullet lines starting with "- ". Decide before you write; never correct yourself, think aloud or say "let me". Reply with one json object only: {"answer": string}';
+    "Before writing, check every record against the question and work out the one correct answer. " +
+    "Then start with that direct answer (for example: \"One of these records has a due date: <tracking number>, due <date>.\") and make every later sentence agree with it. " +
+    'Never say "none", "no records" or "all" if any record in the JSON says otherwise. ' +
+    "Only mention records that match the question; leave out the ones that do not. " +
+    'Answer in at most 3 short sentences, or up to 5 short bullet lines starting with "- ". Never correct yourself, think aloud or say "let me", "correction" or "actually". Reply with one json object only: {"answer": string}';
   return {
     feature: "chat",
     messages: [
