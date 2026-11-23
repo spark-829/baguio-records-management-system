@@ -5,7 +5,7 @@ import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABEL, fmtDate } from "@/lib/labels";
 import type { Status } from "@/lib/types";
-import { monthLabel, parseSummary, reportBounds, toBars } from "@/lib/reports";
+import { monthLabel, onTimeSummary, parseOnTime, parseSummary, reportBounds, toBars } from "@/lib/reports";
 import { PrintButton } from "../records/[id]/slip/print-button";
 
 async function Bars({ title, data }: { title: string; data: { label: string; n: number }[] }) {
@@ -37,9 +37,13 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   const { from, to } = await searchParams;
   const supabase = await createClient();
   const b = reportBounds(from, to);
-  const { data, error } = await supabase.rpc("rms_report_summary", { p_from: b.from, p_to: b.to, p_overdue_limit: 200 });
+  const [{ data, error }, { data: onData, error: onErr }] = await Promise.all([
+    supabase.rpc("rms_report_summary", { p_from: b.from, p_to: b.to, p_overdue_limit: 200 }),
+    supabase.rpc("rms_report_on_time", { p_from: b.from, p_to: b.to }),
+  ]);
   if (error) throw new Error("Report totals failed");
   const s = parseSummary(data);
+  const onTime = onErr ? null : onTimeSummary(parseOnTime(onData));
   const months = s.by_month.map((m) => ({ label: monthLabel(m.key), n: m.n }));
   const printedAt = new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Manila" }).format(new Date());
 
@@ -87,6 +91,34 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <Bars title={t("By document type")} data={toBars(s.by_type, (k) => k)} />
         <Bars title={t("Registered per month")} data={months} />
       </div>
+
+      {onTime && (
+        <section className="card p-4">
+          <h2 className="font-semibold">{t("Finished on time")}</h2>
+          <p className="mb-3 text-sm text-slate-600">{t("Records with a due date that were finished in this period.")}</p>
+          {onTime.finished === 0 ? (
+            <p className="text-sm text-slate-500">{t("No finished records with a due date in this period.")}</p>
+          ) : (
+            <>
+              <p className="mb-3 flex flex-wrap items-baseline gap-3">
+                <span className="text-3xl font-bold">{onTime.pct}%</span>
+                <span className="text-sm text-slate-700">{t("{on} of {n} finished on or before the due date", { on: onTime.on_time, n: onTime.finished })}</span>
+              </p>
+              <ul className="space-y-2">
+                {onTime.offices.map((o) => (
+                  <li key={o.id} className="grid grid-cols-[minmax(7rem,14rem)_1fr_6rem] items-center gap-2 text-sm">
+                    <span className="text-slate-700">{o.name}</span>
+                    <span className="h-3 rounded bg-slate-100">
+                      <span className={`block h-3 rounded ${o.pct < 50 ? "bg-red-600" : "bg-emerald-600"}`} style={{ width: `${o.pct}%` }} />
+                    </span>
+                    <span className="text-right font-semibold tabular-nums">{o.pct}% ({o.on_time}/{o.finished})</span>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      )}
 
       <section className="card p-4">
         <h2 className="mb-2 font-semibold">{t("Overdue records")}</h2>

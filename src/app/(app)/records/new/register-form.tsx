@@ -9,6 +9,7 @@ import { pdfFirstPageToJpeg } from "@/lib/pdf-first-page";
 import { shrinkForAi } from "@/lib/shrink-image";
 import { useUploadPrep } from "@/components/use-upload-prep";
 import { ScanPreview } from "@/components/scan-preview";
+import { ARTA_CLASSES, ARTA_DAYS, ARTA_LABEL, artaDue, isArtaClass, manilaDay } from "@/lib/arta";
 import { registerRecord } from "./actions";
 
 type Opt = { id: string; name: string };
@@ -33,13 +34,15 @@ type Fields = {
   forward_to: string;
   content_text: string;
   ai_summary: string;
+  arta_class: string;
+  in_reply_to: string;
 };
 
-export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canIncoming: boolean; myOfficeId: string | null; barangays?: string[] | null }) {
+export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canIncoming: boolean; myOfficeId: string | null; barangays?: string[] | null; replyTo?: string | null }) {
   const t = useT();
   const [state, action, pending] = useActionState(registerRecord, undefined);
   const [f, setF] = useState<Fields>({
-    direction: props.canIncoming ? "incoming" : "outgoing",
+    direction: props.replyTo ? "outgoing" : props.canIncoming ? "incoming" : "outgoing",
     subject: "",
     description: "",
     document_type_id: "",
@@ -58,6 +61,8 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     forward_to: "",
     content_text: "",
     ai_summary: "",
+    arta_class: "",
+    in_reply_to: props.replyTo ?? "",
   });
   const [aiState, setAiState] = useState<"idle" | "reading" | "done" | "error">("idle");
   const [aiMsg, setAiMsg] = useState("");
@@ -114,6 +119,12 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
       return n;
     });
   };
+
+  // Picking a kind of transaction fills the due date; "None" clears it and "Not set" leaves it alone.
+  function pickArta(v: string) {
+    const cls = isArtaClass(v) ? v : null;
+    setF((p) => ({ ...p, arta_class: v, due_date: cls ? (artaDue(cls, manilaDay()) ?? "") : p.due_date }));
+  }
 
   const [noAi, setNoAi] = useState(false);
 
@@ -276,6 +287,11 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
               <label className="label" htmlFor="f-recipient_org">{t("Recipient's office, barangay or company")}</label>
               <input id="f-recipient_org" name="recipient_org" className={`input ${hl("recipient_org")}`} value={f.recipient_org} onChange={(e) => set("recipient_org", e.target.value)} />
             </div>
+            <div className="md:col-span-2">
+              <label className="label" htmlFor="f-in_reply_to">{t("In reply to (optional)")}</label>
+              <input id="f-in_reply_to" name="in_reply_to" className="input font-mono" placeholder="IN-2026-0001" aria-describedby="f-in_reply_to-help" value={f.in_reply_to} onChange={(e) => set("in_reply_to", e.target.value)} />
+              <p id="f-in_reply_to-help" className="mt-1 text-sm text-slate-600">{t("Answering a letter the City received? Type its tracking number. Both records will link to each other.")}</p>
+            </div>
           </>
         )}
         {props.barangays && (
@@ -335,8 +351,18 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           </select>
         </div>
         <div>
+          <label className="label" htmlFor="f-arta_class">{t("Kind of transaction (ARTA)")}</label>
+          <select id="f-arta_class" name="arta_class" className="input" value={f.arta_class} onChange={(e) => pickArta(e.target.value)}>
+            <option value="">{t("Not set")}</option>
+            {ARTA_CLASSES.map((c) => <option key={c} value={c}>{t(ARTA_LABEL[c])}</option>)}
+          </select>
+        </div>
+        <div>
           <label className="label" htmlFor="f-due_date">{t("Must be acted on by (optional)")}</label>
           <input id="f-due_date" name="due_date" type="date" className="input" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} />
+          {f.arta_class in ARTA_DAYS && (
+            <p className="mt-1 text-sm text-slate-600">{t("Counted {n} working days from today, skipping weekends and holidays. You can change the date.", { n: ARTA_DAYS[f.arta_class as keyof typeof ARTA_DAYS] })}</p>
+          )}
         </div>
 
         <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-xl border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">

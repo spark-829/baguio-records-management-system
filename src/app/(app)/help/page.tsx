@@ -43,6 +43,7 @@ export default async function HelpPage() {
           {S("Click [[Register]] at the top of the screen.")}
           {S("No scan? Skip part 1. Go straight to the form.")}
           {S("Fill in the boxes marked with a red <req>. The other boxes are optional.")}
+          {S("Choose the _Kind of transaction (ARTA)_. The due date fills in by itself, counting only working days. You can still change it.")}
           {S("To send it to an office right away, choose the office under _Send to office_.")}
           {S("Press [[Save and get tracking number]].")}
           {S("Press [[Print routing slip]] and staple it to the paper.")}
@@ -56,6 +57,7 @@ export default async function HelpPage() {
           {S("It is already set to _Outgoing_. Letters that arrive from outside are logged by the Records Section, not here.")}
           {S("Fill in the boxes marked with a red <req>.")}
           {S("Choose the office under _Send to office_ if it goes to another City office.")}
+          {S("Answering a letter? Open it and press [[Write a reply]], or type its tracking number under _In reply to_.")}
           {S("Press [[Save and get tracking number]], then write the tracking number on the paper.")}
         </Topic>
       )}
@@ -85,6 +87,7 @@ export default async function HelpPage() {
 
       <Topic id="late" title={t("See what is late")}>
         {S("Click [[Dashboard]].")}
+        {S("The bell at the top shows how many records were sent to your office or are late. Click it to see them.")}
         {S("Click the red _Overdue_ box. It lists every late document you are allowed to see.")}
         {S("Further down, _Due in the next 7 days_ lists what will be late soon, the nearest date first.")}
         {S("The _Due dates calendar_ puts a dot above each date for every record due that day: <r>red</r> is late, <o>orange</o> is due within 7 days, <g>green</g> is on track. Tap a date to see what is due that day.")}

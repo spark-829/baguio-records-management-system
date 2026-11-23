@@ -8,6 +8,7 @@ import { NavLinks } from "@/components/nav-links";
 import { PineMark, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
 import { getT } from "@/lib/i18n/server";
+import { AlertBell } from "@/components/alert-bell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [me, settings, { t }] = await Promise.all([getProfile(), getSettings(), getT()]);
@@ -43,8 +44,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               <span className="hidden text-xs text-brand-100 sm:block">{t("Records Management System")}</span>
             </span>
           </Link>
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2 text-sm sm:gap-3">
+          <div className="relative ml-auto flex flex-wrap items-center justify-end gap-2 text-sm sm:gap-3">
             <LangToggle dark />
+            {me.office_id && <AlertBell officeCode={me.office?.code ?? null} />}
             <div className="hidden leading-tight sm:block sm:text-right">
               <div className="font-semibold">{me.full_name}</div>
               <div className="text-xs text-brand-100">
