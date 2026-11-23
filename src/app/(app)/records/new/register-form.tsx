@@ -76,8 +76,14 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
+  // Only in-memory blob: URLs are ever used as the preview source (never text taken from the file).
+  function blobUrl(b: Blob): string | null {
+    const url = URL.createObjectURL(b);
+    return url.startsWith("blob:") ? url : null;
+  }
+
   function showPreview(file: File | undefined) {
-    setPreview(file && file.type.startsWith("image/") ? URL.createObjectURL(file) : null);
+    setPreview(file && file.type.startsWith("image/") ? blobUrl(file) : null);
     setScanName(file?.name ?? null);
   }
 
@@ -136,7 +142,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           setAiMsg(PDF_NOTE);
           return;
         }
-        setPreview(URL.createObjectURL(page)); // page preview, like scan apps
+        setPreview(blobUrl(page)); // page preview, like scan apps
         toSend = page;
       }
       const small = await shrinkForAi(toSend);
