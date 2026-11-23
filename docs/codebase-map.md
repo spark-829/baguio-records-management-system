@@ -86,6 +86,17 @@ SQL tests: `supabase/tests/{access_rules,pentest_rules}.sql`.
 One Vitest file per lib module (`workflow`, `qr`, `deepseek`, `ai-budget`,
 `retention`, `safe-next`, `watermark`, ...). No UI tests.
 
+## Resilience
+
+| Path | What |
+| --- | --- |
+| `src/lib/health.ts`, `src/app/api/health/route.ts` | `/api/health` (public, no cookies; calls `rms_today`); test `tests/health.test.ts` |
+| `scripts/backup/` | `lib.sh` (helpers), `backup.sh`, `restore-drill.sh`, `audit-check.sh`, `pull-to-d-drive.ps1` |
+| `.github/workflows/` | `backup`, `restore-drill`, `audit-check`, `uptime`, `ci`, `codeql`; `.github/dependabot.yml` |
+| `docs/` | `backups.md`, `restore-drill.md`, `recovery-runbook.md`, `paper-fallback.md` |
+
+Secret-dependent jobs skip (exit 0) when their GitHub secrets are missing.
+
 ## Docs: `docs/`
 
 `system-analysis.md` (use cases, ERD), `user-manual.md`, `turnover-guide.md`,
