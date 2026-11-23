@@ -181,7 +181,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             {rows.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
                 <td className="whitespace-nowrap px-4 py-2 font-mono text-sm">
-                  <Link prefetch={false} href={`/records/${r.id}`} className="text-brand-700 hover:underline">{r.tracking_no}</Link>
+                  <Link prefetch={false} href={`/records/${r.id}`} className="inline-flex min-h-11 items-center text-brand-700 hover:underline">{r.tracking_no}</Link>
                 </td>
                 <td className="px-4 py-2">
                   <Link prefetch={false} href={`/records/${r.id}`} className="font-medium hover:underline">{r.subject}</Link>

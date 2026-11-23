@@ -44,7 +44,7 @@ export function SummaryBox({ recordId, initial, aiBlocked = false }: { recordId:
         <h2 className="flex items-center gap-2 font-semibold">
           <span className="badge bg-brand-100 text-brand-900">{t("AI")}</span> {t("Summary")}
         </h2>
-        <button onClick={generate} disabled={busy} className="text-sm text-brand-700 hover:underline disabled:opacity-50">
+        <button onClick={generate} disabled={busy} className="inline-flex min-h-11 items-center px-2 text-sm text-brand-700 hover:underline disabled:opacity-50 sm:min-h-0 sm:px-0">
           {t(busy ? "Summarizing…" : summary ? "Refresh" : "Summarize")}
         </button>
       </div>

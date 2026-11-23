@@ -122,17 +122,19 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
       <section className="card p-4">
         <h2 className="mb-2 font-semibold">{t("Overdue records")}</h2>
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase text-slate-500">
-            <tr><th className="py-1">{t("Tracking no.")}</th><th>{t("Subject")}</th><th>{t("Now with")}</th><th>{t("Was due (oldest first)")}</th></tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {s.overdue_rows.map((r) => (
-              <tr key={r.tracking_no}><td className="py-1 font-mono text-xs"><Link href={`/records/${r.id}`}>{r.tracking_no}</Link></td><td>{r.subject}</td><td>{r.office}</td><td>{fmtDate(r.due_date)}</td></tr>
-            ))}
-            {s.overdue === 0 && <tr><td colSpan={4} className="py-2 text-slate-500">{t("None.")}</td></tr>}
-          </tbody>
-        </table>
+        <div className="-mx-4 overflow-x-auto px-4" tabIndex={0} role="region" aria-label={t("Overdue records (scroll sideways for more columns)")}>
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs uppercase text-slate-500">
+              <tr><th className="py-1 pr-3">{t("Tracking no.")}</th><th className="pr-3">{t("Subject")}</th><th className="pr-3">{t("Now with")}</th><th>{t("Was due (oldest first)")}</th></tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {s.overdue_rows.map((r) => (
+                <tr key={r.tracking_no}><td className="whitespace-nowrap py-1 pr-3 font-mono text-xs"><Link href={`/records/${r.id}`}>{r.tracking_no}</Link></td><td className="min-w-[10rem] pr-3">{r.subject}</td><td className="pr-3">{r.office}</td><td>{fmtDate(r.due_date)}</td></tr>
+              ))}
+              {s.overdue === 0 && <tr><td colSpan={4} className="py-2 text-slate-500">{t("None.")}</td></tr>}
+            </tbody>
+          </table>
+        </div>
         {s.overdue > s.overdue_rows.length && (
           <p className="mt-2 text-sm text-slate-600">
             {t("Showing the {n} oldest of {total}.", { n: s.overdue_rows.length, total: s.overdue })} <Link href="/records?overdue=1">{t("See all late records")}</Link>

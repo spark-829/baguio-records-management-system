@@ -48,6 +48,25 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
   const [saving, setSaving] = useState(false);
   const before = useRef(state);
   const busy = saving || pending;
+  // Esc also closes the panel when focus has fallen back to the page after a click (QA-024). The form's own Esc
+  // handler runs first and marks the event handled. Esc meant for another widget (assistant, alerts) is left alone.
+  const panel = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented || busy) return;
+      const a = document.activeElement;
+      if (a && a !== document.body && !panel.current?.contains(a)) return;
+      e.preventDefault();
+      if (confirming) setConfirming(false);
+      else {
+        setOpen(false);
+        setConfirming(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, confirming, busy]);
   // When the save comes back (a new result arrives): close the panel if it worked, or stay open with the message.
   useEffect(() => {
     if (!saving || pending || state === before.current) return;
@@ -78,6 +97,7 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
 
   return (
     <form
+      ref={panel}
       action={(fd) => {
         // Like Gmail's "Sending…": the panel stays open with a disabled "Saving…" button until the save
         // has finished, so nobody presses it twice while waiting (QA-011).
@@ -95,6 +115,7 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
       onKeyDown={(e) => {
         if (e.key === "Escape") {
           e.preventDefault();
+          if (busy) return;
           if (confirming) setConfirming(false);
           else close();
         }
@@ -180,7 +201,7 @@ export function DeleteForm({ recordId }: { recordId: string }) {
   const [open, setOpen] = useState(false);
   if (!open)
     return (
-      <button type="button" onClick={() => setOpen(true)} className="text-sm text-red-700 hover:underline">
+      <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 items-center text-sm text-red-700 hover:underline sm:min-h-0">
         {t("Delete this record…")}
       </button>
     );
