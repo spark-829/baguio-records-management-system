@@ -58,6 +58,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking),
 | `reply-to.ts`, `alerts.ts` | `parseReplyTo`; bell payload `parseAlerts`, `badgeText` |
 | `due.ts`, `retention.ts`, `safe-next.ts` | due dates, retention rules, safe redirects |
 | `reports.ts`, `fetch-pages.ts` | report date bounds, bar merging, RPC result parsers, `onTimeSummary`; `fetchPages` (pages past the 1000-row PostgREST cap) |
+| `list-size.ts`, `map-tally.ts` | `listSize` (the `?n=` list size, steps of the default, capped); `tallyBarangays` (per-barangay counts for the map) |
 | `settings-diff.ts` | `changedSettings` (which admin settings actually changed) |
 
 `src/components/`: alert-bell, badges, brand, nav-links, lang-toggle, idle-logout,

@@ -72,14 +72,14 @@ export default async function Dashboard() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
-          <Link href="/assistant" className="btn-secondary">{t("Ask the assistant")}</Link>
+          {me.role !== "viewer" && <Link prefetch={false} href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
+          <Link prefetch={false} href="/assistant" className="btn-secondary">{t("Ask the assistant")}</Link>
         </div>
       </div>
 
       <div className={`grid grid-cols-2 gap-3 ${stats.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
         {stats.map((s) => (
-          <Link key={s.label} href={s.href} className={`card block border-t-4 p-5 no-underline hover:shadow-md ${s.alert ? "border-red-300 border-t-red-700 bg-red-50" : "border-t-brand-700"}`}>
+          <Link prefetch={false} key={s.label} href={s.href} className={`card block border-t-4 p-5 no-underline hover:shadow-md ${s.alert ? "border-red-300 border-t-red-700 bg-red-50" : "border-t-brand-700"}`}>
             <div className="text-base font-semibold text-slate-700">{s.label}</div>
             <div className={`mt-1 text-3xl font-bold tabular-nums ${s.alert ? "text-red-700" : "text-brand-900"}`}>{s.value}</div>
             <div className="mt-1 text-base text-brand-700 underline">{s.hint} →</div>
@@ -97,14 +97,20 @@ export default async function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="card lg:col-span-2">
           <h2 className="border-b border-slate-100 px-4 py-3 text-lg font-bold">{t("Waiting in my office")}</h2>
-          <RecordList rows={inbox} empty={t(me.office ? "Nothing waiting in your office." : "Your account is not assigned to an office.")} showDue />
+          <RecordList rows={inbox.slice(0, 20)} empty={t(me.office ? "Nothing waiting in your office." : "Your account is not assigned to an office.")} showDue />
+          {inbox.length > 20 && me.office && (
+            <p className="px-4 py-3">
+              <span className="text-sm text-slate-600">{t("Showing the first {n} of {total}.", { n: 20, total: inbox.length })}</span>{" "}
+              <Link prefetch={false} href={`/records?office=${encodeURIComponent(me.office.code)}&here=1&open=1`} className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">{t("See my office's open records")}</Link>
+            </p>
+          )}
         </section>
         <section className="card">
           <h2 className="border-b border-slate-100 px-4 py-3 text-lg font-bold">{t("By status")}</h2>
           <ul className="divide-y divide-slate-100">
             {counts.map(({ s, n }) => (
               <li key={s}>
-                <Link href={`/records?status=${s}`} className="flex min-h-12 items-center justify-between px-4 py-2 hover:bg-brand-50">
+                <Link prefetch={false} href={`/records?status=${s}`} className="flex min-h-12 items-center justify-between px-4 py-2 hover:bg-brand-50">
                   <StatusBadge status={s} />
                   <span className="font-semibold tabular-nums">{n}</span>
                 </Link>
@@ -117,21 +123,29 @@ export default async function Dashboard() {
       {overdue.length > 0 && (
         <section className="card border-red-200">
           <h2 className="border-b border-red-100 px-4 py-3 text-lg font-bold text-red-800">{t("Overdue")}</h2>
-          <RecordList rows={overdue} empty="" showDue />
+          <RecordList rows={overdue.slice(0, 10)} empty="" showDue />
+          {overdue.length > 10 && (
+            <p className="px-4 py-3">
+              <Link prefetch={false} href="/records?overdue=1" className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">{t("See all {n} late records", { n: overdueTotal || overdue.length })}</Link>
+            </p>
+          )}
         </section>
       )}
 
       {dueSoon.length > 0 && (
         <section id="due-soon" className="card scroll-mt-4 border-amber-200">
           <h2 className="border-b border-amber-100 px-4 py-3 text-lg font-bold text-amber-900">{t("Due in the next 7 days")}</h2>
-          <RecordList rows={dueSoon} empty="" showDue />
+          <RecordList rows={dueSoon.slice(0, 10)} empty="" showDue />
+          {dueSoon.length > 10 && (
+            <p className="px-4 py-3 text-sm text-slate-600">{t("Showing the first {n} of {total}.", { n: 10, total: dueSoon.length })}</p>
+          )}
         </section>
       )}
 
       <section className="card">
         <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
           <h2 className="text-lg font-bold">{t("Recently registered")}</h2>
-          <Link href="/records" className="text-sm text-brand-700 hover:underline">{t("All records")}</Link>
+          <Link prefetch={false} href="/records" className="text-sm text-brand-700 hover:underline">{t("All records")}</Link>
         </div>
         <RecordList rows={rows.slice(0, 8)} empty={t("No records yet.")} />
       </section>
@@ -146,7 +160,7 @@ async function RecordList({ rows, empty, showDue = false }: { rows: Row[]; empty
     <ul className="divide-y divide-slate-100">
       {rows.map((r) => (
         <li key={r.id}>
-          <Link href={`/records/${r.id}`} className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-brand-50">
+          <Link prefetch={false} href={`/records/${r.id}`} className="flex min-h-12 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 hover:bg-brand-50">
             <span className="font-mono text-sm text-slate-600">{r.tracking_no}</span>
             <span className="min-w-0 flex-1 basis-full font-medium sm:basis-60">{r.subject}</span>
             <PriorityBadge priority={r.priority} />

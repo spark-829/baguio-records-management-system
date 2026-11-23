@@ -93,7 +93,7 @@ export function AssistantLauncher() {
               <h2 id="assistant-panel-title" className="text-lg font-bold text-white">{t("Records assistant")}</h2>
               <p className="hidden text-sm text-brand-100 sm:block">{t("Searches only the records you may see")}</p>
             </div>
-            <Link href="/assistant" onClick={() => setOpen(false)} className="inline-flex min-h-11 items-center rounded-lg px-2 text-base font-semibold underline underline-offset-4 hover:bg-white/10">
+            <Link prefetch={false} href="/assistant" onClick={() => setOpen(false)} className="inline-flex min-h-11 items-center rounded-lg px-2 text-base font-semibold underline underline-offset-4 hover:bg-white/10">
               {t("Open full page")}
             </Link>
             <button type="button" onClick={closeAndReturnFocus} aria-label={t("Close assistant")} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-white/10">

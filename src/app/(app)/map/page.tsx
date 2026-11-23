@@ -2,6 +2,7 @@ import { BarangayMap, type MapRecord } from "@/components/barangay-map";
 import { getT } from "@/lib/i18n/server";
 import { fetchPages } from "@/lib/fetch-pages";
 import { createClient } from "@/lib/supabase/server";
+import { tallyBarangays } from "@/lib/map-tally";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 
@@ -10,16 +11,17 @@ export const metadata = { title: "Barangay map" };
 const DONE: Status[] = ["completed", "released", "archived"];
 
 /** Where documents come from or go to, by barangay. Only records the account may see are counted. */
-export default async function MapPage({ searchParams }: { searchParams: Promise<{ show?: string }> }) {
-  const [{ t }, { show }] = await Promise.all([getT(), searchParams]);
+export default async function MapPage({ searchParams }: { searchParams: Promise<{ show?: string; b?: string }> }) {
+  const [{ t }, { show, b }] = await Promise.all([getT(), searchParams]);
   const onlyOpen = show === "open";
+  const picked = typeof b === "string" && b.trim() && b.length <= 100 ? b : null;
   const supabase = await createClient();
-  type MapRow = { id: string; tracking_no: string; subject: string; status: Status; due_date: string | null; barangay: string };
+  type MapRow = { status: Status; due_date: string | null; barangay: string };
   // PostgREST caps one response at 1000 rows, so read in pages
   const { data, error } = await fetchPages<MapRow>((from, to) =>
     supabase
       .from("rms_records")
-      .select("id, tracking_no, subject, status, due_date, barangay")
+      .select("barangay, status, due_date")
       .is("deleted_at", null)
       .not("barangay", "is", null)
       .order("created_at", { ascending: false })
@@ -27,14 +29,30 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
       .range(from, to) as unknown as PromiseLike<{ data: MapRow[] | null; error: unknown }>,
   );
   const rows = data;
-  const records: MapRecord[] = rows.filter((r) => !onlyOpen || !DONE.includes(r.status)).map((r) => ({
-    id: r.id,
-    tracking_no: r.tracking_no,
-    subject: r.subject,
-    barangay: r.barangay as string,
-    late: isOverdue(r.due_date, r.status as Status),
-    open: !DONE.includes(r.status as Status),
-  }));
+  const tally = tallyBarangays(
+    rows
+      .filter((r) => !onlyOpen || !DONE.includes(r.status))
+      .map((r) => ({ barangay: r.barangay, late: isOverdue(r.due_date, r.status as Status) })),
+  );
+  let list: MapRecord[] = [];
+  if (picked && !error) {
+    type PickRow = { id: string; tracking_no: string; subject: string; status: Status; due_date: string | null };
+    let q = supabase
+      .from("rms_records")
+      .select("id, tracking_no, subject, status, due_date")
+      .is("deleted_at", null)
+      .eq("barangay", picked);
+    if (onlyOpen) q = q.not("status", "in", `(${DONE.join(",")})`);
+    const { data: picks } = await q.order("created_at", { ascending: false }).limit(100);
+    list = ((picks ?? []) as PickRow[]).map((r) => ({
+      id: r.id,
+      tracking_no: r.tracking_no,
+      subject: r.subject,
+      barangay: picked,
+      late: isOverdue(r.due_date, r.status),
+      open: !DONE.includes(r.status),
+    }));
+  }
 
   return (
     <div className="space-y-4">
@@ -69,7 +87,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
           {t("The map turns on after the database update for barangays is run.")}
         </p>
       ) : (
-        <BarangayMap records={records} />
+        <BarangayMap tally={tally} picked={picked} pickedList={list} onlyOpen={onlyOpen} />
       )}
     </div>
   );

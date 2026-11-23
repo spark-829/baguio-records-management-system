@@ -2,8 +2,9 @@ import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/session";
-import { filtersFromParams, filtersToParams, searchRecords } from "@/lib/search";
+import { filtersFromParams, filtersToParams, searchRecordsPage } from "@/lib/search";
 import { STATUS_LABEL, fmtDate, partyLabel } from "@/lib/labels";
+import { listSize } from "@/lib/list-size";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -15,14 +16,16 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   const sp = await searchParams;
   const f = filtersFromParams(sp);
   // "Open only" comes from the dashboard boxes: hide finished records
+  const n = listSize(sp.n, 50, 500);
   const onlyOpen = Boolean(f.open);
   const supabase = await createClient();
-  const [me, rows, offices, types] = await Promise.all([
+  const [me, page, offices, types] = await Promise.all([
     getProfile(),
-    searchRecords(supabase, f, 100),
+    searchRecordsPage(supabase, f, n),
     supabase.from("rms_offices").select("code, name").eq("is_active", true).order("code"),
     supabase.from("rms_document_types").select("name").eq("is_active", true).order("name"),
   ]);
+  const rows = page.rows;
   const exportHref = `/api/reports/csv?${filtersToParams(f).toString()}`;
   const aiNote = typeof sp.ai === "string" ? sp.ai : undefined;
   const officeNames = new Map((offices.data ?? []).map((o) => [o.code, o.name]));
@@ -37,7 +40,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             {onlyOpen && (
               <>
                 {" · "}
-                <Link href={`/records?${filtersToParams({ ...f, open: false }).toString()}`}>{t("Show finished ones too")}</Link>
+                <Link prefetch={false} href={`/records?${filtersToParams({ ...f, open: false }).toString()}`}>{t("Show finished ones too")}</Link>
               </>
             )}
           </p>
@@ -45,7 +48,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         <div className="flex flex-wrap gap-2">
           <ScanQrButton />
           <a href={exportHref} className="btn-secondary" title={t("Opens in Excel")}>{t("Download list (CSV, opens in Excel)")}</a>
-          {me.role !== "viewer" && <Link href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
+          {me.role !== "viewer" && <Link prefetch={false} href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
         </div>
       </div>
 
@@ -67,7 +70,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </div>
         <div className="flex items-end gap-2">
           <button className="btn-primary flex-1">{t("Search")}</button>
-          <Link href="/records" className="btn-secondary">{t("Clear")}</Link>
+          <Link prefetch={false} href="/records" className="btn-secondary">{t("Clear")}</Link>
         </div>
         <details className="md:col-span-4" open={Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here)}>
           <summary className="cursor-pointer py-1 font-medium text-brand-700">{t("More ways to narrow the list")}</summary>
@@ -143,7 +146,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       <ul className="space-y-3 lg:hidden">
         {rows.map((r) => (
           <li key={r.id}>
-            <Link href={`/records/${r.id}`} className="card block p-4 no-underline hover:border-brand-600">
+            <Link prefetch={false} href={`/records/${r.id}`} className="card block p-4 no-underline hover:border-brand-600">
               <span className="font-mono text-sm text-slate-600">{r.tracking_no}</span>
               <span className="mt-1 block font-semibold text-ink">{r.subject}</span>
               <span className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -178,10 +181,10 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             {rows.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
                 <td className="whitespace-nowrap px-4 py-2 font-mono text-sm">
-                  <Link href={`/records/${r.id}`} className="text-brand-700 hover:underline">{r.tracking_no}</Link>
+                  <Link prefetch={false} href={`/records/${r.id}`} className="text-brand-700 hover:underline">{r.tracking_no}</Link>
                 </td>
                 <td className="px-4 py-2">
-                  <Link href={`/records/${r.id}`} className="font-medium hover:underline">{r.subject}</Link>
+                  <Link prefetch={false} href={`/records/${r.id}`} className="font-medium hover:underline">{r.subject}</Link>
                   <div className="mt-1 flex flex-wrap gap-1">
                     <PriorityBadge priority={r.priority} />
                     <ConfBadge level={r.confidentiality} />
@@ -201,6 +204,15 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           </tbody>
         </table>
       </div>
+      {page.more && n < 500 && (() => {
+        const p = filtersToParams(f);
+        p.set("n", String(n + 50));
+        return (
+          <p>
+            <Link prefetch={false} href={`/records?${p}`} className="btn-secondary">{t("Show {n} more", { n: 50 })}</Link>
+          </p>
+        );
+      })()}
     </div>
   );
 }

@@ -37,7 +37,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </a>
       <header className="no-print on-dark border-b-4 border-gold-500 bg-brand-800 text-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
-          <Link href="/" className="flex min-h-11 items-center gap-3 rounded-lg">
+          <Link prefetch={false} href="/" className="flex min-h-11 items-center gap-3 rounded-lg">
             <PineMark />
             <span className="leading-tight">
               <span className="block text-xl font-bold tracking-tight">{t("Baguio RMS")}</span>
@@ -54,7 +54,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 {me.office ? ` · ${me.office.name}` : ""}
               </div>
             </div>
-            <Link href="/security" className="hidden min-h-11 items-center sm:inline-flex rounded-lg border-2 border-white/60 px-3.5 font-semibold hover:bg-white/10">{t("My account")}</Link>
+            <Link prefetch={false} href="/security" className="hidden min-h-11 items-center sm:inline-flex rounded-lg border-2 border-white/60 px-3.5 font-semibold hover:bg-white/10">{t("My account")}</Link>
             <form action={signOut}>
               <button className="inline-flex min-h-11 items-center rounded-lg border-2 border-white bg-white px-3.5 font-semibold text-brand-800 hover:bg-brand-50">{t("Sign out")}</button>
             </form>

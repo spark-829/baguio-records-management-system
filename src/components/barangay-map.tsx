@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 import { BARANGAYS, MAP_HEIGHT, MAP_WIDTH, steps } from "@/lib/baguio-map";
 import { useT } from "@/lib/i18n/client";
+import type { BarangayTally } from "@/lib/map-tally";
 
 export type MapRecord = { id: string; tracking_no: string; subject: string; barangay: string; late: boolean; open: boolean };
 
@@ -24,27 +26,28 @@ const VIEWS = {
  * point at a barangay to see its name and count, tap it to list its records, plus a ranked list
  * that works without a mouse and for people who find small map areas hard to tap.
  */
-export function BarangayMap({ records }: { records: MapRecord[] }) {
+export function BarangayMap({ tally, picked, pickedList, onlyOpen }: { tally: BarangayTally; picked: string | null; pickedList: MapRecord[]; onlyOpen: boolean }) {
   const t = useT();
-  const [picked, setPicked] = useState<string | null>(null);
+  const router = useRouter();
+  const [pending, start] = useTransition();
   const [hover, setHover] = useState<{ name: string; x: number; y: number } | null>(null);
   const [view, setView] = useState<keyof typeof VIEWS>("city");
 
-  const byName = useMemo(() => {
-    const m = new Map<string, MapRecord[]>();
-    for (const r of records) m.set(r.barangay, [...(m.get(r.barangay) ?? []), r]);
-    return m;
-  }, [records]);
-  const max = Math.max(0, ...[...byName.values()].map((l) => l.length));
+  const max = Math.max(0, ...Object.values(tally).map((v) => v.n));
   const legend = steps(max);
   const shade = (n: number) => {
     if (!n) return EMPTY;
     const i = legend.findIndex(([lo, hi]) => n >= lo && n <= hi);
     return SHADES[Math.round((i / Math.max(1, legend.length - 1)) * (SHADES.length - 1))];
   };
-  const ranked = [...byName.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]));
-  const pickedList = picked ? byName.get(picked) ?? [] : [];
-  const count = (name: string) => byName.get(name)?.length ?? 0;
+  const ranked = Object.entries(tally).sort((a, b) => b[1].n - a[1].n || a[0].localeCompare(b[0]));
+  const count = (name: string) => tally[name]?.n ?? 0;
+  function go(name: string | null) {
+    const p = new URLSearchParams();
+    if (onlyOpen) p.set("show", "open");
+    if (name) p.set("b", name);
+    start(() => router.push(`/map${p.size ? `?${p}` : ""}`, { scroll: false }));
+  }
   const label = (n: number) => t(n === 1 ? "{n} record" : "{n} records", { n });
 
   return (
@@ -97,7 +100,7 @@ export function BarangayMap({ records }: { records: MapRecord[] }) {
                   stroke={on ? "#111827" : "#ffffff"}
                   strokeWidth={on ? 3 : view === "center" ? 0.8 : 1.2}
                   className="cursor-pointer transition-opacity hover:opacity-80"
-                  onClick={() => setPicked(on ? null : b.name)}
+                  onClick={() => go(on ? null : b.name)}
                   onMouseMove={(e) => {
                     const box = (e.currentTarget.ownerSVGElement as SVGSVGElement).getBoundingClientRect();
                     setHover({ name: b.name, x: e.clientX - box.left, y: e.clientY - box.top });
@@ -124,9 +127,9 @@ export function BarangayMap({ records }: { records: MapRecord[] }) {
         <p className="mt-2 text-sm text-slate-600">{t("Tap a barangay to see its records. Darker means more records.")}</p>
       </section>
 
-      <section className="card p-4" aria-live="polite">
+      <section className={`card p-4${pending ? " opacity-60" : ""}`} aria-live="polite" aria-busy={pending}>
         <label className="label" htmlFor="bgy-pick">{t("Choose a barangay")}</label>
-        <select id="bgy-pick" className="input" value={picked ?? ""} onChange={(e) => setPicked(e.target.value || null)}>
+        <select id="bgy-pick" className="input" value={picked ?? ""} onChange={(e) => go(e.target.value || null)}>
           <option value="">{t("All barangays")}</option>
           {BARANGAYS.map((b) => (
             <option key={b.name} value={b.name}>
@@ -139,16 +142,19 @@ export function BarangayMap({ records }: { records: MapRecord[] }) {
           <>
             <h2 className="mt-4 text-lg font-bold">{picked}</h2>
             <p className="text-slate-700">
-              {label(pickedList.length)}
-              {pickedList.some((r) => r.late) && ` · ${t("{n} late", { n: pickedList.filter((r) => r.late).length })}`}
+              {label(count(picked))}
+              {(tally[picked]?.late ?? 0) > 0 && ` · ${t("{n} late", { n: tally[picked]?.late ?? 0 })}`}
             </p>
+            {count(picked) > pickedList.length && (
+              <p className="text-sm text-slate-600">{t("Showing the first {n} of {total}.", { n: pickedList.length, total: count(picked) })}</p>
+            )}
             {pickedList.length === 0 ? (
               <p className="mt-2 text-slate-700">{t("No records for this barangay.")}</p>
             ) : (
               <ul className="mt-2 divide-y divide-slate-100">
                 {pickedList.map((r) => (
                   <li key={r.id}>
-                    <Link href={`/records/${r.id}`} className="block min-h-12 py-2 hover:bg-brand-50">
+                    <Link prefetch={false} href={`/records/${r.id}`} className="block min-h-12 py-2 hover:bg-brand-50">
                       <span className="block font-medium">{r.subject}</span>
                       <span className="block text-sm text-slate-600">
                         <span className="font-mono">{r.tracking_no}</span>
@@ -159,7 +165,7 @@ export function BarangayMap({ records }: { records: MapRecord[] }) {
                 ))}
               </ul>
             )}
-            <button type="button" className="btn-secondary mt-3" onClick={() => setPicked(null)}>
+            <button type="button" className="btn-secondary mt-3" onClick={() => go(null)}>
               {t("Show all barangays")}
             </button>
           </>
@@ -170,14 +176,14 @@ export function BarangayMap({ records }: { records: MapRecord[] }) {
               <p className="mt-2 text-slate-700">{t("No records have a barangay yet.")}</p>
             ) : (
               <ol className="mt-2 space-y-1">
-                {ranked.slice(0, 10).map(([name, list]) => (
+                {ranked.slice(0, 10).map(([name, v]) => (
                   <li key={name}>
-                    <button type="button" onClick={() => setPicked(name)} className="grid min-h-11 w-full grid-cols-[minmax(0,1fr)_6rem_2rem] items-center gap-2 rounded px-1 text-left hover:bg-brand-50">
+                    <button type="button" onClick={() => go(name)} className="grid min-h-11 w-full grid-cols-[minmax(0,1fr)_6rem_2rem] items-center gap-2 rounded px-1 text-left hover:bg-brand-50">
                       <span className="truncate text-brand-800 underline">{name}</span>
                       <span className="h-3 rounded bg-slate-100">
-                        <span className="block h-3 rounded" style={{ width: `${(list.length / max) * 100}%`, background: shade(list.length) }} />
+                        <span className="block h-3 rounded" style={{ width: `${(v.n / max) * 100}%`, background: shade(v.n) }} />
                       </span>
-                      <span className="text-right font-semibold tabular-nums">{list.length}</span>
+                      <span className="text-right font-semibold tabular-nums">{v.n}</span>
                     </button>
                   </li>
                 ))}

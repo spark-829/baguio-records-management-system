@@ -724,6 +724,7 @@ export const FIL: Record<string, string> = {
   "Add a scanned file (PDF, JPG or PNG)": "Magdagdag ng na-scan na file (PDF, JPG o PNG)",
   "Showing the {n} oldest of {total}.": "Ipinapakita ang {n} pinakamatagal sa {total}.",
   "See all late records": "Tingnan lahat ng huling record",
+  "Show {n} more": "Ipakita ang {n} pa",
   "Showing the first {n} of {total}.": "Ipinapakita ang unang {n} sa {total}.",
   "Keep full quality (larger file)": "Panatilihin ang buong kalidad (mas malaking file)",
   "Preparing the file…": "Inihahanda ang file…",
