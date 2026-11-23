@@ -48,8 +48,8 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
         </dl>
         <div className="mt-4 flex items-center gap-4 border-t border-slate-300 pt-4">
           <div className="shrink-0" dangerouslySetInnerHTML={{ __html: qr }} />
-          <p className="text-sm">
-            {t("Scan the code, or go to")} <strong>{origin.replace(/^https?:\/\//, "")}/track</strong> {t("and type the tracking number and code to see where your document is.")}
+          <p className="min-w-0 text-sm">
+            {t("Scan the code, or go to")} <strong className="[overflow-wrap:anywhere]">{origin.replace(/^https?:\/\//, "")}/track</strong> {t("and type the tracking number and code to see where your document is.")}
           </p>
         </div>
       </div>

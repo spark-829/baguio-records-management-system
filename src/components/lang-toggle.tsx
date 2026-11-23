@@ -35,7 +35,7 @@ export function LangToggle({ dark = false }: { dark?: boolean }) {
             lang={l.code === "fil" ? "fil" : "en"}
             aria-pressed={on}
             onClick={() => choose(l.code)}
-            className={`min-h-10 rounded-md px-3 text-sm font-semibold ${
+            className={`min-h-11 rounded-md px-3 text-sm font-semibold ${
               on ? (dark ? "bg-white text-brand-800" : "bg-brand-700 text-white") : dark ? "text-white hover:bg-white/10" : "text-brand-800 hover:bg-brand-50"
             }`}
           >

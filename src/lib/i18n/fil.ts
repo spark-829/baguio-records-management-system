@@ -375,6 +375,7 @@ export const FIL: Record<string, string> = {
   "By current office": "Ayon sa opisinang may hawak",
   "By document type": "Ayon sa uri ng dokumento",
   "Registered per month": "Naitala bawat buwan",
+  "Overdue records (scroll sideways for more columns)": "Mga record na lampas na sa takdang petsa (i-scroll pakanan para sa iba pang hanay)",
   "Overdue records": "Mga record na lampas na sa takdang petsa",
   "Was due (oldest first)": "Takdang petsa (pinakaluma muna)",
   "None.": "Wala.",
