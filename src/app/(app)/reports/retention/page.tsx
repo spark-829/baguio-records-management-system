@@ -4,21 +4,12 @@ import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABEL, fmtDate } from "@/lib/labels";
-import { FINISHED, retention, type RetentionState } from "@/lib/retention";
+import { PERMANENT_YEARS, type RetentionState } from "@/lib/retention";
+import { parseRetention } from "@/lib/reports";
 import type { Status } from "@/lib/types";
 import { PrintButton } from "../../records/[id]/slip/print-button";
 
 export const metadata = { title: "Retention schedule" };
-
-type Row = {
-  id: string;
-  tracking_no: string;
-  subject: string;
-  status: Status;
-  doc_type: { name: string; retention_years: number } | null;
-  current_office: { name: string } | null;
-  routes: { status: Status; created_at: string }[];
-};
 
 const STATE: Record<RetentionState, { label: string; tone: string }> = {
   review_now: { label: "Keep period over: review for disposal", tone: "bg-red-50 text-red-900 border-red-300" },
@@ -36,27 +27,13 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
   if (me.role !== "admin" && me.role !== "records_officer") redirect("/reports");
   const { show } = await searchParams;
   const supabase = await createClient();
-  const [{ data }, { data: types }] = await Promise.all([
-    supabase
-      .from("rms_records")
-      .select("id, tracking_no, subject, status, doc_type:rms_document_types(name, retention_years), current_office:rms_offices!rms_records_current_office_id_fkey(name), routes:rms_routes(status, created_at)")
-      .is("deleted_at", null)
-      .in("status", FINISHED)
-      .order("created_at")
-      .limit(5000),
+  const [{ data, error }, { data: types }] = await Promise.all([
+    supabase.rpc("rms_report_retention", { p_show: show && show in STATE ? show : null, p_limit: 500 }),
     supabase.from("rms_document_types").select("name, retention_years").eq("is_active", true).order("retention_years", { ascending: false }),
   ]);
-
-  const rows = ((data ?? []) as unknown as Row[]).map((r) => {
-    const finishedAt =
-      r.routes.filter((x) => FINISHED.includes(x.status)).map((x) => x.created_at).sort()[0] ?? r.routes.map((x) => x.created_at).sort().at(-1)!;
-    const years = r.doc_type?.retention_years ?? 5;
-    return { ...r, finishedAt, years, ...retention(finishedAt, years) };
-  });
-  rows.sort((a, b) => (a.keepUntil ?? "9999").localeCompare(b.keepUntil ?? "9999"));
-  const counts = { review_now: 0, review_soon: 0, keep: 0 } as Record<RetentionState, number>;
-  rows.forEach((r) => counts[r.state]++);
-  const shown = show && show in STATE ? rows.filter((r) => r.state === show) : rows;
+  if (error) throw new Error("Retention totals failed");
+  const { counts, rows } = parseRetention(data);
+  const total = show && show in STATE ? counts[show as RetentionState] : counts.review_now + counts.review_soon + counts.keep;
 
   return (
     <div className="space-y-5">
@@ -82,6 +59,10 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
         ))}
       </div>
 
+      {total > rows.length && (
+        <p className="text-sm text-slate-600">{t("Showing the first {n} of {total}.", { n: rows.length, total })}</p>
+      )}
+
       <section className="card overflow-x-auto">
         <table className="w-full">
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
@@ -95,17 +76,20 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {shown.map((r) => (
+            {rows.map((r) => {
+              const permanent = r.years >= PERMANENT_YEARS;
+              return (
               <tr key={r.id}>
                 <td className="whitespace-nowrap px-4 py-2 font-mono text-sm"><Link href={`/records/${r.id}`}>{r.tracking_no}</Link></td>
-                <td className="px-4 py-2">{r.subject}<div className="text-sm text-slate-600">{STATUS_LABEL[r.status]} · {r.current_office?.name}</div></td>
-                <td className="px-4 py-2 text-slate-700">{r.doc_type?.name}<div className="text-sm text-slate-600">{r.permanent ? t("Permanent") : r.years === 0 ? t("No keep period") : t("{n} years", { n: r.years })}</div></td>
-                <td className="whitespace-nowrap px-4 py-2">{fmtDate(r.finishedAt)}</td>
-                <td className="whitespace-nowrap px-4 py-2 font-semibold">{r.keepUntil ? fmtDate(r.keepUntil) : t("Permanent")}</td>
-                <td className="px-4 py-2"><span className={`badge border ${STATE[r.state].tone}`}>{t(r.permanent ? "Keep permanently" : STATE[r.state].label)}</span></td>
+                <td className="px-4 py-2">{r.subject}<div className="text-sm text-slate-600">{STATUS_LABEL[r.status as Status]} · {r.office_name}</div></td>
+                <td className="px-4 py-2 text-slate-700">{r.type_name}<div className="text-sm text-slate-600">{permanent ? t("Permanent") : r.years === 0 ? t("No keep period") : t("{n} years", { n: r.years })}</div></td>
+                <td className="whitespace-nowrap px-4 py-2">{fmtDate(r.finished_at)}</td>
+                <td className="whitespace-nowrap px-4 py-2 font-semibold">{r.keep_until ? fmtDate(r.keep_until) : t("Permanent")}</td>
+                <td className="px-4 py-2"><span className={`badge border ${STATE[r.state].tone}`}>{t(permanent ? "Keep permanently" : STATE[r.state].label)}</span></td>
               </tr>
-            ))}
-            {shown.length === 0 && (
+              );
+            })}
+            {rows.length === 0 && (
               <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-600">{t("No finished records in this group.")}</td></tr>
             )}
           </tbody>

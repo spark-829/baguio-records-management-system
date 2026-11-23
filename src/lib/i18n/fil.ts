@@ -717,4 +717,7 @@ export const FIL: Record<string, string> = {
   "This scan is too large for AI reading. Scan again at a lower resolution or fill in the form by hand.": "Masyadong malaki ang scan na ito para basahin ng AI. Mag-scan muli sa mas mababang resolution o punan ang form nang mano-mano.",
   "The AI could not read this PDF. Fill in the form by hand, or upload the scan as JPG or PNG. The PDF is still saved with the record.": "Hindi nabasa ng AI ang PDF na ito. Punan ang form nang mano-mano, o i-upload ang scan bilang JPG o PNG. Naka-save pa rin ang PDF kasama ng record.",
   "Add a scanned file (PDF, JPG or PNG)": "Magdagdag ng na-scan na file (PDF, JPG o PNG)",
+  "Showing the {n} oldest of {total}.": "Ipinapakita ang {n} pinakamatagal sa {total}.",
+  "See all late records": "Tingnan lahat ng huling record",
+  "Showing the first {n} of {total}.": "Ipinapakita ang unang {n} sa {total}.",
 };

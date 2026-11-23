@@ -1,5 +1,6 @@
 import { BarangayMap, type MapRecord } from "@/components/barangay-map";
 import { getT } from "@/lib/i18n/server";
+import { fetchPages } from "@/lib/fetch-pages";
 import { createClient } from "@/lib/supabase/server";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
@@ -13,14 +14,19 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
   const [{ t }, { show }] = await Promise.all([getT(), searchParams]);
   const onlyOpen = show === "open";
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("rms_records")
-    .select("id, tracking_no, subject, status, due_date, barangay")
-    .is("deleted_at", null)
-    .not("barangay", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(2000);
-  const rows = (data ?? []) as { id: string; tracking_no: string; subject: string; status: Status; due_date: string | null; barangay: string }[];
+  type MapRow = { id: string; tracking_no: string; subject: string; status: Status; due_date: string | null; barangay: string };
+  // PostgREST caps one response at 1000 rows, so read in pages
+  const { data, error } = await fetchPages<MapRow>((from, to) =>
+    supabase
+      .from("rms_records")
+      .select("id, tracking_no, subject, status, due_date, barangay")
+      .is("deleted_at", null)
+      .not("barangay", "is", null)
+      .order("created_at", { ascending: false })
+      .order("id")
+      .range(from, to) as unknown as PromiseLike<{ data: MapRow[] | null; error: unknown }>,
+  );
+  const rows = data;
   const records: MapRecord[] = rows.filter((r) => !onlyOpen || !DONE.includes(r.status)).map((r) => ({
     id: r.id,
     tracking_no: r.tracking_no,
