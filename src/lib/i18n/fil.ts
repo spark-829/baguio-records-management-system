@@ -766,4 +766,10 @@ export const FIL: Record<string, string> = {
   "Choose the _Kind of transaction (ARTA)_. The due date fills in by itself, counting only working days. You can still change it.": "Piliin ang _Uri ng transaksyon (ARTA)_. Kusang mapupuno ang takdang petsa, binibilang lamang ang mga araw ng trabaho. Maaari mo pa rin itong palitan.",
   "Answering a letter? Open it and press [[Write a reply]], or type its tracking number under _In reply to_.": "Sumasagot sa isang sulat? Buksan ito at pindutin ang [[Sumulat ng sagot]], o i-type ang tracking number nito sa _Sagot sa_.",
   "The bell at the top shows how many records were sent to your office or are late. Click it to see them.": "Ipinapakita ng kampana sa itaas kung ilang record ang ipinadala sa inyong opisina o huli na. Pindutin ito para makita.",
+  "Something went wrong": "May nangyaring mali",
+  "Loading the newest version…": "Nilo-load ang pinakabagong bersyon…",
+  "The page did not load properly. This can happen right after the system is updated or when the internet connection drops. Nothing you saved was lost.": "Hindi maayos na nag-load ang pahina. Maaari itong mangyari pagkatapos ma-update ang sistema o kapag naputol ang internet. Walang nawala sa mga na-save mo.",
+  "Reload the page": "I-reload ang pahina",
+  "Try again": "Subukan muli",
+  "Error code": "Code ng error",
 };
