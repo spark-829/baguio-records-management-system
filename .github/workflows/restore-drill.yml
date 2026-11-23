@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: supabase/setup-cli@v1
         with:
           version: 3.3.0 # only init/start/stop are used here; newer images match the live Auth better
