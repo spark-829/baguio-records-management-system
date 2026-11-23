@@ -8,6 +8,7 @@ import { PDF_NOTE } from "@/lib/image-size";
 import { pdfFirstPageToJpeg } from "@/lib/pdf-first-page";
 import { shrinkForAi } from "@/lib/shrink-image";
 import { useUploadPrep } from "@/components/use-upload-prep";
+import { ScanPreview } from "@/components/scan-preview";
 import { registerRecord } from "./actions";
 
 type Opt = { id: string; name: string };
@@ -63,7 +64,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
   const [aiFilled, setAiFilled] = useState<Set<keyof Fields>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const captureRef = useRef<HTMLInputElement>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<Blob | null>(null);
   const [scanName, setScanName] = useState<string | null>(null);
 
   const prep = useUploadPrep(fileRef);
@@ -74,16 +75,8 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
-  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
-
-  // Only in-memory blob: URLs are ever used as the preview source (never text taken from the file).
-  function blobUrl(b: Blob): string | null {
-    const url = URL.createObjectURL(b);
-    return url.startsWith("blob:") ? url : null;
-  }
-
   function showPreview(file: File | undefined) {
-    setPreview(file && file.type.startsWith("image/") ? blobUrl(file) : null);
+    setPreview(file && file.type.startsWith("image/") ? file : null);
     setScanName(file?.name ?? null);
   }
 
@@ -142,7 +135,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           setAiMsg(PDF_NOTE);
           return;
         }
-        setPreview(blobUrl(page)); // page preview, like scan apps
+        setPreview(page); // page preview, like scan apps
         toSend = page;
       }
       const small = await shrinkForAi(toSend);
@@ -216,8 +209,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         {scanName && (
           <div className="space-y-2">
             {preview ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={preview} alt={t("Preview of the scanned page")} className="max-h-64 w-full rounded-lg border border-slate-200 object-contain" />
+              <ScanPreview image={preview} label={t("Preview of the scanned page")} />
             ) : (
               <p className="truncate text-sm text-slate-700">{scanName}</p>
             )}
