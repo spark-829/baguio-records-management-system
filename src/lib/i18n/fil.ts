@@ -697,6 +697,7 @@ export const FIL: Record<string, string> = {
   "Your browser can't scan here. Open your phone's camera app and point it at the QR code on the slip; it will open the record.": "Hindi makapag-scan dito ang iyong browser. Buksan ang camera app ng iyong telepono at itutok sa QR code sa slip; bubuksan nito ang record.",
   "Or type the tracking number": "O i-type ang tracking number",
   "This QR code is not a Baguio RMS routing slip.": "Hindi ito QR code ng routing slip ng Baguio RMS.",
+  "That is not a tracking number. It looks like IN-2026-0001.": "Hindi iyan tracking number. Ganito ang itsura nito: IN-2026-0001.",
   "We can't open this record. It may not exist, or your account may not open it. Ask the records desk if you think this is wrong.": "Hindi mabuksan ang record na ito. Maaaring wala ito, o hindi ito mabubuksan ng iyong account. Magtanong sa records desk kung sa palagay mo ay mali ito.",
   "Last step: {step} by {who} on {when}": "Huling hakbang: {step} ni {who} noong {when}",
   "Now at {office}": "Nasa {office} ngayon",

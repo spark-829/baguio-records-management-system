@@ -52,6 +52,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking),
 | `i18n/` | `core.ts` (`makeT`), `server.ts` (`getT`), `client.tsx` (`useT`), `fil.ts` (dictionary, grep only) |
 | `qr.ts`, `watermark.ts`, `shrink-image.ts`, `image-size.ts` | QR, PDF stamp, image helpers |
 | `due.ts`, `retention.ts`, `safe-next.ts` | due dates, retention rules, safe redirects |
+| `settings-diff.ts` | `changedSettings` (which admin settings actually changed) |
 
 `src/components/`: badges, brand, nav-links, lang-toggle, idle-logout,
 scan-qr-button, rich, due-calendar, barangay-map.
