@@ -17,7 +17,8 @@ do not need to explore the tree.
 
 - Read only the files the task needs. Find code with Grep (`-n`, a tight
   `glob`) and read the matching range with `offset`/`limit`, not whole files.
-- Never read: `package-lock.json`, `node_modules/`, `.next/`, `.open-next/`,
+- Never read whole: `.claude/skills/*/data/`, `.claude/skills/*/scripts/`
+  (grep them). Never read: `package-lock.json`, `node_modules/`, `.next/`, `.open-next/`,
   `.wrangler/`, binaries in `public/`. Seed SQL and `src/lib/i18n/fil.ts`
   (700+ lines): grep them, do not read them.
 - Do not re-read a file you just edited or already read this session.
