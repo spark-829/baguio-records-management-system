@@ -19,6 +19,7 @@ import { restoreRecord } from "./actions";
 import { SummaryBox } from "./summary-box";
 import { isComplaint, replyClock, replyDueAt } from "@/lib/complaint";
 import { recordsBackHref } from "@/lib/back-link";
+import { fmtMinutes, slowSteps } from "@/lib/step-times";
 
 type CopyRow = {
   source_tracking_no: string;
@@ -193,6 +194,11 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const assignEvents = assignmentEvents(
     [...history].reverse().map((h) => ({ id: h.id, assigned_to: h.assigned_to ?? null, from_office_id: h.from_office?.id ?? null, to_office_id: h.to_office?.id ?? null })),
   );
+  const slow = slowSteps(
+    [...history].reverse().map((h) => ({ id: h.id, status: h.status, assigned_to: h.assigned_to ?? null, from_office_id: h.from_office?.id ?? null, to_office_id: h.to_office?.id ?? null, created_at: h.created_at })),
+    settings.stepMinutes,
+  );
+  const fmtTook = (n: number) => { const f = fmtMinutes(n); return t(f.key, f.vars); };
   type FileRow = { id: string; file_name: string; version: number; uploaded_at: string; uploader: { full_name: string } | null };
   // Uploaded files appear in the history too, placed just above the step they came after (history is newest first).
   const fileEvents = newestFirst((files ?? []) as unknown as FileRow[], (f) => f.uploaded_at).map((f) => ({
@@ -542,6 +548,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                     ) : (
                       <span className="badge bg-white text-slate-600 ring-1 ring-slate-200">{t("Note")}</span>
                     )}
+                    {slow[r.id] && <span className="badge bg-amber-50 text-amber-900 ring-1 ring-amber-200">{t("Slow")}</span>}
                     <span className="font-medium">
                       {r.assigned_to
                         ? t("{head} assigned this to {name}", { head: r.actor?.full_name ?? "—", name: nameById.get(r.assigned_to) ?? "—" })
@@ -552,6 +559,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                     )}
                   </div>
                   {r.remarks && <p className="mt-1 text-sm text-slate-700">“{r.remarks}”</p>}
+                  {slow[r.id] && <p className="mt-1 text-sm text-slate-700">{t("Took {took}, standard {std}", { took: fmtTook(slow[r.id].took), std: fmtTook(slow[r.id].standard) })}</p>}
                   {assignEvents[r.id]?.kind === "cleared" && <p className="mt-1 text-sm text-slate-600">{t("Assignment cleared.")}</p>}
                   <p className="mt-0.5 text-sm text-slate-600">
                     {fmtDateTime(r.created_at)} · {r.actor?.full_name ?? "—"}

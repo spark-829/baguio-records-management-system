@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "./supabase/server";
 import type { Profile } from "./types";
+import { parseStepMinutes } from "@/lib/step-times";
 
 /** The signed-in user's RMS profile. Sends locked, inactive or not-yet-verified users elsewhere. */
 export const getProfile = cache(async (): Promise<Profile> => {
@@ -42,5 +43,6 @@ export const getSettings = cache(async () => {
     idleTimeoutMinutes: Number(map.idle_timeout_minutes ?? 15),
     watermarkDownloads: map.watermark_downloads !== false,
     aiExcludeConfidential: map.ai_exclude_confidential !== false,
+    stepMinutes: parseStepMinutes(map.step_minutes),
   };
 });

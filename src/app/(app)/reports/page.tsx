@@ -71,6 +71,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         {me.role !== "viewer" && <Link href="/reports/offices" className="btn-secondary">{t("Office workload")}</Link>}
         {(isCentral(me) || me.role === "dept_head") && <Link href="/reports/satisfaction" className="btn-secondary">{t("Client satisfaction")}</Link>}
         {isCentral(me) && <Link href="/reports/retention" className="btn-secondary">{t("Retention schedule")}</Link>}
+        {me.role === "records_officer" && <Link href="/reports/step-times" className="btn-secondary">{t("Standard time per step")}</Link>}
       </nav>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
