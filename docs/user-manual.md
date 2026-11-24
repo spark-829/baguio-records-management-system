@@ -16,6 +16,7 @@ Shows open and overdue records, what is waiting in your office (with how many da
 ## Registering a document (records desk)
 1. Click **Register**.
 2. No scan? Skip to step 3. To scan, click **Scan document** and point the camera at the page, or upload a PDF, JPG or PNG from the office scanner. Then click **Read scan with AI**. Boxes filled by the assistant are highlighted. Scans go straight to the record and are not kept on the device; use **Retake** to scan again. For a PDF, the AI reads the first page.
+2b. Got the letter as an email? Under **Or register an email (.eml file)**, drop or choose the saved email (Gmail: More, Download message; Outlook: File, Save as). The subject, sender, date, mode and message fill in and are highlighted, and PDF, JPG or PNG attachments are attached. Check the boxes, or press **Remove email** to start over. See `docs/email-intake.md` for automatic intake, which is not built yet.
 3. Fill in or check every box unless it says (optional). Choose the **Transaction type**: citizen or client (G2C), government office (G2G) or business (G2B). Pick Government for letters from or to another government office. The assistant can make mistakes; you are responsible for what is saved.
 4. Choose an office in **Send to office** if it should go somewhere right away, and set **Must be acted on by** if there is a deadline.
 5. Click **Save and get tracking number**, or **Cancel** to leave without saving. Print the routing slip with **Print routing slip** and attach it to the paper copy. Its QR code opens the record.

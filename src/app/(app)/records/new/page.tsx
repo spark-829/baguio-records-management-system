@@ -4,6 +4,7 @@ import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { BARANGAYS } from "@/lib/baguio-map";
 import { parseReplyTo } from "@/lib/reply-to";
+import { COPY_TYPE } from "@/lib/copy-request";
 import { RegisterForm } from "./register-form";
 
 export default async function NewRecordPage({ searchParams }: { searchParams: Promise<{ reply_to?: string }> }) {
@@ -27,7 +28,7 @@ export default async function NewRecordPage({ searchParams }: { searchParams: Pr
           {t("Fill in the boxes below. If you have a scanned copy, the assistant can fill them in for you. Check every box, then press Save to get a tracking number.")}
         </p>
       </div>
-      <RegisterForm types={types ?? []} offices={offices ?? []} canIncoming={isCentral(me)} myOfficeId={me.office_id} replyTo={replyTo} barangays={barangayCheck.error ? null : BARANGAYS.map((b) => b.name)} />
+      <RegisterForm types={(types ?? []).filter((x) => x.name !== COPY_TYPE || me.role === "records_officer")} offices={offices ?? []} canIncoming={isCentral(me)} myOfficeId={me.office_id} replyTo={replyTo} barangays={barangayCheck.error ? null : BARANGAYS.map((b) => b.name)} />
     </div>
   );
 }

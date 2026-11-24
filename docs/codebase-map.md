@@ -65,6 +65,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `needs-action.ts` | `sortNeedsAction` (dashboard "Waiting in my office" order: late, due soon, forwarded, urgent, newest) |
 | `copy-request.ts` | `parseCopyForm`, `dpoTag`, `canDecide` (CLO head), `canRelease` (mirrors `rms_copy_decide` / `rms_copy_release`) |
 | `satisfaction.ts`, `complaint.ts`, `csv.ts` | survey parsing and report maths, 72-hour complaint clock and channels, CSV cells |
+| `eml.ts` | `.eml` intake: `looksLikeEml`, `emlToFields`, `pickAttachments`; `parseEml` loads `postal-mime` lazily, browser only (never on the server) |
 | `step-times.ts` | standard minutes per step, `stepKind`, `officeMinutesBetween` (office hours, holidays skipped), `slowSteps` ("Slow" flags in the history) |
 | `due.ts`, `retention.ts`, `safe-next.ts` | due dates, retention rules, safe redirects |
 | `reports.ts`, `fetch-pages.ts` | report date bounds, bar merging, RPC result parsers, `onTimeSummary`; `fetchPages` (pages past the 1000-row PostgREST cap) |
@@ -136,6 +137,6 @@ Secret-dependent jobs skip (exit 0) when their GitHub secrets are missing.
 
 ## Docs: `docs/`
 
-`system-analysis.md` (use cases, ERD), `user-manual.md`, `turnover-guide.md`,
+`system-analysis.md` (use cases, ERD), `user-manual.md`, `email-intake.md` (future Cloudflare Email Routing intake), `turnover-guide.md`,
 `security-test-report.md`, `demo-video-script.md`. Read only when the task is
 about them.

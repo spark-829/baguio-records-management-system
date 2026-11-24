@@ -60,6 +60,12 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
     if (bad) return { error: bad };
   }
 
+  const extras = form.getAll("extra_file").filter((x): x is File => x instanceof File && x.size > 0).slice(0, 4);
+  for (const x of extras) {
+    const bad = checkUpload(x.type, x.size);
+    if (bad) return { error: bad };
+  }
+
   const supabase = await createClient();
   let replyTo: string | null = null;
   if (v.direction === "outgoing" && v.in_reply_to) {
@@ -133,6 +139,11 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
         originalSize: form.get("original_size"),
         withVersion: false,
       }));
+  }
+
+  for (const x of extras) {
+    const r = await saveAttachment(supabase, { recordId: rec.id, userId: me.id, file: x, thumb: null, originalShaHint: null, originalSize: null, withVersion: false });
+    if ("error" in r) fileFailed = true;
   }
 
   if (v.forward_to && v.forward_to !== me.office_id) {

@@ -44,6 +44,7 @@ export default async function HelpPage() {
         <Topic id="log" title={t("Log a letter that just arrived")}>
           {S("Click [[Register]] at the top of the screen.")}
           {S("No scan? Skip part 1. Go straight to the form.")}
+          {S("Got it as an email? Save the email as a .eml file, then drop it under _Or register an email (.eml file)_. The boxes fill in for you. Check them.")}
           {S("Fill in every box unless it says (optional).")}
           {S("Choose the _Transaction type_: citizen, government office or business.")}
           {S("Choose the _ARTA processing time_. The due date fills in by itself, counting only working days. You can still change it.")}
