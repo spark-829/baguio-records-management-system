@@ -15,7 +15,7 @@ Ground every decision in the guides, not taste:
 - tokens in `src/app/globals.css`; `PRODUCT.md` and `DESIGN.md` at the
   repo root summarise users, constraints and the visual system.
 
-Two installed design skills, read as playbooks (open only what the task
+Three installed design skills, read as playbooks (open only what the task
 needs; never read their `data/` or `scripts/` folders whole):
 - **Impeccable** (`.claude/skills/impeccable/`): for a review read
   `reference/critique.md` + `reference/mode-operate.md` (scored UX
@@ -25,6 +25,11 @@ needs; never read their `data/` or `scripts/` folders whole):
   `layout.md`, `typeset.md`, `distill.md`). This app is **Operate** mode
   (`/track` and `/help` are Read): precision and restraint, no bold
   restyles. Never run `impeccable live`.
+- **Taste** (`.claude/skills/design-taste-frontend/`), the other half of
+  the "impeccable-taste" pair: read `references/app-screens.md` for any
+  staff screen and `references/tells.md` for generic-AI tells; use
+  `references/critique.md` alongside Impeccable's on reviews. Its
+  landing-page art direction does not apply to this app.
 - **UI/UX Pro Max** (`.claude/skills/ui-ux-pro-max/`): the priority table in
   `SKILL.md` and `references/quick-reference.md` for UX rules; grep
   `data/ux-guidelines.csv` or `data/app-interface.csv` for a topic.
