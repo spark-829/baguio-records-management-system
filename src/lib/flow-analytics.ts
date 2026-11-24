@@ -148,17 +148,6 @@ export function rankOffices(offices: OfficeFlow[]): RankedOffice[] {
   });
 }
 
-/** The 4 cut values between 5 equal groups of the positive values (nearest rank), or [] with no values. */
-export function quintileCuts(values: number[]): number[] {
-  const v = values.filter((x) => x > 0).sort((a, b) => a - b);
-  if (v.length === 0) return [];
-  return [0.2, 0.4, 0.6, 0.8].map((p) => v[Math.min(v.length - 1, Math.max(0, Math.ceil(p * v.length) - 1))]);
-}
-
-export function quintileIndex(v: number, cuts: number[]): number {
-  return cuts.filter((c) => v > c).length;
-}
-
 export function niceTicks(max: number): number[] {
   if (!(max > 0)) return [0, 1];
   const k = Math.floor(Math.log10(max));
@@ -222,4 +211,39 @@ export function pct(part: number, whole: number): number | null {
 
 export function perWeek(n: number, days: number): number {
   return Math.round((n / (days / 7)) * 10) / 10;
+}
+
+/**
+ * Open-record count at the period start and at the end of each raw bucket, walking back from `openNow`:
+ * open[i-1] = open[i] - logged[i] + finished[i], clamped at 0. Returns bucket count + 1 points; the last is `openNow`.
+ */
+export function openPile(trend: { logged: number; finished: number }[], openNow: number): number[] {
+  const out = [Math.max(0, openNow)];
+  for (let i = trend.length - 1; i >= 0; i--) {
+    out.unshift(Math.max(0, out[0] - trend[i].logged + trend[i].finished));
+  }
+  return out;
+}
+
+/** The top `n` rows by `key` (descending), plus an aggregate of the rest (numeric fields summed) and how many it holds. */
+export function topWithOther<T extends object>(rows: T[], n: number, key: keyof T & string): { top: T[]; other: (T & { count: number }) | null } {
+  const sorted = [...rows].sort((a, b) => Number((b as Record<string, unknown>)[key]) - Number((a as Record<string, unknown>)[key]));
+  const top = sorted.slice(0, n);
+  const rest = sorted.slice(n);
+  if (rest.length === 0) return { top, other: null };
+  const first = rest[0] as Record<string, unknown>;
+  const other: Record<string, unknown> = { count: rest.length };
+  for (const k of Object.keys(first)) {
+    other[k] = typeof first[k] === "number" ? rest.reduce((a, r) => a + ((r as Record<string, unknown>)[k] as number), 0) : first[k];
+  }
+  return { top, other: other as T & { count: number } };
+}
+
+/** Compares the displayed (rounded) values. `better` says which direction is good. Null previous gives "none". */
+export function kpiCompare(value: number | null, prev: number | null, better: "lower" | "higher"): "better" | "worse" | "same" | "none" {
+  if (value === null || prev === null) return "none";
+  const v = Math.round(value);
+  const p = Math.round(prev);
+  if (v === p) return "same";
+  return (v < p) === (better === "lower") ? "better" : "worse";
 }

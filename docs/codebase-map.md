@@ -27,7 +27,7 @@ MFA-pending users. All queries use `createClient()` from
 | `/reports/released` | released documents logbook (records desk, office heads), CSV via `api/reports/csv?report=released` |
 | `/map` | barangay map (`components/barangay-map.tsx`, `lib/baguio-map.ts`) |
 | `/admin/users`, `access`, `audit`, `bin`, `settings` | admin screens; `actions.ts` beside each (`users?locked=1` filters locked accounts) |
-| `/admin/analytics` | admin flow analytics: `admin/analytics/page.tsx`, `charts.tsx` (server-only marks); one RPC `rms_admin_flow_analytics` |
+| `/admin/analytics` | admin flow analytics: `admin/analytics/page.tsx`, `charts.tsx` (server-only BarList, OpenLine, PairedColumns); one RPC `rms_admin_flow_analytics` |
 | `/security` | MFA setup; `/help` user help |
 
 Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (public Client Satisfaction Survey, server form, no client JS),
@@ -46,7 +46,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `session.ts` | `getProfile`, `isCentral`, `getSettings` |
 | `types.ts`, `labels.ts` | Role/Status/Profile types; labels, `maskName`, dates |
 | `workflow.ts` | actions, `allowedActions`, `nextStatus`, `isOverdue`, `isAlreadyReceived`, `canAttach` (mirror of `rms_can_attach`; admins get no record actions) |
-| `security-hub.ts`, `flow-analytics.ts` | pure: admin Security overview parser, attention items, finding text; System analytics parser, ranking, quintiles, ticks, text helpers |
+| `security-hub.ts`, `flow-analytics.ts` | pure: admin Security overview parser, attention items, finding text; System analytics parser, ranking, ticks, open-pile line, top-N-plus-other, KPI comparison, text helpers |
 | `history.ts`, `audit-text.ts` | `newestFirst`, `collapseSteps` (history order, citizen progress); `routeText` (audit routing rows) |
 | `search.ts` | record search filters → `rms_search_records_v3` (adds the box code) |
 | `boxes.ts`, `dispatch.ts` | pure: box codes, box form checks, history text; send methods, release and delivery form checks, `canRecordDelivery` (mirror of `rms_record_delivery`), logbook parser and CSV rows |
