@@ -12,24 +12,27 @@ import { AlertBell } from "@/components/alert-bell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [me, settings, { t }] = await Promise.all([getProfile(), getSettings(), getT()]);
-  const links = [
-    { href: "/", label: t("Dashboard") },
-    { href: "/records", label: t("Records") },
-    ...(me.role !== "viewer" ? [{ href: "/records/new", label: t("Register") }] : []),
-    { href: "/map", label: t("Map") },
-    { href: "/assistant", label: t("Assistant") },
-    { href: "/help", label: t("Help") },
-    ...(me.role !== "staff" ? [{ href: "/reports", label: t("Reports") }] : []),
-    ...(me.role === "admin"
-      ? [
-          { href: "/admin/users", label: t("Users") },
-          { href: "/admin/audit", label: t("Audit log") },
-          { href: "/admin/access", label: t("Access history") },
-          { href: "/admin/bin", label: t("Bin") },
-          { href: "/admin/settings", label: t("Settings") },
-        ]
-      : []),
-  ];
+  const links = me.role === "admin"
+    ? [
+        { href: "/", label: t("Security") },
+        { href: "/admin/users", label: t("Users") },
+        { href: "/admin/access", label: t("Access history") },
+        { href: "/admin/audit", label: t("Audit log") },
+        { href: "/admin/analytics", label: t("Analytics") },
+        { href: "/records", label: t("Records") },
+        { href: "/admin/bin", label: t("Bin") },
+        { href: "/admin/settings", label: t("Settings") },
+        { href: "/help", label: t("Help") },
+      ]
+    : [
+        { href: "/", label: t("Dashboard") },
+        { href: "/records", label: t("Records") },
+        ...(me.role !== "viewer" ? [{ href: "/records/new", label: t("Register") }] : []),
+        { href: "/map", label: t("Map") },
+        { href: "/assistant", label: t("Assistant") },
+        { href: "/help", label: t("Help") },
+        ...(me.role !== "staff" ? [{ href: "/reports", label: t("Reports") }] : []),
+      ];
   const roleLabel = ROLE_LABEL[me.role];
   const showRole = !me.full_name.includes(roleLabel);
   const line2 = [showRole ? t(roleLabel) : null, me.office?.name ?? null].filter(Boolean).join(" · ");
@@ -45,7 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
           <div className="relative ml-auto flex min-w-0 flex-wrap items-center justify-end lg:flex-nowrap gap-2 text-sm sm:gap-3">
             <LangToggle dark />
-            {me.office_id && <AlertBell officeCode={me.office?.code ?? null} />}
+            {me.office_id && me.role !== "admin" && <AlertBell officeCode={me.office?.code ?? null} />}
             <div className="hidden min-w-0 max-w-[12rem] leading-tight sm:block sm:text-right xl:max-w-[18rem]" title={line2 ? `${me.full_name} · ${line2}` : me.full_name}>
               <div className="truncate font-semibold">{me.full_name}</div>
               <div className="truncate text-xs text-brand-100">{line2}</div>

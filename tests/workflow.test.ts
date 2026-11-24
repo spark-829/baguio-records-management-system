@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allowedActions, isAlreadyReceived, isOverdue, nextStatus } from "../src/lib/workflow";
+import { allowedActions, canAttach, isAlreadyReceived, isOverdue, nextStatus } from "../src/lib/workflow";
 
 const base = { direction: "incoming" as const, userOfficeId: "ceo", currentOfficeId: "ceo" };
 
@@ -22,11 +22,18 @@ describe("allowedActions", () => {
 
   it("keeps archiving to the records desk", () => {
     expect(allowedActions({ ...base, status: "completed", role: "dept_head" })).not.toContain("archive");
-    expect(allowedActions({ ...base, status: "completed", role: "admin" })).toContain("archive");
+    expect(allowedActions({ ...base, status: "completed", role: "records_officer" })).toContain("archive");
+  });
+
+  it("gives admins no record actions, holding office or not", () => {
+    for (const status of ["registered", "forwarded", "received", "under_action", "completed"] as const) {
+      expect(allowedActions({ ...base, status, role: "admin" })).toEqual([]);
+      expect(allowedActions({ ...base, status, role: "admin", userOfficeId: "cmo" })).toEqual([]);
+    }
   });
 
   it("makes archived records read-only for everyone", () => {
-    expect(allowedActions({ ...base, status: "archived", role: "admin" })).toEqual([]);
+    expect(allowedActions({ ...base, status: "archived", role: "records_officer" })).toEqual([]);
   });
 });
 
@@ -95,5 +102,31 @@ describe("isAlreadyReceived", () => {
   });
   it("is false for a forwarded record", () => {
     expect(isAlreadyReceived({ ...o, status: "forwarded" })).toBe(false);
+  });
+});
+
+describe("canAttach", () => {
+  const rec = { userOfficeId: "ceo", currentOfficeId: "ceo", originOfficeId: "cmo", status: "received" as const, deleted: false };
+  it("is never true for admin", () => {
+    expect(canAttach({ ...rec, role: "admin" })).toBe(false);
+  });
+  it("is true for the records desk", () => {
+    expect(canAttach({ ...rec, role: "records_officer", userOfficeId: "cto" })).toBe(true);
+  });
+  it("is true for staff at the current or origin office, false elsewhere", () => {
+    expect(canAttach({ ...rec, role: "staff" })).toBe(true);
+    expect(canAttach({ ...rec, role: "staff", userOfficeId: "cmo", currentOfficeId: "ceo" })).toBe(true);
+    expect(canAttach({ ...rec, role: "staff", userOfficeId: "cto" })).toBe(false);
+    expect(canAttach({ ...rec, role: "viewer" })).toBe(false);
+  });
+  it("is false for archived or deleted records", () => {
+    expect(canAttach({ ...rec, role: "records_officer", status: "archived" })).toBe(false);
+    expect(canAttach({ ...rec, role: "records_officer", deleted: true })).toBe(false);
+  });
+});
+
+describe("isAlreadyReceived for admin", () => {
+  it("is false for admin", () => {
+    expect(isAlreadyReceived({ status: "received", role: "admin", userOfficeId: "ceo", currentOfficeId: "ceo" })).toBe(false);
   });
 });

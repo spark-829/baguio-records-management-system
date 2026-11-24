@@ -1,4 +1,5 @@
 import { getT } from "@/lib/i18n/server";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -7,18 +8,26 @@ import type { Role } from "@/lib/types";
 import { unlockUser, updateUser } from "./actions";
 import { NewUserForm } from "./new-user-form";
 
-export default async function UsersPage() {
+export default async function UsersPage({ searchParams }: { searchParams: Promise<{ locked?: string }> }) {
   const { t } = await getT();
   const me = await getProfile();
   if (me.role !== "admin") redirect("/");
+  const lockedOnly = (await searchParams).locked === "1";
   const supabase = await createClient();
   const [{ data: users }, { data: offices }] = await Promise.all([
     supabase.from("rms_profiles").select("id, full_name, role, office_id, is_active, created_at, locked_until, last_login_at").order("full_name"),
     supabase.from("rms_offices").select("id, code, name").order("code"),
   ]);
+  const rows = (users ?? []).filter((u) => !lockedOnly || (u.locked_until && new Date(u.locked_until) > new Date()));
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">{t("User accounts and access")}</h1>
+      {lockedOnly && (
+        <p className="text-sm text-slate-600">
+          {t("Showing locked accounts only.")}{" "}
+          <Link href="/admin/users" className="font-semibold text-brand-700 underline">{t("Show all users")}</Link>
+        </p>
+      )}
       <div className="grid gap-4 lg:grid-cols-3">
         <section className="card overflow-x-auto lg:col-span-2">
           <table className="w-full text-sm">
@@ -26,7 +35,10 @@ export default async function UsersPage() {
               <tr><th className="px-3 py-2">{t("Name")}</th><th className="px-3 py-2">{t("Role")}</th><th className="px-3 py-2">{t("Office")}</th><th className="px-3 py-2">{t("Active")}</th><th /></tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {(users ?? []).map((u) => (
+              {lockedOnly && rows.length === 0 && (
+                <tr><td colSpan={5} className="px-3 py-4 text-slate-600">{t("No accounts are locked right now.")}</td></tr>
+              )}
+              {rows.map((u) => (
                 <tr key={u.id}>
                   <td className="px-3 py-2">
                     <div className="font-medium">{u.full_name}</div>

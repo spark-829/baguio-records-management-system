@@ -15,7 +15,7 @@ MFA-pending users. All queries use `createClient()` from
 
 | Route | Files |
 | --- | --- |
-| `/` dashboard | `page.tsx` (+ `components/due-calendar.tsx`) |
+| `/` dashboard | `page.tsx` (+ `components/due-calendar.tsx`); admins get the Security overview, `security-hub.tsx` |
 | `/records` list, search | `records/page.tsx`, `records/ai-search-box.tsx` |
 | `/records/new` register | `records/new/{page,register-form,actions}.tsx` (scan to prefill; `?reply_to=IN-...` starts a reply) |
 | `/records/[id]` detail | `records/[id]/page.tsx`, `forms.tsx` (take action, attach), `actions.ts`, `summary-box.tsx` |
@@ -24,7 +24,8 @@ MFA-pending users. All queries use `createClient()` from
 | `/assistant` | `assistant/chat.tsx` (records chat) |
 | `/reports`, `/reports/offices`, `/reports/retention` | reports, CSV via `api/reports/csv` |
 | `/map` | barangay map (`components/barangay-map.tsx`, `lib/baguio-map.ts`) |
-| `/admin/users`, `access`, `audit`, `bin`, `settings` | admin screens; `actions.ts` beside each |
+| `/admin/users`, `access`, `audit`, `bin`, `settings` | admin screens; `actions.ts` beside each (`users?locked=1` filters locked accounts) |
+| `/admin/analytics` | admin flow analytics: `admin/analytics/page.tsx`, `charts.tsx` (server-only marks); one RPC `rms_admin_flow_analytics` |
 | `/security` | MFA setup; `/help` user help |
 
 Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking),
@@ -42,7 +43,8 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking),
 | --- | --- |
 | `session.ts` | `getProfile`, `isCentral`, `getSettings` |
 | `types.ts`, `labels.ts` | Role/Status/Profile types; labels, `maskName`, dates |
-| `workflow.ts` | actions, `allowedActions`, `nextStatus`, `isOverdue`, `isAlreadyReceived` |
+| `workflow.ts` | actions, `allowedActions`, `nextStatus`, `isOverdue`, `isAlreadyReceived`, `canAttach` (mirror of `rms_can_attach`; admins get no record actions) |
+| `security-hub.ts`, `flow-analytics.ts` | pure: admin Security overview parser, attention items, finding text; System analytics parser, ranking, quintiles, ticks, text helpers |
 | `history.ts`, `audit-text.ts` | `newestFirst`, `collapseSteps` (history order, citizen progress); `routeText` (audit routing rows) |
 | `search.ts` | record search filters → `rms_search_records` |
 | `ai-gate.ts` | `runAi` (reserve budget, cache, demo fallback) |
@@ -83,18 +85,19 @@ Functions are redefined in later migrations. **Latest definition** lives in:
 | `20261120000100_rms_schema` | tables, RLS base, `rms_records_after_insert`, `rms_touch_updated_at` |
 | `20261120000200_rms_search_ai_admin` | `rms_search_records` (first version) |
 | `20261120000400_rms_security` | `rms_my_role`, `rms_my_office`, `rms_can_view`, soft delete/restore, login lockout, access log, `rms_person_access_report`, `rms_setting` |
-| `20261121000100_rms_pentest_fixes` | guard triggers (records guards moved on to 20261124000100; the attachments and routes guards moved on too), `rms_can_attach`, `rms_log_event` |
+| `20261121000100_rms_pentest_fixes` | guard triggers (records guards moved on to 20261124000100; the attachments and routes guards moved on too), `rms_can_attach` (moved on to 20261124000300), `rms_log_event` |
 | `20261121000200_rms_public_tracking` | `rms_new_track_code` |
 | `20261122000200_rms_qa_wave2` | `rms_search_records`, `rms_public_track`, audit hash function, `rms_today`, `rms_record_bin_history` |
 | `20261122000300_rms_ai_budget_scan` | `rms_audit` (audit trigger), `rms_ai_cap`, `rms_ai_spend_summary`, `rms_ai_cache_get` |
-| `20261123000100_rms_qa_nov23` | `rms_verify_audit_chain`, `rms_from_app`, `rms_ai_spent`, `rms_ai_reserve`, `rms_ai_finalize`, `rms_ai_cache_put`, `rms_client_ip`, `rms_admin_create_user`, `rms_lock_record`, `rms_routes_guard_insert` |
+| `20261123000100_rms_qa_nov23` | `rms_verify_audit_chain`, `rms_from_app`, `rms_ai_spent`, `rms_ai_reserve`, `rms_ai_finalize`, `rms_ai_cache_put`, `rms_client_ip`, `rms_admin_create_user`, `rms_lock_record`, `rms_routes_guard_insert` (moved on to 20261124000300) |
 | `20261123000200_rms_volume_indexes` | `rms_audit_chain` (fast tip lookup), audit/access log indexes, audit hash functions marked parallel safe |
 | `20261123000300_rms_legacy_import` | `rms_legacy_import`, `rms_records_before_insert`, `rms_records_set_search`, `rms_routes_apply`, owner-only `rms_seed_demo`, `rms_seed_demo_access` |
 | `20261123000400_rms_rls_speed` | `rms_my_routed_records`; latest `rms_records_select` and `rms_routes_select` policies (set-based, same visibility as `rms_can_view`) |
 | `20261123000500_rms_report_totals` | `rms_report_summary`, `rms_report_offices`, `rms_report_retention`, `rms_dashboard_totals` (security invoker, totals only; used by Reports and the dashboard cards) |
-| `20261123000600_rms_attachment_compression` | attachment `sha256`, `original_sha256`, `original_size_bytes`, `thumb_path`; `rms_attachments_guard_insert` (latest), `rms_storage_is_orphan`, `rms_storage_delete_orphan` policy |
-| `20261124000100_rms_arta_replies_alerts` | `rms_records.arta_class`, `rms_records.in_reply_to`; `rms_records_guard_insert`, `rms_records_guard_update` (latest); `rms_my_alerts` (bell); `rms_report_on_time` |
+| `20261123000600_rms_attachment_compression` | attachment `sha256`, `original_sha256`, `original_size_bytes`, `thumb_path`; `rms_attachments_guard_insert` (moved on to 20261124000300), `rms_storage_is_orphan`, `rms_storage_delete_orphan` policy |
+| `20261124000100_rms_arta_replies_alerts` | `rms_records.arta_class`, `rms_records.in_reply_to`; `rms_records_guard_insert` (moved on to 20261124000300), `rms_records_guard_update` (latest); `rms_my_alerts` (bell); `rms_report_on_time` |
 | `20261124000200_rms_audit_check_fast` | `rms_audit_checkpoint` table, `rms_audit_row_ok`, `rms_verify_audit_chain` (latest; incremental checkpoint + rotating scrub), `rms_audit_check_info` |
+| `20261124000300_rms_admin_hub` | `rms_records_guard_insert`, `rms_routes_guard_insert`, `rms_attachments_guard_insert`, `rms_can_attach` (latest; admin cannot register, route or attach), `rms_after_hours`, `rms_admin_security_summary`, `rms_admin_flow_analytics` |
 
 Seeds: `seed.sql` (offices, types, demo users), `seed_more.sql`,
 `seed_batch3.sql` (generated by `tools/gen_*.py`; large, grep only).

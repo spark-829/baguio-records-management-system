@@ -47,6 +47,7 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form" };
   const v = parsed.data;
   if (v.direction === "incoming" && !isCentral(me)) return { error: "Only the records desk registers incoming documents." };
+  if (me.role === "admin") return { error: "Administrators do not register records. The records desk does." };
   if (!me.office_id) return { error: "Your account has no office. Ask an administrator." };
 
   const file = form.get("file");

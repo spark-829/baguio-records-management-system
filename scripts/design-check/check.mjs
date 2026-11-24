@@ -31,7 +31,7 @@ const OUT = arg("out");
 const ONLY = arg("only")?.split(",");
 
 const PUBLIC = ["/login", "/track", "/developer"];
-const SIGNED_IN = ["/", "/records", "/records/new", "/reports", "/map", "/assistant", "/help", "@record"];
+const SIGNED_IN = ["/", "/records", "/records/new", "/reports", "/map", "/assistant", "/help", "@record", "/admin/analytics"];
 const VIEWPORTS = [
   { name: "phone", width: 375, height: 812 },
   { name: "desktop", width: 1280, height: 800 },
@@ -160,7 +160,7 @@ async function checkPage(page, path, vp) {
 const browser = await chromium.launch();
 const results = [];
 const signedIn = Boolean(process.env.RMS_EMAIL && process.env.RMS_PASSWORD);
-const paths = [...PUBLIC, ...(signedIn ? SIGNED_IN : [])].filter((p) => !ONLY || ONLY.includes(p));
+const paths = ONLY ? ONLY.filter((p) => signedIn || PUBLIC.includes(p)) : [...PUBLIC, ...(signedIn ? SIGNED_IN : [])];
 
 for (const vp of VIEWPORTS) {
   const ctx = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });

@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { getProfile, getSettings, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { CONF_HELP, CONF_LABEL, PRIORITY_LABEL, daysFromToday, dueText, fmtDate, fmtDateTime, officeName } from "@/lib/labels";
-import { allowedActions, isOverdue } from "@/lib/workflow";
+import { allowedActions, canAttach, isOverdue } from "@/lib/workflow";
 import { newestFirst } from "@/lib/history";
 import { ARTA_LABEL, artaProgress, artaText, isArtaClass, manilaDay } from "@/lib/arta";
 import type { Direction, Status, Priority, Confidentiality } from "@/lib/types";
@@ -101,10 +101,14 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const replies = (replyRows ?? []) as { id: string; tracking_no: string }[];
 
   // Same rule as rms_can_attach in the database, so the form only shows when the upload will be allowed (QA-010).
-  const canAttach =
-    !deleted &&
-    rec.status !== "archived" &&
-    (isCentral(me) || ((me.role === "dept_head" || me.role === "staff") && !!me.office_id && [rec.current_office_id, rec.origin_office_id].includes(me.office_id)));
+  const mayAttach = canAttach({
+    role: me.role,
+    userOfficeId: me.office_id,
+    currentOfficeId: rec.current_office_id,
+    originOfficeId: rec.origin_office_id,
+    status: rec.status,
+    deleted,
+  });
 
   const actions = deleted ? [] : allowedActions({
     status: rec.status,
@@ -234,7 +238,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         <div className="grid w-full gap-2 sm:flex sm:w-auto">
           <Link href={`/records/${rec.id}/slip`} className="btn-secondary">{t("Print routing slip")}</Link>
           {incoming && <Link href={`/records/${rec.id}/receipt`} className="btn-secondary">{t("Print receipt for the sender")}</Link>}
-          {incoming && !deleted && me.role !== "viewer" && (
+          {incoming && !deleted && me.role !== "viewer" && me.role !== "admin" && (
             <Link href={`/records/new?reply_to=${encodeURIComponent(rec.tracking_no)}`} className="btn-secondary">{t("Write a reply")}</Link>
           )}
         </div>
@@ -304,7 +308,9 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
             <p className="text-sm text-slate-500">
               {deleted
                 ? t("Deleted records are read-only until restored.")
-                : me.role === "viewer"
+                : me.role === "admin"
+                  ? t("Administrators can look up records but do not act on them.")
+                  : me.role === "viewer"
                   ? t("Your account is read-only.")
                   : rec.status === "archived"
                     ? t("This record is archived and read-only.")
@@ -414,10 +420,10 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
             ))}
             {(files ?? []).length === 0 && <li className="text-slate-500">{t("No files attached.")}</li>}
           </ul>
-          {canAttach ? (
+          {mayAttach ? (
             <AttachForm recordId={rec.id} />
           ) : (
-            !deleted && rec.status !== "archived" && <p className="text-sm text-slate-500">{t("Only the office holding this record, the office that sent it, or the records desk can add files.")}</p>
+            !deleted && rec.status !== "archived" && <p className="text-sm text-slate-500">{me.role === "admin" ? t("Administrators do not add files to records.") : t("Only the office holding this record, the office that sent it, or the records desk can add files.")}</p>
           )}
           <p className="mt-2 text-xs text-slate-500">
             {t(settings.watermarkDownloads ? "Files open through a link that expires in 60 seconds and are stamped with your name and the date. Each download is logged." : "Files open through a link that expires in 60 seconds. Each download is logged.")}
