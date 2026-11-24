@@ -63,14 +63,15 @@ export function AlertBell({ officeCode }: { officeCode: string | null }) {
         type="button"
         aria-expanded={open}
         aria-controls="alert-panel"
-        aria-label={t("Alerts: {n} need your attention", { n: count })}
         onClick={() => setOpen((o) => !o)}
         className="relative inline-flex min-h-11 items-center gap-2 rounded-lg border-2 border-white/60 px-3 font-semibold hover:bg-white/10"
       >
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-6 w-6">
           <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
         </svg>
-        <span className="hidden sm:inline">{t("Alerts")}</span>
+        {/* Name comes from content, not aria-label, so it always contains the visible word (WCAG 2.5.3) */}
+        <span aria-hidden="true" className="hidden sm:inline">{t("Alerts")}</span>
+        <span className="sr-only">{t("Alerts: {n} need your attention", { n: count })}</span>
         {badge && (
           <span aria-hidden="true" className="absolute -right-2 -top-2 min-w-6 rounded-full bg-red-600 px-1.5 text-center text-xs font-bold leading-6 text-white">{badge}</span>
         )}
