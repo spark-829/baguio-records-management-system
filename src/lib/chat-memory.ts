@@ -33,7 +33,18 @@ export function serializeChat(turns: StoredTurn[]): string {
 function validSources(s: unknown): s is ChatSource[] {
   return (
     Array.isArray(s) &&
-    s.every((x) => x && typeof x === "object" && typeof x.id === "string" && typeof x.tracking_no === "string" && typeof x.n === "number")
+    s.every(
+      (x) =>
+        x &&
+        typeof x === "object" &&
+        typeof x.id === "string" &&
+        typeof x.tracking_no === "string" &&
+        typeof x.n === "number" &&
+        typeof x.subject === "string" &&
+        typeof x.status === "string" &&
+        (x.due_date === null || typeof x.due_date === "string") &&
+        (x.office === null || typeof x.office === "string"),
+    )
   );
 }
 
@@ -52,7 +63,7 @@ export function parseStoredChat(raw: string | null): StoredTurn[] {
       if (validSources(t.sources)) turn.sources = t.sources;
       out.push(turn);
     }
-    return out;
+    return capStoredTurns(out);
   } catch {
     return [];
   }

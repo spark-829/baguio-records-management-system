@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Chat } from "@/app/(app)/assistant/chat";
+import { readChat } from "@/lib/chat-store";
 import { useT } from "@/lib/i18n/client";
 
 function ChatIcon() {
@@ -54,6 +55,11 @@ export function AssistantLauncher({ userId }: { userId: string }) {
   useEffect(() => {
     if (hideHere) setOpen(false);
   }, [hideHere]);
+
+  // Purge any other user's stored chat as soon as the signed-in shell loads, not only when the chat opens.
+  useEffect(() => {
+    readChat(userId);
+  }, [userId]);
 
   useEffect(() => {
     if (!open && returnFocus.current) {

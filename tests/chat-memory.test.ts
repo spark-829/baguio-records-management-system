@@ -8,7 +8,7 @@ import {
   type StoredTurn,
 } from "../src/lib/chat-memory";
 
-const src = { id: "a", tracking_no: "IN-2026-0001", n: 1 };
+const src = { id: "a", tracking_no: "IN-2026-0001", n: 1, subject: "Voucher", status: "received", due_date: null, office: "Engineering" };
 
 function turns(count: number, content = "hello"): StoredTurn[] {
   return Array.from({ length: count }, (_, i) => ({ role: i % 2 === 0 ? "user" : "assistant", content: `${content} ${i}` }));
@@ -29,6 +29,18 @@ describe("parseStoredChat", () => {
       { role: "assistant", content: "a", demo: true, note: "n", sources: [src as never] },
     ];
     expect(parseStoredChat(serializeChat(chat))).toEqual(chat);
+  });
+  it("drops sources missing status (QA-044) but keeps the turn", () => {
+    const { status: _s, ...noStatus } = src;
+    void _s;
+    const raw = JSON.stringify({ v: 1, turns: [{ role: "user", content: "q" }, { role: "assistant", content: "a", sources: [noStatus] }] });
+    const out = parseStoredChat(raw);
+    expect(out).toHaveLength(2);
+    expect(out[1].sources).toBeUndefined();
+  });
+  it("caps an oversized stored chat on load (QA-046)", () => {
+    const raw = JSON.stringify({ v: 1, turns: Array.from({ length: 100 }, (_, i) => ({ role: i % 2 ? "assistant" : "user", content: "x" })) });
+    expect(parseStoredChat(raw).length).toBeLessThanOrEqual(40);
   });
   it("drops bad sources but keeps the turn", () => {
     const raw = JSON.stringify({ v: 1, turns: [{ role: "user", content: "q" }, { role: "assistant", content: "a", sources: [{ id: 1 }] }] });
