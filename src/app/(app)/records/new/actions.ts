@@ -9,12 +9,15 @@ import { saveAttachment } from "@/lib/save-attachment";
 import { checkUpload } from "@/lib/upload-policy";
 import { artaDue, manilaDay } from "@/lib/arta";
 import { parseReplyTo } from "@/lib/reply-to";
+import { complaintDueDate, isComplaint } from "@/lib/complaint";
+import { isCopyType, parseCopyForm, type CopyForm } from "@/lib/copy-request";
 
 const RecordInput = z.object({
   direction: z.enum(["incoming", "outgoing"]),
   subject: z.string().trim().min(3, "Subject is too short").max(300),
   description: z.string().trim().max(4000).optional(),
   document_type_id: z.uuid("Choose a document type"),
+  transaction_type: z.enum(["G2C", "G2G", "G2B"], { error: "Choose the transaction type." }),
   category: z.string().trim().max(80).optional(),
   keywords: z.string().optional(),
   priority: z.enum(["low", "normal", "urgent"]),
@@ -57,6 +60,12 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
     if (bad) return { error: bad };
   }
 
+  const extras = form.getAll("extra_file").filter((x): x is File => x instanceof File && x.size > 0).slice(0, 4);
+  for (const x of extras) {
+    const bad = checkUpload(x.type, x.size);
+    if (bad) return { error: bad };
+  }
+
   const supabase = await createClient();
   let replyTo: string | null = null;
   if (v.direction === "outgoing" && v.in_reply_to) {
@@ -66,7 +75,18 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
     if (!parent || parent.direction !== "incoming") return { error: "No received record with that tracking number that you can open. Check the number." };
     replyTo = parent.id;
   }
-  const dueDate = v.due_date ?? (v.arta_class ? artaDue(v.arta_class, manilaDay()) : null);
+  let dueDate = v.due_date ?? (v.arta_class ? artaDue(v.arta_class, manilaDay()) : null);
+  const { data: dt } = await supabase.from("rms_document_types").select("name").eq("id", v.document_type_id).maybeSingle();
+  if (!v.due_date && isComplaint(dt?.name)) dueDate = complaintDueDate(new Date().toISOString());
+  let copy: CopyForm | null = null;
+  if (isCopyType(dt?.name)) {
+    if (!isCentral(me)) return { error: "Only the records desk registers a request for copy." };
+    const pc = parseCopyForm(Object.fromEntries([...form.keys()].filter((k) => k !== "file").map((k) => [k, form.get(k)])));
+    if ("error" in pc) return { error: pc.error };
+    const { data: src } = await supabase.from("rms_records").select("id").eq("tracking_no", pc.value.source_tracking_no).is("deleted_at", null).maybeSingle();
+    if (!src) return { error: "No record with that tracking number. Check the number." };
+    copy = pc.value;
+  }
   const { data: rec, error } = await supabase
     .from("rms_records")
     .insert({
@@ -74,6 +94,7 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
       subject: v.subject,
       description: v.description ?? null,
       document_type_id: v.document_type_id,
+      transaction_type: v.transaction_type,
       category: v.category ?? null,
       keywords: (v.keywords ?? "").split(",").map((k) => k.trim().toLowerCase()).filter(Boolean).slice(0, 12),
       priority: v.priority,
@@ -99,6 +120,12 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
     .single();
   if (error || !rec) return { error: error?.message ?? "Could not save the record" };
 
+  let copyFailed = false;
+  if (copy) {
+    const { error: copyErr } = await supabase.from("rms_copy_requests").insert({ record_id: rec.id, ...copy, created_by: me.id });
+    copyFailed = !!copyErr;
+  }
+
   let fileFailed = false;
   if (hasFile) {
     fileFailed =
@@ -114,6 +141,11 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
       }));
   }
 
+  for (const x of extras) {
+    const r = await saveAttachment(supabase, { recordId: rec.id, userId: me.id, file: x, thumb: null, originalShaHint: null, originalSize: null, withVersion: false });
+    if ("error" in r) fileFailed = true;
+  }
+
   if (v.forward_to && v.forward_to !== me.office_id) {
     await supabase.from("rms_routes").insert({
       record_id: rec.id,
@@ -124,5 +156,5 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
       acted_by: me.id,
     });
   }
-  redirect(`/records/${rec.id}?new=1${form.get("from_scan") === "1" ? "&scan=1" : ""}${fileFailed ? "&file=failed" : ""}`);
+  redirect(`/records/${rec.id}?new=1${form.get("from_scan") === "1" ? "&scan=1" : ""}${fileFailed ? "&file=failed" : ""}${copyFailed ? "&copy=failed" : ""}`);
 }

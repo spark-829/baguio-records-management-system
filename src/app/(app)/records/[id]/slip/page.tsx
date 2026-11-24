@@ -20,7 +20,7 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
   const supabase = await createClient();
   const { data: rec } = await supabase
     .from("rms_records")
-    .select("id, tracking_no, direction, subject, priority, confidentiality, sender_name, sender_org, recipient_name, recipient_org, document_date, due_date, created_at, doc_type:rms_document_types(name), origin:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name)")
+    .select("id, tracking_no, direction, subject, priority, confidentiality, sender_name, sender_org, recipient_name, recipient_org, document_date, due_date, created_at, doc_type:rms_document_types(name), origin:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), assignee:rms_profiles!rms_records_assigned_to_fkey(full_name)")
     .eq("id", id)
     .maybeSingle();
   if (!rec) notFound();
@@ -42,7 +42,7 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
     tracking_no: string; direction: string; subject: string; priority: "low" | "normal" | "urgent"; confidentiality: "public" | "internal" | "confidential";
     sender_name: string | null; sender_org: string | null; recipient_name: string | null; recipient_org: string | null;
     document_date: string | null; due_date: string | null; created_at: string;
-    doc_type: { name: string } | null; origin: { code: string; name: string } | null; creator: { full_name: string } | null;
+    doc_type: { name: string } | null; origin: { code: string; name: string } | null; creator: { full_name: string } | null; assignee: { full_name: string } | null;
   };
   const party = r.direction === "incoming" ? [r.sender_name, r.sender_org] : [r.recipient_name, r.recipient_org];
 
@@ -99,6 +99,8 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
           <dt className="font-semibold">{t("Date on document")}</dt><dd className="col-span-2">{fmtDate(r.document_date)}</dd>
           <dt className="font-semibold">{t("Registered")}</dt><dd className="col-span-2">{fmtDateTime(r.created_at)} · {r.origin?.name} · {r.creator?.full_name}</dd>
           <dt className="font-semibold">{t("Action due")}</dt><dd className="col-span-2">{fmtDate(r.due_date)}</dd>
+          <dt className="font-semibold">{t("Action officer")}</dt>
+          <dd className="col-span-2">{r.assignee?.full_name ?? <span className="inline-block w-48 border-b border-slate-900" aria-hidden="true">&nbsp;</span>}</dd>
         </dl>
         <div className="overflow-x-auto">
         <table className="w-full min-w-[34rem] border-collapse text-xs">

@@ -11,6 +11,7 @@ export type ReportSummary = {
   by_status: Count[];
   by_office: Count[];
   by_type: Count[];
+  by_tx: Count[];
   by_month: Count[];
   overdue_rows: { id: string; tracking_no: string; subject: string; due_date: string | null; created_at: string; office: string | null }[];
 };
@@ -77,6 +78,7 @@ export function parseSummary(data: unknown): ReportSummary {
     by_status: counts(d.by_status),
     by_office: counts(d.by_office),
     by_type: counts(d.by_type),
+    by_tx: counts(d.by_tx),
     by_month: counts(d.by_month),
     overdue_rows: arr(d.overdue_rows),
   };

@@ -5,11 +5,12 @@ insert into public.rms_offices (code, name) values
   ('CMO',  'City Mayor''s Office'),
   ('CAO',  'City Administrator''s Office'),
   ('CEO',  'City Engineering Office'),
-  ('CTO',  'City Treasurer''s Office'),
+  ('CTO',  'City Treasury Office'),
   ('CBO',  'City Budget Office'),
-  ('HRMO', 'Human Resource Management Office'),
+  ('HRMO', 'City Human Resource Management Office'),
   ('CLO',  'City Legal Office'),
-  ('CPDO', 'City Planning and Development Office')
+  ('CPDO', 'City Planning, Development and Sustainability Office'),
+  ('CGSO', 'City General Services Office')
 on conflict (code) do nothing;
 
 insert into public.rms_document_types (name, retention_years) values
@@ -27,7 +28,7 @@ begin
   for u in
     select * from (values
       ('admin@rms-demo.test',      'Maria Santos (Admin)',          'admin'::public.rms_role,           'CMO'),
-      ('records@rms-demo.test',    'Jose Reyes (Records Officer)',  'records_officer'::public.rms_role, 'CMO'),
+      ('records@rms-demo.test',    'Jose Reyes (Records Officer)',  'records_officer'::public.rms_role, 'CGSO'),
       ('engineering.head@rms-demo.test', 'Ana Dizon (Engineering Head)', 'dept_head'::public.rms_role, 'CEO'),
       ('engineering.staff@rms-demo.test','Carlo Bautista (Engineering Staff)', 'staff'::public.rms_role, 'CEO'),
       ('treasury.staff@rms-demo.test',   'Liza Mendoza (Treasury Staff)', 'staff'::public.rms_role, 'CTO'),

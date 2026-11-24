@@ -41,6 +41,8 @@ describe("parseSummary / parseRetention", () => {
     expect(s.total).toBe(12);
     expect(s.overdue).toBe(3);
     expect(s.by_month).toEqual([{ key: "2026-11", n: 4 }]);
+    expect(s.by_tx).toEqual([]);
+    expect(parseSummary({ by_tx: [{ key: "G2C", n: "2" }] }).by_tx).toEqual([{ key: "G2C", n: 2 }]);
     expect(parseRetention({ keep: "5", rows: [] }).counts.keep).toBe(5);
   });
 });

@@ -1,3 +1,4 @@
+import type { TxType } from "./transaction-type";
 export type Role = "admin" | "records_officer" | "dept_head" | "staff" | "viewer";
 export type Direction = "incoming" | "outgoing";
 export type Status =
@@ -56,6 +57,7 @@ export interface SearchRow {
   sender_org: string | null;
   recipient_name: string | null;
   recipient_org: string | null;
+  transaction_type: string | null;
 }
 
 export interface SearchFilters {
@@ -73,4 +75,5 @@ export interface SearchFilters {
   /** Only records still being handled */
   open?: boolean;
   priority?: Priority;
+  tx?: TxType;
 }

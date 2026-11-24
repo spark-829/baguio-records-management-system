@@ -1,3 +1,4 @@
+import { txLabel } from "@/lib/transaction-type";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -68,7 +69,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       </div>
       <nav aria-label={t("More reports")} className="no-print flex flex-wrap gap-2">
         {me.role !== "viewer" && <Link href="/reports/offices" className="btn-secondary">{t("Office workload")}</Link>}
+        {(isCentral(me) || me.role === "dept_head") && <Link href="/reports/satisfaction" className="btn-secondary">{t("Client satisfaction")}</Link>}
         {isCentral(me) && <Link href="/reports/retention" className="btn-secondary">{t("Retention schedule")}</Link>}
+        {me.role === "records_officer" && <Link href="/reports/step-times" className="btn-secondary">{t("Standard time per step")}</Link>}
       </nav>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -89,6 +92,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <Bars title={t("By status")} data={toBars(s.by_status, (k) => t(STATUS_LABEL[k as Status] ?? k))} />
         <Bars title={t("By current office")} data={toBars(s.by_office, (k) => k)} />
         <Bars title={t("By document type")} data={toBars(s.by_type, (k) => k)} />
+        <Bars title={t("By transaction type")} data={toBars(s.by_tx, (k) => t(txLabel(k)))} />
         <Bars title={t("Registered per month")} data={months} />
       </div>
 

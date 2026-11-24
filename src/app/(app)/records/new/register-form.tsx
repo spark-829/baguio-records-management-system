@@ -10,6 +10,10 @@ import { shrinkForAi } from "@/lib/shrink-image";
 import { useUploadPrep } from "@/components/use-upload-prep";
 import { ScanPreview } from "@/components/scan-preview";
 import { ARTA_CLASSES, ARTA_DAYS, ARTA_LABEL, artaDue, isArtaClass, manilaDay } from "@/lib/arta";
+import { TX_FORM_LABEL, TX_TYPES } from "@/lib/transaction-type";
+import { COPY_TYPE } from "@/lib/copy-request";
+import { MAX_EML_BYTES, emlToFields, looksLikeEml, parseEml, pickAttachments } from "@/lib/eml";
+import { compressForUpload } from "@/lib/compress-upload";
 import { registerRecord } from "./actions";
 
 type Opt = { id: string; name: string };
@@ -20,6 +24,7 @@ type Fields = {
   subject: string;
   description: string;
   document_type_id: string;
+  transaction_type: string;
   category: string;
   keywords: string;
   priority: "low" | "normal" | "urgent";
@@ -46,6 +51,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     subject: "",
     description: "",
     document_type_id: "",
+    transaction_type: "",
     category: "",
     keywords: "",
     priority: "normal",
@@ -64,6 +70,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     arta_class: "",
     in_reply_to: props.replyTo ?? "",
   });
+  const [copyKind, setCopyKind] = useState<"owner" | "representative" | "">("");
   const [aiState, setAiState] = useState<"idle" | "reading" | "done" | "error">("idle");
   const [aiMsg, setAiMsg] = useState("");
   const [aiFilled, setAiFilled] = useState<Set<keyof Fields>>(new Set());
@@ -73,10 +80,16 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
   const [scanName, setScanName] = useState<string | null>(null);
 
   const prep = useUploadPrep(fileRef);
+  const extraRef = useRef<HTMLInputElement>(null);
+  type EmlPanel = { sender: string; date: string; files: string[]; skipped: { name: string; reason: "type" | "size" }[]; filled: (keyof Fields)[] };
+  const [eml, setEml] = useState<EmlPanel | null>(null);
+  const [emlErr, setEmlErr] = useState("");
+  const [emlBusy, setEmlBusy] = useState(false);
 
   // React 19 resets uncontrolled inputs after an action that returns an error, so drop the stale preview too.
   useEffect(() => {
     if (state && !fileRef.current?.files?.length) clearScan();
+    if (state && !extraRef.current?.files?.length) setEml(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
@@ -104,6 +117,63 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     setPreview(null);
     setScanName(null);
   }
+  function setInputFiles(input: HTMLInputElement | null, files: File[]) {
+    if (!input) return;
+    const dt = new DataTransfer();
+    files.forEach((x) => dt.items.add(x));
+    input.files = dt.files;
+  }
+
+  // The email is read in this browser only. Its attachments go into the form like a scan; nothing is sent until Save.
+  async function takeEml(file: File | undefined) {
+    if (!file) return;
+    setEmlErr("");
+    if (file.size > MAX_EML_BYTES) {
+      setEmlErr("This file is not an email. Save it as .eml and try again.");
+      return;
+    }
+    setEmlBusy(true);
+    try {
+      if (!looksLikeEml(await file.slice(0, 8192).text())) {
+        setEmlErr("This file is not an email. Save it as .eml and try again.");
+        return;
+      }
+      const email = await parseEml(await file.arrayBuffer());
+      const fields = emlToFields(email);
+      const { kept, skipped } = pickAttachments(email.attachments ?? []);
+      const { mode, ...rest } = fields;
+      const next: Partial<Fields> = { ...rest, mode };
+      setF((p) => ({ ...p, ...next }));
+      const filled = (Object.keys(next) as (keyof Fields)[]).filter((k) => k !== "content_text" && next[k]);
+      setAiFilled(new Set(filled));
+      clearScan();
+      if (kept[0]) {
+        setInputFiles(fileRef.current, [kept[0]]);
+        showPreview(kept[0]);
+        void prep.prepare(kept[0]);
+      }
+      const extras = await Promise.all(kept.slice(1).map(async (x) => (await compressForUpload(x, false)).file));
+      setInputFiles(extraRef.current, extras);
+      setEml({ sender: fields.sender_name || fields.sender_org || "—", date: fields.document_date || "—", files: kept.map((x) => x.name), skipped, filled: [...filled, "content_text"] });
+    } catch {
+      setEmlErr("This file is not an email. Save it as .eml and try again.");
+    } finally {
+      setEmlBusy(false);
+    }
+  }
+
+  function removeEml() {
+    if (eml) {
+      const blank = Object.fromEntries(eml.filled.map((k) => [k, k === "mode" ? (props.canIncoming ? "walk-in" : "internal") : ""]));
+      setF((p) => ({ ...p, ...blank }));
+      setAiFilled(new Set());
+    }
+    clearScan();
+    setInputFiles(extraRef.current, []);
+    setEml(null);
+    setEmlErr("");
+  }
+
   function retake() {
     clearScan();
     setAiState("idle");
@@ -207,6 +277,37 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         {prep.controls}
         {prep.fields}
         <p className="text-sm text-slate-600">{t("PDF, JPG or PNG from a scanner, up to 10 MB. The file is kept with the record.")}</p>
+        <div>
+          <label htmlFor="eml" className="label">{t("Or register an email (.eml file)")}</label>
+          <p className="mb-2 text-sm text-slate-600">{t("Gmail: open the email, More, Download message. Outlook: File, Save as.")}</p>
+          <div
+            className="rounded-lg border-2 border-dashed border-slate-300 p-3 text-sm text-slate-700"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); void takeEml(e.dataTransfer.files?.[0]); }}
+          >
+            <p className="mb-2">{t("Drop the email file here, or choose it")}</p>
+            <input id="eml" type="file" accept=".eml,message/rfc822" className="file-input" onChange={(e) => { void takeEml(e.target.files?.[0]); e.target.value = ""; }} />
+          </div>
+          {emlBusy && <p role="status" className="mt-2 text-sm text-slate-700">{t("Reading the email…")}</p>}
+          {emlErr && <p role="alert" className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-800">{t(emlErr)}</p>}
+          {eml && (
+            <div role="status" className="mt-2 space-y-2 rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
+              <p className="font-medium">{t("From {sender} · {date} · {n} attachments", { sender: eml.sender, date: eml.date, n: eml.files.length })}</p>
+              {eml.files.length > 0 && <ul className="list-disc pl-5">{eml.files.map((n) => <li key={n} className="break-all">{n}</li>)}</ul>}
+              {eml.skipped.length > 0 && (
+                <ul className="list-disc pl-5 text-slate-800">
+                  {eml.skipped.map((x) => (
+                    <li key={x.name} className="break-all">
+                      {t(x.reason === "type" ? "Skipped {file}: only PDF, JPG or PNG are kept." : "Skipped {file}: too big to send with the form. Attach it on the record page after saving.", { file: x.name })}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <button type="button" onClick={removeEml} className="btn-secondary w-full">{t("Remove email")}</button>
+            </div>
+          )}
+          <input ref={extraRef} type="file" name="extra_file" multiple className="sr-only" aria-hidden tabIndex={-1} />
+        </div>
         <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="checkbox mt-0.5" />
           <span>{t("Sensitive document: do not send it to the AI. Fill the form by hand.")}</span>
@@ -258,6 +359,58 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
             {props.types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
+        <fieldset className="md:col-span-2" aria-describedby="f-tx-hint">
+          <legend className="label">{t("Transaction type")}</legend>
+          <p id="f-tx-hint" className="mb-2 text-sm text-slate-600">{t("Pick Government for letters from or to another government office.")}</p>
+          <div className="grid gap-1">
+            {TX_TYPES.map((k) => (
+              <label key={k} className="flex min-h-11 items-center gap-3">
+                <input type="radio" name="transaction_type" value={k} required checked={f.transaction_type === k} onChange={() => set("transaction_type", k)} />
+                <span>{t(TX_FORM_LABEL[k])}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
+        {props.canIncoming && props.types.find((x) => x.id === f.document_type_id)?.name === COPY_TYPE && (
+          <fieldset className="md:col-span-2 grid gap-3 rounded-md border-2 border-slate-200 p-3 md:grid-cols-2">
+            <legend className="label px-1">{t("About the copy")}</legend>
+            <div className="md:col-span-2">
+              <label className="label" htmlFor="f-copy_source">{t("Tracking number of the record asked for")}</label>
+              <input id="f-copy_source" name="copy_source" required className="input font-mono uppercase" placeholder="IN-2026-0001" autoComplete="off" />
+            </div>
+            <div>
+              <label className="label" htmlFor="f-copy_pages">{t("Number of pages")}</label>
+              <input id="f-copy_pages" name="copy_pages" type="number" min={1} max={5000} className="input" />
+            </div>
+            <div>
+              <label className="label" htmlFor="f-copy_fee">{t("Fee (₱)")}</label>
+              <input id="f-copy_fee" name="copy_fee" inputMode="decimal" className="input" />
+            </div>
+            <fieldset className="md:col-span-2">
+              <legend className="label">{t("Who is asking?")}</legend>
+              <div className="grid gap-1">
+                <label className="flex min-h-11 items-center gap-3">
+                  <input type="radio" name="copy_requester" value="owner" required checked={copyKind === "owner"} onChange={() => setCopyKind("owner")} />
+                  <span>{t("The owner")}</span>
+                </label>
+                <label className="flex min-h-11 items-center gap-3">
+                  <input type="radio" name="copy_requester" value="representative" required checked={copyKind === "representative"} onChange={() => setCopyKind("representative")} />
+                  <span>{t("A representative")}</span>
+                </label>
+              </div>
+            </fieldset>
+            <label className="flex min-h-11 items-center gap-3 md:col-span-2">
+              <input type="checkbox" name="copy_id" className="checkbox" />
+              <span>{t("Valid ID checked")}</span>
+            </label>
+            {copyKind === "representative" && (
+              <label className="flex min-h-11 items-center gap-3 md:col-span-2">
+                <input type="checkbox" name="copy_auth" className="checkbox" required />
+                <span>{t("Authorization letter or SPA checked")}</span>
+              </label>
+            )}
+          </fieldset>
+        )}
         <div className="md:col-span-2">
           <label className="label" htmlFor="f-subject">{t("Subject (what it is about)")}</label>
           <input id="f-subject" name="subject" required className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />
