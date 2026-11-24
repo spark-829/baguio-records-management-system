@@ -96,7 +96,7 @@ export async function SecurityHub({ me }: { me: Profile }) {
         </>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {s && (
           <section className="card lg:col-span-2" aria-labelledby="events-title">
             <div className="border-b border-line px-4 py-3 sm:px-5">
@@ -106,7 +106,7 @@ export async function SecurityHub({ me }: { me: Profile }) {
             {s.events.length === 0 ? (
               <p className="px-4 py-6 text-sm text-slate-600 sm:px-5">{t("No security events in the last 24 hours.")}</p>
             ) : (
-              <div className="overflow-x-auto">
+              <div tabIndex={0} className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-left text-slate-600">
                     <tr>
@@ -190,7 +190,7 @@ export async function SecurityHub({ me }: { me: Profile }) {
         <ul className="mt-2 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-x-6">
           {ADMIN_PAGES.map((p) => (
             <li key={p.href}>
-              <Link prefetch={false} href={p.href} className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">{t(p.label)}</Link>
+              <Link prefetch={false} href={p.href} className="inline-flex min-h-11 min-w-11 items-center font-semibold text-brand-700 underline">{t(p.label)}</Link>
             </li>
           ))}
         </ul>

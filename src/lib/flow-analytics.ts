@@ -173,6 +173,14 @@ export function niceTicks(max: number): number[] {
   return Array.from({ length: n + 1 }, (_, i) => Math.round(i * step * 1e6) / 1e6);
 }
 
+/**
+ * Drops the first and last buckets: the first starts before the period and the last is still running,
+ * so both hold only part of a week or month and would dip on the chart (Jira and GA mark or drop these too).
+ */
+export function fullBuckets<T>(points: T[]): T[] {
+  return points.length > 2 ? points.slice(1, -1) : points;
+}
+
 export function labelIndexes(n: number, maxLabels = 6): number[] {
   if (n <= 0) return [];
   if (n <= maxLabels) return Array.from({ length: n }, (_, i) => i);

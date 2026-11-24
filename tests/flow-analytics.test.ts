@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  fullBuckets,
   dayText, findingText, labelIndexes, niceTicks, pct, perWeek, periodDays, pileText, quintileCuts, quintileIndex, rankOffices, viewMode,
 } from "../src/lib/flow-analytics";
 import type { OfficeFlow } from "../src/lib/flow-analytics";
@@ -101,5 +102,13 @@ describe("text helpers", () => {
     expect(pct(1, 0)).toBeNull();
     expect(pct(1, 3)).toBe(33);
     expect(perWeek(30, 90)).toBe(2.3);
+  });
+});
+
+describe("fullBuckets", () => {
+  it("drops the partial first and last buckets", () => {
+    expect(fullBuckets([1, 2, 3, 4])).toEqual([2, 3]);
+    expect(fullBuckets([1, 2])).toEqual([1, 2]);
+    expect(fullBuckets([])).toEqual([]);
   });
 });

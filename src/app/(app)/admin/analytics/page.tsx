@@ -5,7 +5,7 @@ import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDateTime } from "@/lib/labels";
 import {
-  dayText, findingText, labelIndexes, niceTicks, parseFlow, pct, perWeek, periodDays, periodLabel, periodNoun, pileText,
+  dayText, findingText, fullBuckets, labelIndexes, niceTicks, parseFlow, pct, perWeek, periodDays, periodLabel, periodNoun, pileText,
   quintileCuts, quintileIndex, rankOffices, viewMode,
 } from "@/lib/flow-analytics";
 import type { Period, View } from "@/lib/flow-analytics";
@@ -125,9 +125,10 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   const oName = (id: string) => byId.get(id)?.name ?? "—";
 
   // Trend
-  const trendMax = Math.max(0, ...data.trend.flatMap((p) => [p.logged, p.finished]));
+  const trend = fullBuckets(data.trend);
+  const trendMax = Math.max(0, ...trend.flatMap((p) => [p.logged, p.finished]));
   const ticks = niceTicks(trendMax);
-  const labels = labelIndexes(data.trend.length).map((i) => ({ index: i, text: bucketLabel(data.trend[i].start, data.grain) }));
+  const labels = labelIndexes(trend.length).map((i) => ({ index: i, text: bucketLabel(trend[i].start, data.grain) }));
   const pile = pileText(data.logged, strip.finished);
 
   const returnsPct = pct(data.returns.recordsReturned, data.returns.recordsMoved);
@@ -180,7 +181,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
             <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="inline-block h-3 w-6 border border-brand-700 bg-brand-200" />{t("Sent, not yet received")}</span>
           </p>
         </div>
-        <div className="hidden overflow-x-auto md:block">
+        <div tabIndex={0} className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-slate-600">
               <tr>
@@ -254,7 +255,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
           <p className="px-4 py-6 text-sm text-slate-600 sm:px-5">{t("No open records right now.")}</p>
         ) : (
           <>
-            <div className="hidden overflow-x-auto md:block">
+            <div tabIndex={0} className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-left text-slate-600">
                   <tr>
@@ -324,7 +325,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         ) : (
           <>
             <div className="hidden space-y-3 px-4 py-3 sm:px-5 md:block">
-              <div className="overflow-x-auto">
+              <div tabIndex={0} className="overflow-x-auto">
                 <table className="text-sm">
                   <thead>
                     <tr>
@@ -399,10 +400,11 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
           </p>
         </div>
         <div className="space-y-3 px-4 py-4 sm:px-5">
-          <TrendChart points={data.trend} ticks={ticks} labels={labels} names={{ logged: t("Logged"), finished: t("Finished") }} />
+          <TrendChart points={trend} ticks={ticks} labels={labels} names={{ logged: t("Logged"), finished: t("Finished") }} />
+          <p className="text-sm text-slate-600">{t(data.grain === "month" ? "Only whole months are shown." : "Only whole weeks are shown.")}</p>
           <details>
             <summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold text-brand-700 underline">{t("Show the numbers")}</summary>
-            <div className="overflow-x-auto">
+            <div tabIndex={0} className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-left text-slate-600">
                   <tr>
@@ -413,7 +415,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
-                  {data.trend.map((p) => (
+                  {trend.map((p) => (
                     <tr key={p.start}>
                       <th scope="row" className="px-3 py-2 text-left font-normal">{bucketLabel(p.start, data.grain)}</th>
                       <td className="px-3 py-2 tabular-nums">{p.logged}</td>
@@ -444,7 +446,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         {data.returns.recordsReturned === 0 ? (
           <p className="px-4 py-6 text-sm text-slate-600 sm:px-5">{t("No records were sent back in this period.")}</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div tabIndex={0} className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-50 text-left text-slate-600">
                 <tr>

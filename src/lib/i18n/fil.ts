@@ -938,4 +938,6 @@ export const FIL: Record<string, string> = {
   "Check due": "Kailangan nang suriin",
   "{total} entries · last checked {time}": "{total} entry · huling sinuri noong {time}",
   "Open Audit log to run the check.": "Buksan ang Audit log para patakbuhin ang pagsusuri.",
+  "Only whole weeks are shown.": "Buong linggo lang ang ipinapakita.",
+  "Only whole months are shown.": "Buong buwan lang ang ipinapakita.",
 };
