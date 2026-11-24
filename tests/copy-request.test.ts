@@ -39,6 +39,10 @@ describe("canDecide", () => {
     expect(canDecide({ ...ok, officeCode: "CGSO" })).toBe(false);
     expect(canDecide({ ...ok, dpoStatus: "approved" })).toBe(false);
   });
+  it("lets the CLO decide a not-needed request whose source became confidential", () => {
+    expect(canDecide({ ...ok, dpoStatus: "not_needed" })).toBe(false);
+    expect(canDecide({ ...ok, dpoStatus: "not_needed", sourceConfidential: true })).toBe(true);
+  });
 });
 
 describe("canRelease", () => {
@@ -53,5 +57,9 @@ describe("canRelease", () => {
     expect(canRelease({ ...ok, role: "staff" })).toBe(false);
     expect(canRelease({ ...ok, role: "staff", currentOfficeId: "a" })).toBe(true);
     expect(canRelease({ ...ok, status: "forwarded" })).toBe(false);
+  });
+  it("needs approval when the source is now confidential", () => {
+    expect(canRelease({ ...ok, sourceConfidential: true })).toBe(false);
+    expect(canRelease({ ...ok, dpoStatus: "approved", sourceConfidential: true })).toBe(true);
   });
 });

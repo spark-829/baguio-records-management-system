@@ -115,8 +115,10 @@ begin
   if not found or r.deleted_at is not null or r.current_office_id is distinct from v_clo or r.status not in ('received', 'under_action') then
     raise exception 'send the request to the City Legal Office and mark it received first';
   end if;
-  select id, dpo_status into c from public.rms_copy_requests where record_id = p_record_id;
-  if not found or c.dpo_status <> 'pending' then
+  select cr.id, cr.dpo_status,
+         coalesce((select s.confidentiality = 'confidential' from public.rms_records s where s.id = cr.source_record_id), false) as src_conf
+    into c from public.rms_copy_requests cr where cr.record_id = p_record_id;
+  if not found or not (c.dpo_status = 'pending' or (c.dpo_status = 'not_needed' and c.src_conf)) then
     raise exception 'this request is not waiting for approval';
   end if;
   if not coalesce(p_approve, false) and (v_reason is null or length(v_reason) not between 5 and 1000) then
@@ -124,6 +126,7 @@ begin
   end if;
   update public.rms_copy_requests
      set dpo_status = case when p_approve then 'approved' else 'refused' end,
+         dpo_required = true,
          dpo_by = auth.uid(), dpo_at = now(), dpo_reason = v_reason
    where id = c.id;
   insert into public.rms_routes (record_id, from_office_id, to_office_id, status, action_taken, remarks, acted_by)
@@ -153,13 +156,15 @@ begin
   if r.status not in ('registered', 'received', 'under_action', 'completed') then
     raise exception 'the request is not at a step where a copy can be released';
   end if;
-  select id, dpo_status, dpo_required, released_at into c from public.rms_copy_requests where record_id = p_record_id;
+  select cr.id, cr.dpo_status, cr.dpo_required, cr.released_at, cr.source_record_id,
+         coalesce((select s.confidentiality = 'confidential' from public.rms_records s where s.id = cr.source_record_id), false) as src_conf
+    into c from public.rms_copy_requests cr where cr.record_id = p_record_id;
   if not found or c.released_at is not null then raise exception 'there is no copy waiting to be released'; end if;
-  if c.dpo_status not in ('not_needed', 'approved') then
+  if c.dpo_status not in ('not_needed', 'approved') or (c.dpo_status <> 'approved' and c.src_conf) then
     raise exception 'you can release the copy after the Data Privacy Officer approves';
   end if;
   if length(v_name) not between 2 and 200 then raise exception 'type the name of the person who received the copy'; end if;
-  if c.dpo_required and not coalesce(p_id_checked, false) then
+  if (c.dpo_required or c.src_conf) and not coalesce(p_id_checked, false) then
     raise exception 'check the ID of the person receiving a confidential copy';
   end if;
   update public.rms_copy_requests

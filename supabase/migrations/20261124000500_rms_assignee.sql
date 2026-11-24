@@ -117,6 +117,37 @@ begin
 end $$;
 revoke execute on function public.rms_routes_apply() from public, anon, authenticated;
 
+-- c2. Records: a new record never starts with an assignee --------------------------------------
+create or replace function public.rms_records_guard_insert()
+returns trigger language plpgsql set search_path = '' as $$
+declare v_role public.rms_role := public.rms_my_role();
+begin
+  if current_user <> 'authenticated' then
+    return new;
+  end if;
+  if v_role = 'admin' then
+    raise exception 'administrators look after accounts and security; the records desk registers records (separation of duties)';
+  end if;
+  new.assigned_to := null;
+  new.assigned_at := null;
+  new.created_at := now();
+  if v_role is distinct from 'admin' and v_role is distinct from 'records_officer' then
+    new.current_office_id := new.origin_office_id;
+  end if;
+  -- A reply is an outgoing record answering a received record the user can open (RLS applies to this select).
+  if new.in_reply_to is not null then
+    if new.direction is distinct from 'outgoing' then
+      raise exception 'only a record the City sends out can be a reply';
+    end if;
+    if not exists (select 1 from public.rms_records p
+                    where p.id = new.in_reply_to and p.direction = 'incoming' and p.deleted_at is null) then
+      raise exception 'the record it replies to was not found';
+    end if;
+  end if;
+  return new;
+end $$;
+revoke execute on function public.rms_records_guard_insert() from public, anon, authenticated;
+
 -- d. Records: the assignee changes only through a route step ----------------------------------
 create or replace function public.rms_records_guard_update()
 returns trigger language plpgsql set search_path = '' as $$

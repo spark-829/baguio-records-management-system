@@ -38,5 +38,29 @@ begin
 end;
 $$;
 
+-- Only rms_set_step_minutes (security definer, so current_user is not 'authenticated') may write this key.
+create or replace function public.rms_settings_guard_step_minutes()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if current_user <> 'authenticated' then
+    return coalesce(new, old);
+  end if;
+  if (tg_op <> 'INSERT' and old.key = 'step_minutes') or (tg_op <> 'DELETE' and new.key = 'step_minutes') then
+    raise exception 'only the records desk sets standard times';
+  end if;
+  return coalesce(new, old);
+end $$;
+revoke execute on function public.rms_settings_guard_step_minutes() from public, anon, authenticated;
+
+do $$
+begin
+  if not exists (select 1 from pg_trigger where tgname = 'rms_settings_guard_step_minutes'
+                  and tgrelid = 'public.rms_settings'::regclass) then
+    create trigger rms_settings_guard_step_minutes
+      before insert or update on public.rms_settings
+      for each row execute function public.rms_settings_guard_step_minutes();
+  end if;
+end $$;
+
 revoke execute on function public.rms_set_step_minutes(jsonb) from public, anon;
 grant execute on function public.rms_set_step_minutes(jsonb) to authenticated;

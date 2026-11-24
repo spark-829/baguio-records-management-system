@@ -33,7 +33,7 @@ type CopyRow = {
   dpo_at: string | null;
   released_to: string | null;
   released_at: string | null;
-  source: { id: string; tracking_no: string } | null;
+  source: { id: string; tracking_no: string; confidentiality: string } | null;
   dpo: { full_name: string } | null;
   releaser: { full_name: string } | null;
 };
@@ -138,7 +138,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     rec.doc_type?.name === COPY_TYPE
       ? supabase
           .from("rms_copy_requests")
-          .select("*, source:rms_records!rms_copy_requests_source_record_id_fkey(id, tracking_no), dpo:rms_profiles!rms_copy_requests_dpo_by_fkey(full_name), releaser:rms_profiles!rms_copy_requests_released_by_fkey(full_name)")
+          .select("*, source:rms_records!rms_copy_requests_source_record_id_fkey(id, tracking_no, confidentiality), dpo:rms_profiles!rms_copy_requests_dpo_by_fkey(full_name), releaser:rms_profiles!rms_copy_requests_released_by_fkey(full_name)")
           .eq("record_id", id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
@@ -151,6 +151,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     currentOfficeCode: rec.current_office?.code ?? null,
     status: rec.status,
     dpoStatus: copyReq.dpo_status,
+    sourceConfidential: copyReq.source?.confidentiality === "confidential",
   });
   const mayRelease = !!copyReq && canRelease({
     role: me.role,
@@ -160,6 +161,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     dpoStatus: copyReq.dpo_status,
     releasedAt: copyReq.released_at,
     deleted,
+    sourceConfidential: copyReq.source?.confidentiality === "confidential",
   });
   const TONE: Record<DpoTone, string> = { amber: "bg-amber-100 text-amber-900", emerald: "bg-emerald-100 text-emerald-900", red: "bg-red-100 text-red-900", slate: "bg-slate-100 text-slate-800" };
   const replies = (replyRows ?? []) as { id: string; tracking_no: string }[];

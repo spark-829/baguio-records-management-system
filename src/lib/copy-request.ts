@@ -67,13 +67,13 @@ export function dpoTag(row: { dpo_status: DpoStatus; dpo_name?: string | null; d
   }
 }
 
-export function canDecide(a: { role: string; officeCode: string | null | undefined; status: string; dpoStatus: DpoStatus | null | undefined; currentOfficeCode?: string | null }): boolean {
+export function canDecide(a: { role: string; officeCode: string | null | undefined; status: string; dpoStatus: DpoStatus | null | undefined; currentOfficeCode?: string | null; sourceConfidential?: boolean }): boolean {
   return (
     a.role === "dept_head" &&
     a.officeCode === CLO_CODE &&
     (a.currentOfficeCode === undefined || a.currentOfficeCode === CLO_CODE) &&
     (a.status === "received" || a.status === "under_action") &&
-    a.dpoStatus === "pending"
+    (a.dpoStatus === "pending" || (a.dpoStatus === "not_needed" && !!a.sourceConfidential))
   );
 }
 
@@ -85,8 +85,10 @@ export function canRelease(a: {
   dpoStatus: DpoStatus | null | undefined;
   releasedAt: string | null | undefined;
   deleted: boolean;
+  sourceConfidential?: boolean;
 }): boolean {
   if (a.deleted || a.releasedAt) return false;
   const roleOk = a.role === "records_officer" || ((a.role === "dept_head" || a.role === "staff") && !!a.userOfficeId && a.userOfficeId === a.currentOfficeId);
-  return roleOk && ["registered", "received", "under_action", "completed"].includes(a.status) && (a.dpoStatus === "not_needed" || a.dpoStatus === "approved");
+  const dpoOk = a.dpoStatus === "approved" || (a.dpoStatus === "not_needed" && !a.sourceConfidential);
+  return roleOk && ["registered", "received", "under_action", "completed"].includes(a.status) && dpoOk;
 }

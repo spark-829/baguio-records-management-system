@@ -22,7 +22,7 @@ export default async function SurveyPage({ searchParams }: { searchParams: Promi
     result = error ? { error: "not_found" } : (data as Check);
   }
   const bad = !result || "error" in result ? (result && "error" in result ? result.error : err === "too_many" || err === "not_found" ? err : null) : null;
-  const answered = (result && "answered" in result && result.answered) || err === "already";
+  const answered = sent !== "1" && ((result && "answered" in result && result.answered) || err === "already");
   const form = result && "tracking_no" in result && !answered && sent !== "1";
 
   return (
