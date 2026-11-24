@@ -156,6 +156,8 @@ export const FIL: Record<string, string> = {
   "your office": "opisina mo",
   "Register a record": "Magtala ng record",
   "Waiting in my office": "Naghihintay sa opisina ko",
+  "Late and due-soon records come first.": "Nauuna ang mga huli na at malapit nang dumating ang takdang araw.",
+  "See all {n} in my office": "Tingnan ang lahat ng {n} sa opisina ko",
   "Nothing waiting in your office.": "Walang naghihintay sa opisina mo.",
   "Your account is not assigned to an office.": "Wala pang opisinang nakatalaga sa account mo.",
   "By status": "Ayon sa katayuan",

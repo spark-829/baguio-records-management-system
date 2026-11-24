@@ -23,7 +23,7 @@ function CloseIcon() {
   );
 }
 
-/** Floating help-chat widget (lower left) on every signed-in page except the full assistant page. */
+/** Assistant button at the right end of the nav bar (icon only below lg) with a chat panel: bottom-right on wider screens, full screen on phones. Hidden on the full assistant page and the register form. */
 export function AssistantLauncher() {
   const t = useT();
   const pathname = usePathname();
@@ -33,7 +33,7 @@ export function AssistantLauncher() {
   const panel = useRef<HTMLDivElement>(null);
   const returnFocus = useRef(false);
 
-  // The full assistant page has its own chat; the register form has a phone action bar at bottom-left.
+  // The full assistant page has its own chat; the register form keeps the screen for its phone action bar.
   const hideHere = pathname === "/assistant" || pathname.startsWith("/assistant/") || pathname === "/records/new" || pathname.startsWith("/records/new/");
   const shown = open && !hideHere;
 
@@ -86,7 +86,7 @@ export function AssistantLauncher() {
           ref={panel}
           role="dialog"
           aria-labelledby="assistant-panel-title"
-          className={`no-print fixed inset-0 z-40 flex-col overflow-hidden bg-white sm:inset-auto sm:bottom-24 sm:left-4 sm:h-[min(640px,calc(100vh-11rem))] sm:w-[420px] sm:rounded-2xl sm:border sm:border-slate-200 sm:shadow-2xl ${shown ? "flex" : "hidden"}`}
+          className={`no-print fixed inset-0 z-40 flex-col overflow-hidden bg-white sm:inset-auto sm:right-4 sm:bottom-4 sm:h-[min(640px,calc(100vh-2rem))] sm:w-[420px] sm:rounded-2xl sm:border sm:border-slate-200 sm:shadow-2xl ${shown ? "flex" : "hidden"}`}
         >
           <div className="on-dark flex items-center gap-2 bg-brand-800 px-4 py-3 text-white">
             <div className="min-w-0 flex-1 leading-tight">
@@ -112,10 +112,10 @@ export function AssistantLauncher() {
           onClick={toggle}
           aria-expanded={open}
           aria-controls="assistant-panel"
-          className={`no-print fixed bottom-4 left-4 z-40 h-14 w-14 min-h-14 items-center justify-center gap-2 rounded-full bg-brand-700 px-0 text-base font-semibold text-white shadow-lg ring-2 ring-white hover:bg-brand-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-gold-500 sm:w-auto sm:px-5 ${open ? "hidden sm:inline-flex" : "inline-flex"}`}
+          className={`no-print my-1 min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border-2 border-brand-700 bg-white px-2.5 text-base font-semibold text-brand-800 hover:bg-brand-50 lg:px-3.5 ${open ? "hidden sm:inline-flex" : "inline-flex"}`}
         >
           {open ? <CloseIcon /> : <ChatIcon />}
-          <span className="sr-only sm:not-sr-only">{open ? t("Close assistant") : t("Ask the assistant")}</span>
+          <span className="sr-only lg:not-sr-only">{open ? t("Close assistant") : t("Ask the assistant")}</span>
         </button>
       )}
     </>

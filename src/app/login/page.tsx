@@ -1,7 +1,7 @@
 import { getT } from "@/lib/i18n/server";
 import { safeNextPath } from "@/lib/safe-next";
 import { LoginForm } from "./login-form";
-import { PineMark, SiteFooter } from "@/components/brand";
+import { BrandLockup, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
 
 const DEMO = [
@@ -24,50 +24,40 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const { t } = await getT();
   const { error, next } = await searchParams;
   return (
-    <div className="flex min-h-screen flex-col bg-brand-800">
-      <main className="on-dark flex flex-1 items-center justify-center border-t-4 border-gold-500 bg-[linear-gradient(160deg,var(--color-brand-900),var(--color-brand-700))] px-4 py-10">
-        <div className="grid w-full max-w-5xl items-start gap-8 md:grid-cols-2">
-          <div className="text-white">
-            <div className="flex flex-wrap items-center gap-3">
-              <PineMark className="h-12 w-12" />
-              <span className="text-xl font-bold tracking-tight">Baguio RMS</span>
-              <div className="ml-auto">
-                <LangToggle dark />
-              </div>
-            </div>
-            <p className="mt-6 text-sm font-semibold uppercase tracking-widest text-brand-100">{t("A demo for the City Government of Baguio")}</p>
-            <h1 className="mt-2 text-3xl font-bold text-white">{t("Records Management System")}</h1>
-            <p className="mt-3 text-lg text-brand-100">
-              {t("Register incoming and outgoing documents, route them between offices, see where each one is, and find it again in seconds.")}
-            </p>
-            <div className="mt-6 rounded-xl border border-white/20 bg-white/10 p-5 text-sm">
-              <p className="font-semibold">{t("Demo accounts (password: Demo@2026)")}</p>
-              <ul className="mt-3 space-y-2">
-                {DEMO.map((d) => (
-                  <li key={d.email}>
-                    <span className="font-mono text-sm break-all text-white">{d.email}</span>
-                    <span className="text-brand-100"> · {t(d.role)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <p className="mt-4 text-sm text-brand-100">
-              {t("Portfolio demo built by")}{" "}
-              <a href="/developer" className="font-semibold text-white underline">Vicson Yaris</a>.{" "}
-              {t("Not an official City Government system; all data is fictional.")}
-            </p>
-          </div>
-          <div className="card order-first border-t-4 border-t-gold-500 p-6 text-ink sm:p-8 md:order-none">
-            <h2 className="text-2xl font-bold">{t("Sign in")}</h2>
+    <div className="flex min-h-screen flex-col">
+      <header className="on-dark border-b-4 border-gold-500 bg-brand-800 text-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
+          <BrandLockup />
+          <div className="ml-auto"><LangToggle dark /></div>
+        </div>
+      </header>
+      <main id="main" className="flex-1 bg-page px-4 py-8 sm:py-12">
+        <div className="mx-auto grid w-full max-w-5xl items-start gap-8 md:grid-cols-2">
+          <div className="card p-6 sm:p-8">
+            <h1 className="text-2xl font-bold">{t("Sign in")}</h1>
             {error && NOTICES[error] && (
-              <p
-                role="status"
-                className={`mt-3 rounded-lg border-l-4 p-3 text-sm ${error === "signed-out" ? "border-emerald-700 bg-emerald-50 text-emerald-900" : "border-amber-600 bg-amber-50 text-amber-900"}`}
-              >
-                {t(NOTICES[error])}
-              </p>
+              <p role="status" className={`mt-3 rounded-lg border p-3 text-sm ${error === "signed-out" ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-amber-300 bg-amber-50 text-amber-900"}`}>{t(NOTICES[error])}</p>
             )}
             <LoginForm next={safeNextPath(next) ?? ""} />
+          </div>
+          <div>
+            <p className="text-lg text-slate-700">{t("Register incoming and outgoing documents, route them between offices, see where each one is, and find it again in seconds.")}</p>
+            <div className="card mt-6 p-5">
+              <h2 className="text-lg font-bold">{t("Demo accounts (password: Demo@2026)")}</h2>
+              <dl className="mt-3 space-y-3">
+                {DEMO.map((d) => (
+                  <div key={d.email}>
+                    <dt className="font-mono text-sm break-all text-ink">{d.email}</dt>
+                    <dd className="text-sm text-slate-600">{t(d.role)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+            <p className="mt-4 text-sm text-slate-600">
+              {t("Portfolio demo built by")}{" "}
+              <a href="/developer" className="font-semibold text-brand-700 underline">Vicson Yaris</a>.{" "}
+              {t("Not an official City Government system; all data is fictional.")}
+            </p>
           </div>
         </div>
       </main>

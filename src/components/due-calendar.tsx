@@ -33,7 +33,7 @@ const ymd = (d: Date) => d.toISOString().slice(0, 10);
  * colored dots under each date, tap a date to see what is due that day.
  * Large cells and words beside every color, for older staff and color-blind users.
  */
-export function DueCalendar({ items, today }: { items: DueItem[]; today: string }) {
+export function DueCalendar({ items, today, lateTotal }: { items: DueItem[]; today: string; lateTotal?: number }) {
   const t = useT();
   const lang = useLang();
   const fmt = useMemo(() => formats(dateLocale(lang)), [lang]);
@@ -59,6 +59,9 @@ export function DueCalendar({ items, today }: { items: DueItem[]; today: string 
   const pickedItems = byDay.get(picked) ?? [];
   // On today's date, also list what is still late from earlier days, so nothing is forgotten
   const stillLate = picked === today ? items.filter((i) => i.due_date < today).sort((a, b) => a.due_date.localeCompare(b.due_date)) : [];
+  // Heading and link use the server total; the list itself comes from the dashboard's 500-row sample
+  const lateN = Math.max(lateTotal ?? 0, stillLate.length);
+  const lateListed = Math.min(stillLate.length, 5);
 
   return (
     <section className="card p-4" aria-labelledby="cal-title">
@@ -80,7 +83,7 @@ export function DueCalendar({ items, today }: { items: DueItem[]; today: string 
         {(Object.keys(TONE) as Tone[]).map((tone) => (
           <li key={tone} className="flex items-center gap-1.5">
             <span className={`inline-block h-3 w-3 rounded-full ${TONE[tone].dot}`} aria-hidden />
-            {tone === "soon" ? <a href="#due-soon" className="underline">{t(TONE[tone].label)}</a> : t(TONE[tone].label)}
+            {t(TONE[tone].label)}
           </li>
         ))}
         {lateCount > 0 && <li className="text-slate-600">{t("Tap today's date to also see everything that is late.")}</li>}
@@ -138,11 +141,11 @@ export function DueCalendar({ items, today }: { items: DueItem[]; today: string 
           )}
           {stillLate.length > 0 && (
             <>
-              <h3 className="mt-4 text-base font-bold text-red-800">{t("Still late from earlier days ({n})", { n: stillLate.length })}</h3>
+              <h3 className="mt-4 text-base font-bold text-red-800">{t("Still late from earlier days ({n})", { n: lateN })}</h3>
               <Items list={stillLate.slice(0, 5)} today={today} showDate />
-              {stillLate.length > 5 && (
+              {lateN > lateListed && (
                 <Link prefetch={false} href="/records?overdue=1" className="mt-1 inline-block py-2 font-medium text-brand-700 underline">
-                  {t("See all {n} late records", { n: stillLate.length })}
+                  {t("See all {n} late records", { n: lateN })}
                 </Link>
               )}
             </>
