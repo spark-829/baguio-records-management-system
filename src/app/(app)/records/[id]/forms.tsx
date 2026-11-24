@@ -201,7 +201,7 @@ export function DeleteForm({ recordId }: { recordId: string }) {
   const [open, setOpen] = useState(false);
   if (!open)
     return (
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 items-center text-sm text-red-700 hover:underline sm:min-h-0">
+      <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 items-center text-sm text-red-700 hover:underline">
         {t("Delete this record…")}
       </button>
     );
@@ -213,7 +213,7 @@ export function DeleteForm({ recordId }: { recordId: string }) {
       <p className="text-xs text-slate-500">{t("The record moves to the deleted-records bin. Only an administrator can restore it. This is logged.")}</p>
       {state?.error && <p className="text-sm text-red-700">{t(state.error)}</p>}
       <div className="flex gap-2">
-        <button className="btn rounded-lg bg-red-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-800" disabled={pending}>
+        <button className="btn bg-red-700 text-white hover:bg-red-800" disabled={pending}>
           {t(pending ? "Deleting…" : "Yes, move to bin")}
         </button>
         <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>{t("Cancel")}</button>

@@ -83,7 +83,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
         </nav>
       </div>
       {error ? (
-        <p className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-amber-950">
+        <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-950">
           {t("The map turns on after the database update for barangays is run.")}
         </p>
       ) : (

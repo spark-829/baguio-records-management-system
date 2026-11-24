@@ -44,7 +44,7 @@ export function LoginForm({ next = "" }: { next?: string }) {
         />
         <span>{t("I have read the privacy notice and will use records for official work only.")}</span>
       </label>
-      {state?.error && <p className="rounded-lg border-l-4 border-red-700 bg-red-50 p-3 text-sm font-medium text-red-800" role="alert">{t(state.error)}</p>}
+      {state?.error && <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-900" role="alert">{t(state.error)}</p>}
       <button className="btn-primary min-h-12 w-full text-lg" disabled={pending}>{t(pending ? "Signing in…" : "Sign in")}</button>
     </form>
   );

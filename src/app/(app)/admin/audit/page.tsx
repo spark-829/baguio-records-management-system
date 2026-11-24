@@ -120,14 +120,14 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         </form>
       </div>
       {chain.error ? (
-        <p className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-900">{t(integrityErrorText(chain.error))}</p>
+        <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">{t(integrityErrorText(chain.error))}</p>
       ) : chain.data === null ? (
-        <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <p className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
           {t("Integrity check passed. Each entry is sealed with a digital fingerprint of the one before it, and the chain has no gaps, so no entry has been removed.")}
           {coverage && <> {t(coverage.key, coverage.vars)}</>}
         </p>
       ) : (
-        <p className="rounded-lg border border-l-4 border-red-300 border-l-red-700 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
+        <p className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-900">
           {t("Integrity check FAILED at entry #{n}. The log was changed outside the system from that point on.", { n: String(chain.data) })}
         </p>
       )}

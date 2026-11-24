@@ -335,14 +335,19 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
             <option value="urgent">{t("Urgent")}</option>
           </select>
         </div>
-        <div>
-          <label className="label" htmlFor="f-confidentiality">{t("Who may see it")}</label>
-          <select id="f-confidentiality" name="confidentiality" className={`input ${hl("confidentiality")}`} value={f.confidentiality} onChange={(e) => set("confidentiality", e.target.value as Fields["confidentiality"])}>
-            <option value="public">{t("Public: anyone in the City offices")}</option>
-            <option value="internal">{t("Internal: City staff involved with it")}</option>
-            <option value="confidential">{t("Confidential: records desk and handling offices only")}</option>
-          </select>
-        </div>
+        <fieldset className={`min-w-0 rounded-md border-2 p-1 ${hl("confidentiality") || "border-transparent"}`}>
+          <legend className="label">{t("Who may see it")}</legend>
+          {([
+            ["public", "Public", "Anyone in the City offices"],
+            ["internal", "Internal", "City staff involved with it"],
+            ["confidential", "Confidential", "Records desk and handling offices only"],
+          ] as const).map(([v, name, hint]) => (
+            <label key={v} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md px-2 py-2 hover:bg-brand-50">
+              <input type="radio" name="confidentiality" value={v} checked={f.confidentiality === v} onChange={() => set("confidentiality", v)} className="checkbox mt-0.5" />
+              <span><span className="font-semibold">{t(name)}</span><span className="block text-sm text-slate-600">{t(hint)}</span></span>
+            </label>
+          ))}
+        </fieldset>
         <div>
           <label className="label" htmlFor="f-forward_to">{t("Send to office (optional)")}</label>
           <select id="f-forward_to" name="forward_to" className={`input ${hl("forward_to")}`} value={f.forward_to} onChange={(e) => set("forward_to", e.target.value)}>
@@ -351,8 +356,9 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           </select>
         </div>
         <div>
-          <label className="label" htmlFor="f-arta_class">{t("Kind of transaction (ARTA)")}</label>
-          <select id="f-arta_class" name="arta_class" className="input" value={f.arta_class} onChange={(e) => pickArta(e.target.value)}>
+          <label className="label" htmlFor="f-arta_class">{t("ARTA processing time (optional)")}</label>
+          <p id="f-arta_class-hint" className="mb-2 text-sm text-slate-600">{t("Anti-Red Tape Act. Picking one fills in the date below.")}</p>
+          <select id="f-arta_class" name="arta_class" aria-describedby="f-arta_class-hint" className="input" value={f.arta_class} onChange={(e) => pickArta(e.target.value)}>
             <option value="">{t("Not set")}</option>
             {ARTA_CLASSES.map((c) => <option key={c} value={c}>{t(ARTA_LABEL[c])}</option>)}
           </select>

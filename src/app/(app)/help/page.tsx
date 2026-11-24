@@ -43,7 +43,7 @@ export default async function HelpPage() {
           {S("Click [[Register]] at the top of the screen.")}
           {S("No scan? Skip part 1. Go straight to the form.")}
           {S("Fill in every box unless it says (optional).")}
-          {S("Choose the _Kind of transaction (ARTA)_. The due date fills in by itself, counting only working days. You can still change it.")}
+          {S("Choose the _ARTA processing time_. The due date fills in by itself, counting only working days. You can still change it.")}
           {S("To send it to an office right away, choose the office under _Send to office_.")}
           {S("Press [[Save and get tracking number]].")}
           {S("Press [[Print routing slip]] and staple it to the paper.")}

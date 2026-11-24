@@ -117,6 +117,10 @@ tracking numbers. Senior-friendly scale: 15 / 17 / 18 (body) / 21 / 24 /
 Max width 7xl, 16px side gutter on phones. Left-aligned text and forms.
 Header + horizontal nav on desktop, Menu button on phones. Tables scroll in
 their own box on phones. The assistant button sits at the right end of the nav bar (icon only below `2xl`, beside the Menu button on phones). Its panel opens bottom-right on wider screens and full screen on phones; closing returns focus to the button. No floating buttons.
+Header: lockup left; language, alerts, name block (name plus role · office, truncated with the full text on hover), My account and Sign out on the right. One row at 1280.
+Page header: h1 text-2xl, meta line, actions right (secondary first, primary last).
+Public pages (/login, /track) use the same header with lockup and language only.
+The assistant panel is non-modal on wider screens: Esc closes it when focus is inside; it is modal and full screen on phones.
 
 ## Elevation & Depth
 Flat. Cards use a 1px `line` border and no shadow. No stacked
@@ -133,3 +137,4 @@ shadows, no glass.
 - Badges: `badge`, word + colour, never colour alone.
 - Cards: `card` only to group related content.
 - Focus: 3px brand-700 outline, gold on dark backgrounds.
+- Callouts: tinted, 1px border all round, never a side stripe.

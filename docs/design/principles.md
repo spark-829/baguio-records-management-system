@@ -160,6 +160,7 @@ content.
   line; Filipino runs about 30% longer, so leave room.
 - **Proven patterns** (Vic's rule): name the app or design system a
   pattern comes from when proposing it.
+- **App shell**: GOV.UK header over a white service-nav bar; the assistant button sits at the right end of the nav bar (icon only below `2xl`, label from `2xl`), never floating; its panel is a non-modal side panel on desktop (APG: Esc closes only from inside) and a modal on phones.
 
 ## Sources
 

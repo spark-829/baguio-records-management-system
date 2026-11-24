@@ -5,6 +5,7 @@ import { getProfile } from "@/lib/session";
 import { filtersFromParams, filtersToParams, searchRecordsPage } from "@/lib/search";
 import { STATUS_LABEL, fmtDate, partyLabel } from "@/lib/labels";
 import { foundText, listSize } from "@/lib/list-size";
+import { listQuery } from "@/lib/back-link";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -27,6 +28,8 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   ]);
   const rows = page.rows;
   const exportHref = `/api/reports/csv?${filtersToParams(f).toString()}`;
+  const listQs = listQuery(f, n);
+  const recordHref = (id: string) => `/records/${id}${listQs ? `?back=${encodeURIComponent(listQs)}` : ""}`;
   const aiNote = typeof sp.ai === "string" ? sp.ai : undefined;
   const officeNames = new Map((offices.data ?? []).map((o) => [o.code, o.name]));
   const narrowed = Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here);
@@ -147,7 +150,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       <ul className="space-y-3 lg:hidden">
         {rows.map((r) => (
           <li key={r.id}>
-            <Link prefetch={false} href={`/records/${r.id}`} className="card block p-4 no-underline hover:border-brand-600">
+            <Link prefetch={false} href={recordHref(r.id)} className="card block p-4 no-underline hover:border-brand-600">
               <span className="font-mono text-sm text-slate-600">{r.tracking_no}</span>
               <span className="mt-1 block font-semibold text-ink">{r.subject}</span>
               <span className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -181,10 +184,10 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             {rows.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
                 <td className="w-40 whitespace-nowrap px-4 py-2 font-mono text-sm">
-                  <Link prefetch={false} href={`/records/${r.id}`} className="inline-flex min-h-11 items-center text-brand-700 hover:underline">{r.tracking_no}</Link>
+                  <Link prefetch={false} href={recordHref(r.id)} className="inline-flex min-h-11 items-center text-brand-700 hover:underline">{r.tracking_no}</Link>
                 </td>
                 <td className="min-w-[18rem] px-4 py-2">
-                  <Link prefetch={false} href={`/records/${r.id}`} className="inline-block py-0.5 font-semibold text-ink hover:underline">{r.subject}</Link>
+                  <Link prefetch={false} href={recordHref(r.id)} className="inline-block py-0.5 font-semibold text-ink hover:underline">{r.subject}</Link>
                   <div className="mt-1 flex flex-wrap gap-1">
                     <PriorityBadge priority={r.priority} />
                     <ConfBadge level={r.confidentiality} />
