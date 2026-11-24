@@ -27,6 +27,16 @@ do not need to explore the tree.
 - Pipe noisy commands through `tail -n 40` or `grep`; show only failures.
 - Keep replies short: the result, what changed, anything left. No replaying
   of tool output.
+- Thread hygiene: one big thread at a time. A thread past about 2 days or
+  40 turns is carrying heavy history: finish it, write the lasting facts to
+  `docs/` or project memory, and tell Vic to start a fresh thread.
+- Scheduled and QA runs: check first, stop early (`no_reply_needed`) when
+  there is nothing to do. Use Sonnet for routine checks and testers, Opus
+  only for planning and review. Never fire more than needed per day.
+- Before big work (new feature, full-suite runs, multi-agent runs) say in one
+  line which agents you will start; skip the planner for small fixes.
+- Usage log: when Vic asks about usage, or at the end of a big thread, add a
+  row to `docs/token-usage.md` and give one recommendation.
 
 ## Conventions
 
