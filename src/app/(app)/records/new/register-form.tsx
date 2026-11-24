@@ -11,6 +11,7 @@ import { useUploadPrep } from "@/components/use-upload-prep";
 import { ScanPreview } from "@/components/scan-preview";
 import { ARTA_CLASSES, ARTA_DAYS, ARTA_LABEL, artaDue, isArtaClass, manilaDay } from "@/lib/arta";
 import { TX_FORM_LABEL, TX_TYPES } from "@/lib/transaction-type";
+import { COPY_TYPE } from "@/lib/copy-request";
 import { registerRecord } from "./actions";
 
 type Opt = { id: string; name: string };
@@ -67,6 +68,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     arta_class: "",
     in_reply_to: props.replyTo ?? "",
   });
+  const [copyKind, setCopyKind] = useState<"owner" | "representative" | "">("");
   const [aiState, setAiState] = useState<"idle" | "reading" | "done" | "error">("idle");
   const [aiMsg, setAiMsg] = useState("");
   const [aiFilled, setAiFilled] = useState<Set<keyof Fields>>(new Set());
@@ -273,6 +275,46 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
             ))}
           </div>
         </fieldset>
+        {props.canIncoming && props.types.find((x) => x.id === f.document_type_id)?.name === COPY_TYPE && (
+          <fieldset className="md:col-span-2 grid gap-3 rounded-md border-2 border-slate-200 p-3 md:grid-cols-2">
+            <legend className="label px-1">{t("About the copy")}</legend>
+            <div className="md:col-span-2">
+              <label className="label" htmlFor="f-copy_source">{t("Tracking number of the record asked for")}</label>
+              <input id="f-copy_source" name="copy_source" required className="input font-mono uppercase" placeholder="IN-2026-0001" autoComplete="off" />
+            </div>
+            <div>
+              <label className="label" htmlFor="f-copy_pages">{t("Number of pages")}</label>
+              <input id="f-copy_pages" name="copy_pages" type="number" min={1} max={5000} className="input" />
+            </div>
+            <div>
+              <label className="label" htmlFor="f-copy_fee">{t("Fee (₱)")}</label>
+              <input id="f-copy_fee" name="copy_fee" inputMode="decimal" className="input" />
+            </div>
+            <fieldset className="md:col-span-2">
+              <legend className="label">{t("Who is asking?")}</legend>
+              <div className="grid gap-1">
+                <label className="flex min-h-11 items-center gap-3">
+                  <input type="radio" name="copy_requester" value="owner" required checked={copyKind === "owner"} onChange={() => setCopyKind("owner")} />
+                  <span>{t("The owner")}</span>
+                </label>
+                <label className="flex min-h-11 items-center gap-3">
+                  <input type="radio" name="copy_requester" value="representative" required checked={copyKind === "representative"} onChange={() => setCopyKind("representative")} />
+                  <span>{t("A representative")}</span>
+                </label>
+              </div>
+            </fieldset>
+            <label className="flex min-h-11 items-center gap-3 md:col-span-2">
+              <input type="checkbox" name="copy_id" className="checkbox" />
+              <span>{t("Valid ID checked")}</span>
+            </label>
+            {copyKind === "representative" && (
+              <label className="flex min-h-11 items-center gap-3 md:col-span-2">
+                <input type="checkbox" name="copy_auth" className="checkbox" required />
+                <span>{t("Authorization letter or SPA checked")}</span>
+              </label>
+            )}
+          </fieldset>
+        )}
         <div className="md:col-span-2">
           <label className="label" htmlFor="f-subject">{t("Subject (what it is about)")}</label>
           <input id="f-subject" name="subject" required className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />

@@ -169,3 +169,46 @@ export async function restoreRecord(form: FormData) {
   revalidatePath("/admin/bin");
   revalidatePath(`/records/${recordId}`);
 }
+
+const COPY_ERRORS: [RegExp, string][] = [
+  [/only the city legal officer/i, "Only the City Legal Officer (Data Privacy Officer) can decide."],
+  [/send the request to the city legal office/i, "Send the request to the City Legal Office and mark it received first."],
+  [/not waiting for approval/i, "This request is not waiting for approval."],
+  [/reason of at least/i, "Give a reason of at least 5 characters for refusing."],
+  [/after the data privacy officer approves/i, "You can release the copy after the Data Privacy Officer approves."],
+  [/check the id of the person/i, "Check the ID of the person receiving a confidential copy."],
+  [/name of the person/i, "Type the name of the person who received it."],
+  [/no copy waiting/i, "This copy was already released."],
+];
+const copyError = (m: string) => COPY_ERRORS.find(([re]) => re.test(m))?.[1] ?? m;
+
+export async function decideCopy(_prev: ActState, form: FormData): Promise<ActState> {
+  const me = await getProfile();
+  const recordId = String(form.get("record_id") ?? "");
+  if (!UUID.test(recordId)) return { error: "Record not found" };
+  if (me.role !== "dept_head") return { error: "Only the City Legal Officer (Data Privacy Officer) can decide." };
+  const approve = String(form.get("decision") ?? "") === "approve";
+  const reason = String(form.get("reason") ?? "").trim().slice(0, 1000);
+  if (!approve && reason.length < 5) return { error: "Give a reason of at least 5 characters for refusing." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("rms_copy_decide", { p_record_id: recordId, p_approve: approve, p_reason: reason || undefined });
+  if (error) return { error: copyError(error.message) };
+  revalidatePath(`/records/${recordId}`);
+  revalidatePath("/");
+  return { ok: approve ? "Release approved." : "Release refused." };
+}
+
+export async function releaseCopy(_prev: ActState, form: FormData): Promise<ActState> {
+  const me = await getProfile();
+  const recordId = String(form.get("record_id") ?? "");
+  if (!UUID.test(recordId)) return { error: "Record not found" };
+  if (me.role === "admin" || me.role === "viewer") return { error: "Only the records desk or the office holding the request can release the copy." };
+  const name = String(form.get("received_by") ?? "").trim().slice(0, 200);
+  if (name.length < 2) return { error: "Type the name of the person who received it." };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("rms_copy_release", { p_record_id: recordId, p_received_by: name, p_id_checked: form.get("id_checked") === "on" });
+  if (error) return { error: copyError(error.message) };
+  revalidatePath(`/records/${recordId}`);
+  revalidatePath("/");
+  return { ok: "Release recorded." };
+}

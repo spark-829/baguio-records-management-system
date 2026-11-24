@@ -47,6 +47,7 @@ export default async function HelpPage() {
           {S("Fill in every box unless it says (optional).")}
           {S("Choose the _Transaction type_: citizen, government office or business.")}
           {S("Choose the _ARTA processing time_. The due date fills in by itself, counting only working days. You can still change it.")}
+          {S("Choosing the _Document type_ Request for copy shows _About the copy_. A confidential copy is released only after the Data Privacy Officer approves.")}
           {S("To send it to an office right away, choose the office under _Send to office_.")}
           {S("Press [[Save and get tracking number]].")}
           {S("Press [[Print routing slip]] and staple it to the paper.")}

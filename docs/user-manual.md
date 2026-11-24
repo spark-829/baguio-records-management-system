@@ -33,6 +33,9 @@ The receipt has a second QR code, **Rate our service**. The citizen can also pre
 ## Complaints
 Register a complaint with the document type **Complaint**. The reply is due 72 hours after it is logged, and the record page shows the hours left, or in red how late it is. The clock stops when the record is finished or a reply is linked. /track and **Help** list other ways to complain: the OPACD online portal (opacd.baguio.gov.ph), PACD email (pacd.baguiogovph@gmail.com), Hotline 8888 and the Anti-Red Tape Authority (complaints@arta.gov.ph).
 
+## Requests for copies (records desk, City Legal Office, offices)
+The records desk registers a copy request with the document type **Request for copy**, then fills **About the copy**: tracking number of the record asked for (it must exist), pages, fee, owner or representative, and the ID and authorization checks (a representative needs the authorization letter or SPA). If the record asked for is confidential, the Data Privacy Officer must approve first. The Data Privacy Officer is the head of the City Legal Office (office code CLO; do not change that code). Flow: register, forward to the City Legal Office, the head marks it received and presses **Approve release (Data Privacy Officer)** or **Refuse release** (reason required), the request is sent back, then the records desk or the holding office presses **Record release** with the name of the person who received it and (for a confidential copy) the ID check. Not confidential: no approval is needed. Administrators cannot decide or release.
+
 ## Acting on a record
 Open the record. The box at the top shows who has it now, what needs to be done, and how many days are left or how late it is.
 

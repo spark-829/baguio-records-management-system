@@ -12,12 +12,30 @@ import { newestFirst } from "@/lib/history";
 import { ARTA_LABEL, artaProgress, artaText, isArtaClass, manilaDay } from "@/lib/arta";
 import type { Direction, Status, Priority, Confidentiality } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
-import { ActionForm, AssignForm, AttachForm, DeleteForm } from "./forms";
+import { ActionForm, AssignForm, AttachForm, CopyDecisionForm, CopyReleaseForm, DeleteForm } from "./forms";
+import { COPY_TYPE, canDecide, canRelease, dpoTag, type DpoStatus, type DpoTone } from "@/lib/copy-request";
 import { assignableStaff, assignmentEvents, canAssign } from "@/lib/assign";
 import { restoreRecord } from "./actions";
 import { SummaryBox } from "./summary-box";
 import { isComplaint, replyClock, replyDueAt } from "@/lib/complaint";
 import { recordsBackHref } from "@/lib/back-link";
+
+type CopyRow = {
+  source_tracking_no: string;
+  pages: number | null;
+  fee_php: string | number | null;
+  requester_kind: "owner" | "representative";
+  id_checked: boolean;
+  authorization_checked: boolean;
+  dpo_required: boolean;
+  dpo_status: DpoStatus;
+  dpo_at: string | null;
+  released_to: string | null;
+  released_at: string | null;
+  source: { id: string; tracking_no: string } | null;
+  dpo: { full_name: string } | null;
+  releaser: { full_name: string } | null;
+};
 
 type Rec = {
   id: string;
@@ -69,10 +87,10 @@ type Route = {
   actor: { full_name: string } | null;
 };
 
-export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string; back?: string }> }) {
+export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string; back?: string; copy?: string }> }) {
   const { t } = await getT();
   const { id } = await params;
-  const { new: isNew, scan, file, back } = await searchParams;
+  const { new: isNew, scan, file, back, copy: copyFlag } = await searchParams;
   const backHref = recordsBackHref(back);
   const [me, settings] = await Promise.all([getProfile(), getSettings()]);
   const supabase = await createClient();
@@ -94,7 +112,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     status: rec.status,
     deleted,
   });
-  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }, { data: parent }, { data: replyRows }, { data: staffRows }] = await Promise.all([
+  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }, { data: parent }, { data: replyRows }, { data: staffRows }, { data: copyRow }] = await Promise.all([
     // Access history: every opened record is logged with who, when and from which IP (in parallel with the reads below).
     supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: rec.id }),
     supabase
@@ -115,7 +133,34 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     mayAssign
       ? supabase.from("rms_profiles").select("id, full_name, role").eq("office_id", rec.current_office_id).eq("is_active", true).in("role", ["staff", "dept_head"])
       : Promise.resolve({ data: [] as { id: string; full_name: string; role: string }[] }),
+    // Request for copy details (only read for that type).
+    rec.doc_type?.name === COPY_TYPE
+      ? supabase
+          .from("rms_copy_requests")
+          .select("*, source:rms_records!rms_copy_requests_source_record_id_fkey(id, tracking_no), dpo:rms_profiles!rms_copy_requests_dpo_by_fkey(full_name), releaser:rms_profiles!rms_copy_requests_released_by_fkey(full_name)")
+          .eq("record_id", id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
+  const copyReq = copyRow as unknown as CopyRow | null;
+  const isCopy = rec.doc_type?.name === COPY_TYPE;
+  const mayDecide = !deleted && !!copyReq && canDecide({
+    role: me.role,
+    officeCode: me.office_id && me.office_id === rec.current_office_id ? rec.current_office?.code : null,
+    currentOfficeCode: rec.current_office?.code ?? null,
+    status: rec.status,
+    dpoStatus: copyReq.dpo_status,
+  });
+  const mayRelease = !!copyReq && canRelease({
+    role: me.role,
+    userOfficeId: me.office_id,
+    currentOfficeId: rec.current_office_id,
+    status: rec.status,
+    dpoStatus: copyReq.dpo_status,
+    releasedAt: copyReq.released_at,
+    deleted,
+  });
+  const TONE: Record<DpoTone, string> = { amber: "bg-amber-100 text-amber-900", emerald: "bg-emerald-100 text-emerald-900", red: "bg-red-100 text-red-900", slate: "bg-slate-100 text-slate-800" };
   const replies = (replyRows ?? []) as { id: string; tracking_no: string }[];
 
   // Same rule as rms_can_attach in the database, so the form only shows when the upload will be allowed (QA-010).
@@ -226,6 +271,9 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {t("The record was saved, but the file could not be attached. Attach it again under Attachments below.")}
         </div>
+      )}
+      {copyFlag === "failed" && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">{t("Copy details were not recorded for this request.")}</div>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -342,6 +390,19 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               )}
             </details>
           )}
+          {mayDecide && copyReq && (
+            <div className="mb-3 rounded border border-line p-2">
+              <CopyDecisionForm recordId={rec.id} />
+            </div>
+          )}
+          {mayRelease && copyReq && (
+            <div className="mb-3 rounded border border-line p-2">
+              <CopyReleaseForm recordId={rec.id} idRequired={copyReq.dpo_required} />
+            </div>
+          )}
+          {copyReq?.dpo_status === "pending" && !mayDecide && !deleted && (
+            <p className="mb-3 text-sm text-slate-700">{t("You can release the copy after the Data Privacy Officer approves.")}</p>
+          )}
           {actions.length > 0 && <p className="mb-2 text-sm text-slate-600">{t("Nothing is saved until you press Save and then confirm.")}</p>}
           {actions.length ? (
             <ActionForm
@@ -368,6 +429,57 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
 
         <div className="space-y-4 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <SummaryBox recordId={rec.id} initial={rec.ai_summary} aiBlocked={rec.confidentiality === "confidential" && settings.aiExcludeConfidential} />
+
+          {isCopy && (
+            <section className="card p-4" aria-labelledby="copy-h">
+              <h2 id="copy-h" className="mb-3 font-semibold">{t("Copy request")}</h2>
+              {copyReq ? (
+                (() => {
+                  const tag = dpoTag({ dpo_status: copyReq.dpo_status, dpo_name: copyReq.dpo?.full_name, dpo_at: copyReq.dpo_at }, fmtDate);
+                  return (
+                    <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                      <div className="flex gap-2 border-b border-slate-100 py-1">
+                        <dt className="w-40 shrink-0 text-slate-500">{t("Copy of")}</dt>
+                        <dd className="font-medium">
+                          {copyReq.source ? <Link href={`/records/${copyReq.source.id}`} className="font-mono">{copyReq.source.tracking_no}</Link> : <span className="font-mono">{copyReq.source_tracking_no}</span>}
+                        </dd>
+                      </div>
+                      <div className="flex gap-2 border-b border-slate-100 py-1">
+                        <dt className="w-40 shrink-0 text-slate-500">{t("Number of pages")}</dt>
+                        <dd className="font-medium">{copyReq.pages ?? "—"}</dd>
+                      </div>
+                      <div className="flex gap-2 border-b border-slate-100 py-1">
+                        <dt className="w-40 shrink-0 text-slate-500">{t("Fee (₱)")}</dt>
+                        <dd className="font-medium">{copyReq.fee_php != null ? `₱${Number(copyReq.fee_php).toFixed(2)}` : "—"}</dd>
+                      </div>
+                      <div className="flex gap-2 border-b border-slate-100 py-1">
+                        <dt className="w-40 shrink-0 text-slate-500">{t("Who is asking?")}</dt>
+                        <dd className="font-medium">
+                          {t(copyReq.requester_kind === "owner" ? "The owner" : "A representative")}
+                          {copyReq.id_checked ? ` · ${t("Valid ID checked")}` : ""}
+                          {copyReq.authorization_checked ? ` · ${t("Authorization letter or SPA checked")}` : ""}
+                        </dd>
+                      </div>
+                      <div className="flex gap-2 border-b border-slate-100 py-1">
+                        <dt className="w-40 shrink-0 text-slate-500">{t("Data Privacy Officer")}</dt>
+                        <dd>
+                          <span className={`badge ${TONE[tag.tone]}`}>{t(tag.label, { name: tag.name ?? "", date: tag.date ?? "" })}</span>
+                        </dd>
+                      </div>
+                      {copyReq.released_at && (
+                        <div className="flex gap-2 border-b border-slate-100 py-1">
+                          <dt className="w-40 shrink-0 text-slate-500">{t("Copy released")}</dt>
+                          <dd className="font-medium">{t("Released to {name}, {date}", { name: copyReq.released_to ?? "—", date: fmtDate(copyReq.released_at) })}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  );
+                })()
+              ) : (
+                <p className="text-sm text-slate-700">{t("Copy details were not recorded for this request.")}</p>
+              )}
+            </section>
+          )}
 
           <section className="card p-4">
             <h2 className="mb-3 font-semibold">{t("Details")}</h2>

@@ -5,7 +5,7 @@ import { useT } from "@/lib/i18n/client";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useUploadPrep } from "@/components/use-upload-prep";
 import { ACTIONS, type ActionKind } from "@/lib/workflow";
-import { addAttachment, assignRecord, deleteRecord, recordAction } from "./actions";
+import { addAttachment, assignRecord, decideCopy, deleteRecord, recordAction, releaseCopy } from "./actions";
 
 type Office = { id: string; code: string; name: string };
 
@@ -238,6 +238,100 @@ export function DeleteForm({ recordId }: { recordId: string }) {
         </button>
         <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>{t("Cancel")}</button>
       </div>
+    </form>
+  );
+}
+
+export function CopyDecisionForm({ recordId }: { recordId: string }) {
+  const t = useT();
+  const [state, action, pending] = useActionState(decideCopy, undefined);
+  const [refusing, setRefusing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <form
+      action={action}
+      onSubmit={(e) => {
+        if (refusing && !confirming) {
+          e.preventDefault();
+          setConfirming(true);
+        }
+      }}
+      className="space-y-3"
+    >
+      <input type="hidden" name="record_id" value={recordId} />
+      <input type="hidden" name="decision" value={refusing ? "refuse" : "approve"} />
+      {refusing && (
+        <div>
+          <label className="label" htmlFor="cd-reason">{t("Reason for refusing")}</label>
+          <textarea id="cd-reason" name="reason" rows={3} className="input" minLength={5} maxLength={1000} required onChange={() => setConfirming(false)} />
+        </div>
+      )}
+      <div role="status">
+        {state?.error && <p className="text-sm text-red-700">{t(state.error)}</p>}
+        {!pending && state?.ok && <p className="text-sm text-emerald-700">{t(state.ok)}</p>}
+      </div>
+      {!refusing ? (
+        <div className="flex flex-wrap gap-2">
+          <button className="btn-primary" disabled={pending} aria-busy={pending}>{t(pending ? "Saving…" : "Approve release (Data Privacy Officer)")}</button>
+          <button type="button" className="btn-secondary text-red-700" onClick={() => setRefusing(true)}>{t("Refuse release")}</button>
+        </div>
+      ) : confirming ? (
+        <div tabIndex={-1} className="space-y-2 rounded-lg border border-red-300 bg-red-50 p-3" role="alertdialog" aria-label={t("Please confirm")} aria-describedby="cd-confirm-q">
+          <p id="cd-confirm-q" className="font-medium text-red-900">{t("Refuse the release? This cannot be undone.")}</p>
+          <div className="flex gap-2">
+            <button className="btn bg-red-700 text-white hover:bg-red-800 flex-1" disabled={pending} aria-busy={pending}>{t(pending ? "Saving…" : "Refuse release")}</button>
+            <button type="button" className="btn-secondary flex-1" disabled={pending} onClick={() => setConfirming(false)}>{t("No, go back")}</button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <button type="submit" className="btn bg-red-700 text-white hover:bg-red-800">{t("Refuse release")}</button>
+          <button type="button" className="btn-secondary" onClick={() => { setRefusing(false); setConfirming(false); }}>{t("Cancel")}</button>
+        </div>
+      )}
+    </form>
+  );
+}
+
+export function CopyReleaseForm({ recordId, idRequired }: { recordId: string; idRequired: boolean }) {
+  const t = useT();
+  const [state, action, pending] = useActionState(releaseCopy, undefined);
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <form
+      action={action}
+      onSubmit={(e) => {
+        if (!confirming) {
+          e.preventDefault();
+          setConfirming(true);
+        }
+      }}
+      className="space-y-3"
+    >
+      <input type="hidden" name="record_id" value={recordId} />
+      <div>
+        <label className="label" htmlFor="cr-name">{t("Name of the person who received it")}</label>
+        <input id="cr-name" name="received_by" className="input" minLength={2} maxLength={200} required autoComplete="off" onChange={() => setConfirming(false)} />
+      </div>
+      <label className="flex min-h-11 items-center gap-3">
+        <input type="checkbox" name="id_checked" className="checkbox" required={idRequired} />
+        <span>{t("I checked their ID")}</span>
+      </label>
+      <div role="status">
+        {state?.error && <p className="text-sm text-red-700">{t(state.error)}</p>}
+        {!pending && state?.ok && <p className="text-sm text-emerald-700">{t(state.ok)}</p>}
+      </div>
+      {confirming ? (
+        <div tabIndex={-1} className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3" role="alertdialog" aria-label={t("Please confirm")} aria-describedby="cr-confirm-q">
+          <p id="cr-confirm-q" className="font-medium text-amber-950">{t("Record the release of this copy?")}</p>
+          <div className="flex gap-2">
+            <button className="btn-primary flex-1" disabled={pending} aria-busy={pending}>{t(pending ? "Saving…" : "Yes, save it")}</button>
+            <button type="button" className="btn-secondary flex-1" disabled={pending} onClick={() => setConfirming(false)}>{t("No, go back")}</button>
+          </div>
+        </div>
+      ) : (
+        <button type="submit" className="btn-primary w-full">{t("Record release")}</button>
+      )}
     </form>
   );
 }
