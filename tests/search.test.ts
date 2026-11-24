@@ -25,3 +25,16 @@ describe("tx filter", () => {
     expect(filtersFromParams(Object.fromEntries(filtersToParams(f))).tx).toBe("G2B");
   });
 });
+
+describe("box filter", () => {
+  it("reads a box code, upper-cased, and drops junk", () => {
+    expect(filtersFromParams({ box: "cgso 2026 012" }).box).toBe("CGSO-2026-012");
+    expect(filtersFromParams({ box: "x'; drop" }).box).toBeUndefined();
+    expect(filtersFromParams({}).box).toBeUndefined();
+  });
+  it("round-trips", () => {
+    const f = filtersFromParams({ box: "CGSO-2026-012" });
+    expect(filtersToParams(f).get("box")).toBe("CGSO-2026-012");
+    expect(filtersFromParams(Object.fromEntries(filtersToParams(f))).box).toBe("CGSO-2026-012");
+  });
+});

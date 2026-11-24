@@ -31,6 +31,7 @@ export default async function HelpPage() {
           {me.role !== "viewer" && <TopicLink id="act" title={t("Add a note or send it to another office")} />}
           <TopicLink id="late" title={t("See what is late")} />
           {me.role !== "viewer" && <TopicLink id="slip" title={t("Print a routing slip")} />}
+          {me.role === "records_officer" && <TopicLink id="boxes" title={t("Keep track of paper in boxes")} />}
           {me.role !== "staff" && <TopicLink id="reports" title={t("Reports and totals")} />}
           <TopicLink id="complaints" title={t("Complaints and the survey")} />
           <TopicLink id="ask" title={t("Ask the assistant")} />
@@ -88,6 +89,7 @@ export default async function HelpPage() {
           {S("Choose what you want to do. To return it to the office that sent it, choose _Send back to …_.")}
           {S("Write a short note if needed.")}
           {S("Press [[Save]]. The system asks you to confirm. Press [[Yes, save it]], or [[No, go back]].")}
+          {S("For a document your office sends out, choose _Mark as sent out_, then choose how it was sent. For registered mail or a courier, type the tracking number from the receipt. When it arrives, press [[Record delivery]] on the _Sending_ card and type who received it.")}
           {S("Office heads: to give the work to a staff member, open _Assign a person_ in the _Take action_ box, choose the person and press [[Assign]]. Staff see it under _Assigned to me_ on the Dashboard.")}
         </Topic>
       )}
@@ -109,6 +111,15 @@ export default async function HelpPage() {
         </Topic>
       )}
 
+      {me.role === "records_officer" && (
+        <Topic id="boxes" title={t("Keep track of paper in boxes")}>
+          {S("Click [[Boxes]] at the top, then [[Add a box]]. Type the room and shelf, and what is inside, then press [[Save box]].")}
+          {S("On the box page, press [[Print label]] and stick the label on the box. The QR code opens the box page.")}
+          {S("To file a paper copy, open the record and press [[Put in a box]] under _Details_. Type the code on the box label and confirm.")}
+          {S("To find the records in a box, open the box page, or type the box code in the _Box code_ filter on [[Records]].")}
+        </Topic>
+      )}
+
       {me.role !== "staff" && (
         <Topic id="reports" title={t("Reports and totals")}>
           {S("Click [[Reports]] at the top.")}
@@ -116,6 +127,7 @@ export default async function HelpPage() {
           {S("To see one period only, choose the _From_ and _To_ dates, then press [[Apply]].")}
           {S("Press [[Print report]] for a paper copy, or [[Download list (CSV, opens in Excel)]] to open it in Excel.")}
           {me.role !== "viewer" && S("_Office workload_ shows which offices have the most waiting and late documents.")}
+          {(me.role === "records_officer" || me.role === "dept_head") && S("Press [[Released documents logbook]] to see what was sent out on one day. Press [[Print logbook]] for the signing sheet, or [[Download CSV]] for Excel.")}
           {me.role === "records_officer" && S("Press [[Standard time per step]] to set how many minutes each step should take. Slower steps show _Slow_ in the record history.")}
         </Topic>
       )}

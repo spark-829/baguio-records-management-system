@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SearchFilters, SearchRow } from "./types";
 import { isTxType, type TxType } from "./transaction-type";
+import { isBoxCode, normalizeBoxCode } from "./boxes";
 
 const MANILA = "Asia/Manila";
 const manilaDay = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: MANILA }).format(new Date(iso));
@@ -20,7 +21,7 @@ export function trackingGuesses(q: string | undefined, year = new Date().getFull
 }
 
 async function rpc(supabase: SupabaseClient, f: SearchFilters, limit: number, excludeConfidential: boolean) {
-  const { data, error } = await supabase.rpc("rms_search_records_v2", {
+  const { data, error } = await supabase.rpc("rms_search_records_v3", {
     p_q: f.q || null,
     p_person: f.person || null,
     p_direction: f.direction || null,
@@ -34,6 +35,7 @@ async function rpc(supabase: SupabaseClient, f: SearchFilters, limit: number, ex
     p_limit: limit,
     p_exclude_confidential: excludeConfidential,
     p_tx: f.tx || null,
+    p_box_code: f.box || null,
   });
   if (error) throw new Error(error.message);
   return (data ?? []) as SearchRow[];
@@ -90,6 +92,10 @@ export function filtersFromParams(sp: Record<string, string | string[] | undefin
     here: one("here") === "1",
     open: one("open") === "1",
     tx: isTxType(one("tx")) ? (one("tx") as TxType) : undefined,
+    box: (() => {
+      const b = normalizeBoxCode(one("box"));
+      return isBoxCode(b) ? b : undefined;
+    })(),
     priority: (["low", "normal", "urgent"].includes(one("priority") ?? "") ? one("priority") : undefined) as SearchFilters["priority"],
   };
 }
@@ -109,5 +115,6 @@ export function filtersToParams(f: SearchFilters) {
   if (f.open) p.set("open", "1");
   if (f.priority) p.set("priority", f.priority);
   if (f.tx) p.set("tx", f.tx);
+  if (f.box) p.set("box", f.box);
   return p;
 }

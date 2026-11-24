@@ -33,7 +33,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   const recordHref = (id: string) => `/records/${id}${listQs ? `?back=${encodeURIComponent(listQs)}` : ""}`;
   const aiNote = typeof sp.ai === "string" ? sp.ai : undefined;
   const officeNames = new Map((offices.data ?? []).map((o) => [o.code, o.name]));
-  const narrowed = Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here || f.tx);
+  const narrowed = Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here || f.tx || f.box);
   const active = Boolean(f.q || aiNote || narrowed);
 
   return (
@@ -41,6 +41,11 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t("Records")}</h1>
+          {f.box && (
+            <p className="text-lg font-semibold">
+              {t("In box {code}").split("{code}")[0]}<span className="whitespace-nowrap font-mono">{f.box}</span>{t("In box {code}").split("{code}")[1]}
+            </p>
+          )}
           <p className="text-sm text-slate-600">
             {t(foundText(rows.length, page.more, onlyOpen), { n: rows.length })}
             {onlyOpen && (
@@ -111,6 +116,12 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             {(offices.data ?? []).map((o) => <option key={o.code} value={o.code}>{o.name}</option>)}
           </select>
         </div>
+        {me.role === "records_officer" && (
+          <div>
+            <label className="label" htmlFor="box">{t("Box code")}</label>
+            <input className="input font-mono" id="box" name="box" defaultValue={f.box} autoComplete="off" />
+          </div>
+        )}
         <div>
           <label className="label" htmlFor="type">{t("Document type")}</label>
           <select className="input" id="type" name="type" defaultValue={f.docType ?? ""}>

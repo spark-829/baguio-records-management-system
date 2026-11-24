@@ -7,6 +7,9 @@ import { createClient } from "@/lib/supabase/server";
 import { canAssign } from "@/lib/assign";
 import { saveAttachment } from "@/lib/save-attachment";
 import { ACTIONS, allowedActions, doneText, isAlreadyReceived, nextStatus, type ActionKind } from "@/lib/workflow";
+import { manilaDay } from "@/lib/arta";
+import { boxErrorText, isBoxCode, normalizeBoxCode } from "@/lib/boxes";
+import { deliveryErrorText, firstError, parseDeliveryForm, parseReleaseForm, releaseErrorText } from "@/lib/dispatch";
 import type { Direction, Status } from "@/lib/types";
 
 const ALREADY_RECEIVED = "Already received.";
@@ -43,6 +46,35 @@ export async function recordAction(_prev: ActState, form: FormData): Promise<Act
   if (!allowed.includes(kind)) return { error: "That action is not available for this record." };
   if (ACTIONS[kind].needsOffice && !toOffice) return { error: "Choose the office to forward to." };
   if (kind === "remark" && !actionTaken && !remarks) return { error: "Write the action taken or a remark." };
+
+  if (kind === "release") {
+    const parsed = parseReleaseForm(
+      { method: form.get("send_method"), courier: form.get("courier"), tracking: form.get("tracking_no"), sentOn: form.get("sent_on") },
+      manilaDay(),
+    );
+    if (!parsed.ok) return { error: firstError(parsed.errors) };
+    const v = parsed.value;
+    const { error: relError } = await supabase.rpc("rms_release_record", {
+      p_record_id: rec.id,
+      p_method: v.method,
+      p_courier: v.courier,
+      p_tracking_no: v.tracking,
+      p_sent_on: v.sentOn,
+      p_note: [actionTaken, remarks].filter(Boolean).join("\n") || null,
+    });
+    if (relError) return { error: releaseErrorText(relError.message) };
+    revalidatePath(`/records/${rec.id}`);
+    return { ok: "Saved." };
+  }
+  if (kind === "archive") {
+    // The box is saved first, so a wrong code stops the archive.
+    const box = normalizeBoxCode(form.get("box_code"));
+    if (box && me.role === "records_officer") {
+      if (!isBoxCode(box)) return { error: "Type the code on the box label" };
+      const { error: boxError } = await supabase.rpc("rms_set_record_box", { p_record_id: rec.id, p_box_code: box });
+      if (boxError) return { error: boxErrorText(boxError.message) };
+    }
+  }
 
   const toName =
     kind === "forward" && toOffice
@@ -211,4 +243,47 @@ export async function releaseCopy(_prev: ActState, form: FormData): Promise<ActS
   revalidatePath(`/records/${recordId}`);
   revalidatePath("/");
   return { ok: "Release recorded." };
+}
+
+/** Records desk only: put a record in a box, move it, or take it out. Saved as a history step; the database re-checks every rule. */
+export async function moveRecordBox(_prev: ActState, form: FormData): Promise<ActState> {
+  const me = await getProfile();
+  if (me.role !== "records_officer") return { error: "Only the records desk can put records in boxes." };
+  const recordId = String(form.get("record_id") ?? "");
+  if (!UUID.test(recordId)) return { error: "Record not found" };
+  const takeOut = form.get("take_out") === "on";
+  const code = takeOut ? null : normalizeBoxCode(form.get("box_code"));
+  if (!takeOut && !isBoxCode(code ?? "")) return { error: "Type the code on the box label" };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("rms_set_record_box", { p_record_id: recordId, p_box_code: code });
+  if (error) return { error: boxErrorText(error.message) };
+  if (data === false) return { ok: "No change: it is already in that box." };
+  revalidatePath(`/records/${recordId}`);
+  return { ok: "Saved." };
+}
+
+/** Records who received a record that was sent out. The page then shows "Delivery saved." */
+export async function recordDelivery(_prev: ActState, form: FormData): Promise<ActState> {
+  const me = await getProfile();
+  if (me.role === "admin" || me.role === "viewer") return { error: "Only the records desk or the sending office can record delivery." };
+  const recordId = String(form.get("record_id") ?? "");
+  if (!UUID.test(recordId)) return { error: "Record not found" };
+  const supabase = await createClient();
+  const { data: dispatch } = await supabase.from("rms_dispatches").select("sent_on").eq("record_id", recordId).maybeSingle();
+  if (!dispatch) return { error: "Delivery can be recorded only while the record is sent out." };
+  const parsed = parseDeliveryForm(
+    { receivedBy: form.get("received_by"), receivedOn: form.get("received_on"), note: form.get("note") },
+    String(dispatch.sent_on),
+    manilaDay(),
+  );
+  if (!parsed.ok) return { error: firstError(parsed.errors) };
+  const { error } = await supabase.rpc("rms_record_delivery", {
+    p_record_id: recordId,
+    p_received_by: parsed.value.receivedBy,
+    p_received_on: parsed.value.receivedOn,
+    p_note: parsed.value.note,
+  });
+  if (error) return { error: deliveryErrorText(error.message) };
+  revalidatePath(`/records/${recordId}`);
+  redirect(`/records/${recordId}?delivered=1#sending`);
 }

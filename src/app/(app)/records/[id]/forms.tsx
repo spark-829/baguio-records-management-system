@@ -5,6 +5,8 @@ import { useT } from "@/lib/i18n/client";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useUploadPrep } from "@/components/use-upload-prep";
 import { ACTIONS, type ActionKind } from "@/lib/workflow";
+import { normalizeBoxCode } from "@/lib/boxes";
+import { COURIERS, METHOD_LABEL, SEND_METHODS, historyHow, needsTracking, parseReleaseForm, type ReleaseErrors } from "@/lib/dispatch";
 import { addAttachment, assignRecord, decideCopy, deleteRecord, recordAction, releaseCopy } from "./actions";
 
 type Office = { id: string; code: string; name: string };
@@ -13,8 +15,16 @@ type Office = { id: string; code: string; name: string };
  * The "Take action" panel. It stays closed until the person asks for it, so nothing is saved by a stray click,
  * and every save shows a plain "Are you sure?" step first.
  */
-export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }: { recordId: string; trackingNo: string; actions: ActionKind[]; offices: Office[]; returnTo?: Office | null }) {
+export type ActionExtras = { today: string; boxField: boolean; currentBox: string | null; deliveryOpen: boolean };
+
+export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, extras }: { recordId: string; trackingNo: string; actions: ActionKind[]; offices: Office[]; returnTo?: Office | null; extras?: ActionExtras }) {
   const t = useT();
+  const [method, setMethod] = useState("");
+  const [courier, setCourier] = useState("");
+  const [tracking, setTracking] = useState("");
+  const [sentOn, setSentOn] = useState(extras?.today ?? "");
+  const [boxCode, setBoxCode] = useState(extras?.currentBox ?? "");
+  const [errs, setErrs] = useState<ReleaseErrors>({});
   const [state, action, pending] = useActionState(recordAction, undefined);
   const canReturn = Boolean(returnTo && actions.includes("forward") && offices.some((o) => o.id === returnTo.id));
   // "Add a note" comes first when allowed: the safest choice is the default
@@ -78,10 +88,17 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
   const kind: ActionKind = choice === "return" ? "forward" : (choice as ActionKind);
   const toOffice = choice === "return" ? returnTo!.id : office;
   const officeLabel = offices.find((o) => o.id === toOffice)?.name;
+  const how = t(historyHow(method, courier));
   const summary =
     kind === "forward"
       ? t("Send {no} to {office}?", { no: trackingNo, office: officeLabel ?? t("the office you chose") })
-      : `${t(ACTIONS[kind].label).replace(/\s*\(.*\)$/, "")}: ${trackingNo}?`;
+      : kind === "release"
+        ? needsTracking(method) && tracking.trim()
+          ? t("Send out {no} by {how}, tracking {track}?", { no: trackingNo, how, track: tracking.trim().toUpperCase().replace(/\s+/g, "") })
+          : t("Send out {no} by {how}?", { no: trackingNo, how })
+        : kind === "archive" && normalizeBoxCode(boxCode)
+          ? t("File away {no} in box {code}?", { no: trackingNo, code: normalizeBoxCode(boxCode) })
+          : `${t(ACTIONS[kind].label).replace(/\s*\(.*\)$/, "")}: ${trackingNo}?`;
 
   if (!open)
     return (
@@ -109,7 +126,18 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
         // Pressing Enter in a text box must never save straight away: it asks first.
         if (!confirming) {
           e.preventDefault();
-          if (!(choice === "forward" && !office)) setConfirming(true);
+          if (choice === "forward" && !office) return;
+          if (kind === "release") {
+            const r = parseReleaseForm({ method, courier, tracking, sentOn }, extras?.today ?? "");
+            if (!r.ok) {
+              setErrs(r.errors);
+              const id = r.errors.method ? "act-method-registered_mail" : r.errors.tracking ? "act-tracking" : "act-sent-on";
+              document.getElementById(id)?.focus();
+              return;
+            }
+            setErrs({});
+          }
+          setConfirming(true);
         }
       }}
       onKeyDown={(e) => {
@@ -141,6 +169,73 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
           </select>
         </div>
       )}
+      {kind === "release" && (
+        <>
+          <fieldset aria-describedby={errs.method ? "act-method-err" : undefined}>
+            <legend className="label">{t("How was it sent?")}</legend>
+            {SEND_METHODS.map((m) => (
+              <label key={m} className="flex min-h-11 items-center gap-3">
+                <input
+                  type="radio"
+                  id={`act-method-${m}`}
+                  name="send_method"
+                  value={m}
+                  checked={method === m}
+                  onChange={() => { setMethod(m); setConfirming(false); }}
+                />
+                {t(METHOD_LABEL[m])}
+              </label>
+            ))}
+            {errs.method && <p id="act-method-err" className="text-sm text-red-700">{t(errs.method)}</p>}
+          </fieldset>
+          {method === "courier" && (
+            <div>
+              <label className="label" htmlFor="act-courier">{t("Courier name")}</label>
+              <input id="act-courier" name="courier" className="input" list="courier-names" autoComplete="off" value={courier} onChange={(e) => { setCourier(e.target.value); setConfirming(false); }} />
+              <datalist id="courier-names">{COURIERS.map((c) => <option key={c} value={c} />)}</datalist>
+            </div>
+          )}
+          {needsTracking(method) && (
+            <div>
+              <label className="label" htmlFor="act-tracking">{t("Tracking number")}</label>
+              <input
+                id="act-tracking"
+                name="tracking_no"
+                className="input font-mono"
+                autoComplete="off"
+                value={tracking}
+                aria-invalid={errs.tracking ? true : undefined}
+                aria-describedby={errs.tracking ? "act-tracking-hint act-tracking-err" : "act-tracking-hint"}
+                onChange={(e) => { setTracking(e.target.value); setConfirming(false); }}
+              />
+              <p id="act-tracking-hint" className="mt-1 text-sm text-slate-600">{t("From the receipt, e.g. RR123456789PH")}</p>
+              {errs.tracking && <p id="act-tracking-err" className="text-sm text-red-700">{t(errs.tracking)}</p>}
+            </div>
+          )}
+          <div>
+            <label className="label" htmlFor="act-sent-on">{t("Date sent")}</label>
+            <input
+              id="act-sent-on"
+              name="sent_on"
+              type="date"
+              className="input"
+              max={extras?.today}
+              value={sentOn}
+              aria-invalid={errs.sentOn ? true : undefined}
+              aria-describedby={errs.sentOn ? "act-sent-on-err" : undefined}
+              onChange={(e) => { setSentOn(e.target.value); setConfirming(false); }}
+            />
+            {errs.sentOn && <p id="act-sent-on-err" className="text-sm text-red-700">{t(errs.sentOn)}</p>}
+          </div>
+        </>
+      )}
+      {kind === "archive" && extras?.boxField && (
+        <div>
+          <label className="label" htmlFor="act-box">{t("Put the paper in a box (optional)")}</label>
+          <input id="act-box" name="box_code" className="input font-mono" list="box-codes" autoComplete="off" aria-describedby="act-box-hint" value={boxCode} onChange={(e) => { setBoxCode(e.target.value); setConfirming(false); }} />
+          <p id="act-box-hint" className="mt-1 text-sm text-slate-600">{t("Leave empty if it is not boxed yet.")}</p>
+        </div>
+      )}
       <div>
         <label className="label" htmlFor="act-taken">{t("What was done? (optional)")}</label>
         <input id="act-taken" name="action_taken" className="input" placeholder={t("e.g. Site inspected, voucher signed")} />
@@ -153,6 +248,9 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo }:
       {confirming ? (
         <div ref={confirmBox} tabIndex={-1} className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3" role="alertdialog" aria-label={t("Please confirm")} aria-describedby="act-confirm-q">
           <p id="act-confirm-q" className="font-medium text-amber-950">{summary}</p>
+          {kind === "archive" && extras?.deliveryOpen && (
+            <p className="text-sm text-amber-950">{t("Delivery is not recorded yet. You cannot add it after filing away.")}</p>
+          )}
           <div className="flex gap-2">
             <button className="btn-primary flex-1" disabled={busy} aria-busy={busy}>{t(busy ? "Saving…" : "Yes, save it")}</button>
             <button type="button" className="btn-secondary flex-1" disabled={busy} onClick={() => setConfirming(false)}>{t("No, go back")}</button>

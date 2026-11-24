@@ -37,6 +37,10 @@ describe("recordsBackHref", () => {
     const qs = listQuery(filtersFromParams({ q: "road & bridge", office: "CEO", here: "1", open: "1" }), 100);
     expect(recordsBackHref(decodeURIComponent(encodeURIComponent(qs)))).toBe(`/records?${qs}`);
   });
+  it("keeps the box filter and drops a junk one", () => {
+    expect(recordsBackHref("q=a&box=cgso-2026-012")).toBe("/records?q=a&box=CGSO-2026-012");
+    expect(recordsBackHref("box=%3Cscript%3E")).toBe("/records");
+  });
   it("listQuery is empty with no filters", () => {
     expect(listQuery(filtersFromParams({}), 50)).toBe("");
   });

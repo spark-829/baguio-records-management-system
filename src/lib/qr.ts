@@ -3,6 +3,7 @@ export const TRACKING_RE = /^(IN|OUT)-\d{4}-\d{4,}$/i;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const scanPath = (tn: string) => `/r/${encodeURIComponent(tn.trim().toUpperCase())}`;
+export const boxUrl = (origin: string, id: string) => `${origin.replace(/\/+$/, "")}/boxes/${id.toLowerCase()}`;
 export const scanUrl = (origin: string, tn: string) => `${origin.replace(/\/+$/, "")}${scanPath(tn)}`;
 
 /** Returns an internal path for a scanned text, or null. Never returns a full URL: we never navigate off-site. */
@@ -27,5 +28,6 @@ export function parseScannedText(text: string): string | null {
     return TRACKING_RE.test(tn) ? scanPath(tn) : null;
   }
   if (parts.length === 2 && parts[0] === "records" && UUID_RE.test(parts[1])) return `/records/${parts[1].toLowerCase()}`;
+  if (parts.length === 2 && parts[0] === "boxes" && UUID_RE.test(parts[1])) return `/boxes/${parts[1].toLowerCase()}`;
   return null;
 }

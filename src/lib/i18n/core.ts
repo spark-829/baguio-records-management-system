@@ -35,5 +35,17 @@ export function actionText(text: string | null | undefined, t: T) {
   if (!text) return "";
   const m = /^Sent to (.+)$/.exec(text);
   if (m && m[1] !== "another office") return t("Sent to {office}", { office: m[1] });
+  const sent = /^Sent out by (.+?), tracking ([A-Z0-9-]+)$/.exec(text);
+  if (sent) return t("Sent out by {how}, tracking {no}", { how: t(sent[1]), no: sent[2] });
+  const sentHow = /^Sent out by (.+)$/.exec(text);
+  if (sentHow) return t("Sent out by {how}", { how: t(sentHow[1]) });
+  const got = /^Delivery recorded: received by (.+) on (\d{1,2} [A-Z][a-z]{2} \d{4})$/.exec(text);
+  if (got) return t("Delivery recorded: received by {name} on {date}", { name: got[1], date: got[2] });
+  const put = /^Put in box (\S+)$/.exec(text);
+  if (put) return t("Put in box {code}", { code: put[1] });
+  const moved = /^Moved from box (\S+) to (\S+)$/.exec(text);
+  if (moved) return t("Moved from box {a} to {b}", { a: moved[1], b: moved[2] });
+  const out = /^Taken out of box (\S+)$/.exec(text);
+  if (out) return t("Taken out of box {code}", { code: out[1] });
   return t(text);
 }
