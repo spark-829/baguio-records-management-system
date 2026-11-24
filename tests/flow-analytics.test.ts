@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   fullBuckets,
-  dayText, findingText, labelIndexes, niceTicks, pct, perWeek, periodDays, pileText, quintileCuts, quintileIndex, rankOffices, viewMode,
+  dayText, findingText, labelIndexes, niceTicks, pct, perWeek, periodDays, pileText, openPile, topWithOther, kpiCompare, rankOffices, viewMode,
 } from "../src/lib/flow-analytics";
 import type { OfficeFlow } from "../src/lib/flow-analytics";
 
@@ -37,25 +37,6 @@ describe("rankOffices", () => {
   });
   it("handles no waiting time", () => {
     expect(rankOffices([office("A", 0, 0, 0)])[0].share).toBe(0);
-  });
-});
-
-describe("quintiles", () => {
-  it("returns no cuts for no values", () => {
-    expect(quintileCuts([])).toEqual([]);
-    expect(quintileCuts([0, -1])).toEqual([]);
-  });
-  it("cuts 1..10", () => {
-    const cuts = quintileCuts([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    expect(cuts).toEqual([2, 4, 6, 8]);
-    expect(quintileIndex(1, cuts)).toBe(0);
-    expect(quintileIndex(3, cuts)).toBe(1);
-    expect(quintileIndex(10, cuts)).toBe(4);
-  });
-  it("all-equal values land in the lowest group", () => {
-    const cuts = quintileCuts([5, 5, 5, 5]);
-    expect(cuts).toEqual([5, 5, 5, 5]);
-    expect(quintileIndex(5, cuts)).toBe(0);
   });
 });
 
@@ -110,5 +91,49 @@ describe("fullBuckets", () => {
     expect(fullBuckets([1, 2, 3, 4])).toEqual([2, 3]);
     expect(fullBuckets([1, 2])).toEqual([1, 2]);
     expect(fullBuckets([])).toEqual([]);
+  });
+});
+
+describe("openPile", () => {
+  it("start equals prevOpen for a consistent example", () => {
+    const pts = openPile([{ logged: 300, finished: 200 }, { logged: 424, finished: 487 }], 150);
+    expect(pts).toEqual([113, 213, 150]);
+  });
+  it("clamps at 0", () => {
+    expect(openPile([{ logged: 0, finished: 0 }, { logged: 50, finished: 0 }], 10)).toEqual([0, 0, 10]);
+  });
+  it("no buckets gives openNow only", () => {
+    expect(openPile([], 7)).toEqual([7]);
+  });
+});
+
+describe("topWithOther", () => {
+  const rows = [{ n: "a", v: 5, w: 1 }, { n: "b", v: 9, w: 2 }, { n: "c", v: 1, w: 3 }, { n: "d", v: 2, w: 4 }];
+  it("no other when all fit", () => {
+    const r = topWithOther(rows, 4, "v");
+    expect(r.other).toBeNull();
+    expect(r.top.map((x) => x.n)).toEqual(["b", "a", "d", "c"]);
+  });
+  it("sums the rest", () => {
+    const r = topWithOther(rows, 2, "v");
+    expect(r.top.map((x) => x.n)).toEqual(["b", "a"]);
+    expect(r.other).toMatchObject({ count: 2, v: 3, w: 7 });
+  });
+});
+
+describe("kpiCompare", () => {
+  it("lower is better", () => {
+    expect(kpiCompare(150, 113, "lower")).toBe("worse");
+    expect(kpiCompare(100, 113, "lower")).toBe("better");
+  });
+  it("higher is better", () => {
+    expect(kpiCompare(80, 70, "higher")).toBe("better");
+    expect(kpiCompare(60, 70, "higher")).toBe("worse");
+  });
+  it("same compares rounded values", () => {
+    expect(kpiCompare(2.2, 2.4, "lower")).toBe("same");
+  });
+  it("null previous", () => {
+    expect(kpiCompare(5, null, "lower")).toBe("none");
   });
 });
