@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Fragment } from "react";
 import { getProfile, getSettings, isCentral } from "@/lib/session";
 import { getT } from "@/lib/i18n/server";
+import { ComplaintChannels } from "@/components/complaint-channels";
 
 export const metadata = { title: "Help" };
 
@@ -31,6 +32,7 @@ export default async function HelpPage() {
           <TopicLink id="late" title={t("See what is late")} />
           {me.role !== "viewer" && <TopicLink id="slip" title={t("Print a routing slip")} />}
           {me.role !== "staff" && <TopicLink id="reports" title={t("Reports and totals")} />}
+          <TopicLink id="complaints" title={t("Complaints and the survey")} />
           <TopicLink id="ask" title={t("Ask the assistant")} />
           <TopicLink id="language" title={t("Change the language")} />
           <TopicLink id="bigger" title={t("Make the words bigger")} />
@@ -114,6 +116,13 @@ export default async function HelpPage() {
           {me.role !== "viewer" && S("_Office workload_ shows which offices have the most waiting and late documents.")}
         </Topic>
       )}
+
+      <Topic id="complaints" title={t("Complaints and the survey")}>
+        {S("To log a complaint, press [[Register]] and choose the _Document type_ Complaint. The reply is due in 72 hours, and the _Due_ box counts the hours.")}
+        {S("The receipt has a second code, _Rate our service_. The citizen scans it to answer a short survey without giving a name.")}
+        {me.role !== "staff" && me.role !== "viewer" && S("Open [[Reports]], then [[Client satisfaction]], to see the answers by month and print them for the City Human Resource Management Office.")}
+        <ComplaintChannels />
+      </Topic>
 
       <Topic id="ask" title={t("Ask the assistant")}>
         {S("Click [[Assistant]].")}

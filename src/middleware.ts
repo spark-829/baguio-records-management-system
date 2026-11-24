@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
   const { data } = await supabase.auth.getUser();
   const isLogin = request.nextUrl.pathname.startsWith("/login");
   // The public tracking and developer pages are open to citizens without an account.
-  const isPublic = ["/track", "/developer", "/api/health"].includes(request.nextUrl.pathname);
+  const isPublic = ["/track", "/survey", "/developer", "/api/health"].includes(request.nextUrl.pathname);
   if (!data.user && !isLogin && !isPublic) {
     const url = request.nextUrl.clone();
     const { pathname, search } = request.nextUrl;

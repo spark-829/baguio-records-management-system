@@ -9,6 +9,7 @@ import { saveAttachment } from "@/lib/save-attachment";
 import { checkUpload } from "@/lib/upload-policy";
 import { artaDue, manilaDay } from "@/lib/arta";
 import { parseReplyTo } from "@/lib/reply-to";
+import { complaintDueDate, isComplaint } from "@/lib/complaint";
 
 const RecordInput = z.object({
   direction: z.enum(["incoming", "outgoing"]),
@@ -67,7 +68,11 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
     if (!parent || parent.direction !== "incoming") return { error: "No received record with that tracking number that you can open. Check the number." };
     replyTo = parent.id;
   }
-  const dueDate = v.due_date ?? (v.arta_class ? artaDue(v.arta_class, manilaDay()) : null);
+  let dueDate = v.due_date ?? (v.arta_class ? artaDue(v.arta_class, manilaDay()) : null);
+  if (!v.due_date) {
+    const { data: dt } = await supabase.from("rms_document_types").select("name").eq("id", v.document_type_id).maybeSingle();
+    if (isComplaint(dt?.name)) dueDate = complaintDueDate(new Date().toISOString());
+  }
   const { data: rec, error } = await supabase
     .from("rms_records")
     .insert({

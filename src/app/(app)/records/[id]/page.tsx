@@ -16,6 +16,7 @@ import { ActionForm, AssignForm, AttachForm, DeleteForm } from "./forms";
 import { assignableStaff, assignmentEvents, canAssign } from "@/lib/assign";
 import { restoreRecord } from "./actions";
 import { SummaryBox } from "./summary-box";
+import { isComplaint, replyClock, replyDueAt } from "@/lib/complaint";
 import { recordsBackHref } from "@/lib/back-link";
 
 type Rec = {
@@ -169,6 +170,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const open = !["completed", "released", "archived"].includes(rec.status);
   const due = open ? dueText(rec.due_date, undefined, t) : "";
   const isLate = open && Boolean(rec.due_date) && daysFromToday(rec.due_date!.slice(0, 10)) < 0;
+  const complaintClock = isComplaint(rec.doc_type?.name) ? replyClock({ createdAt: rec.created_at, now: new Date(), replied: !open || replies.length > 0 }) : null;
   const arta = isArtaClass(rec.arta_class) ? rec.arta_class : null;
   // History is newest first, so the last finishing step is the oldest one.
   const finStep = history.filter((r) => ["completed", "released", "archived"].includes(r.status)).at(-1);
@@ -310,6 +312,11 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                 {rec.due_date ? fmtDate(rec.due_date) : t("No due date")}
               </dd>
               {due && <dd className={`text-sm font-medium ${isLate ? "text-red-700" : "text-slate-700"}`}>{due[0].toUpperCase() + due.slice(1)}</dd>}
+              {complaintClock && complaintClock.kind !== "replied" && (
+                <dd className={`text-sm ${complaintClock.kind === "late" ? "font-medium text-red-700" : "text-slate-700"}`}>
+                  {t("Reply due {date}", { date: fmtDateTime(replyDueAt(rec.created_at).toISOString()) })} · {complaintClock.kind === "late" ? t("Late by {n} hours", { n: complaintClock.hours }) : t("{n} hours left", { n: complaintClock.hours })}
+                </dd>
+              )}
               {arta && (
                 <dd className={`text-sm ${isLate ? "font-medium text-red-700" : "text-slate-700"}`}>
                   {t(ARTA_LABEL[arta])}{artaLine ? ` · ${artaLine}` : ""}

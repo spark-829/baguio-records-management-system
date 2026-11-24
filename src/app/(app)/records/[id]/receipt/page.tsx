@@ -29,7 +29,11 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "https"}://${h.get("host")}`;
   const url = `${origin}/track?no=${encodeURIComponent(r.tracking_no)}&code=${encodeURIComponent(r.track_code)}`;
-  const qr = await QRCode.toString(url, { type: "svg", margin: 0, width: 120 });
+  const surveyUrl = `${origin}/survey?no=${encodeURIComponent(r.tracking_no)}&code=${encodeURIComponent(r.track_code)}`;
+  const [qr, surveyQr] = await Promise.all([
+    QRCode.toString(url, { type: "svg", margin: 0, width: 120 }),
+    QRCode.toString(surveyUrl, { type: "svg", margin: 0, width: 120 }),
+  ]);
 
   return (
     <div className="mx-auto max-w-md">
@@ -46,8 +50,14 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <dt className="font-semibold">{t("Received")}</dt><dd>{fmtDateTime(r.created_at)}</dd>
           <dt className="font-semibold">{t("Received by")}</dt><dd>{r.creator?.full_name?.split(" (")[0]}</dd>
         </dl>
-        <div className="mt-4 flex items-center gap-4 border-t border-slate-300 pt-4">
-          <div className="shrink-0" dangerouslySetInnerHTML={{ __html: qr }} />
+        <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-300 pt-4">
+          <div className="flex shrink-0 gap-4">
+            <div dangerouslySetInnerHTML={{ __html: qr }} />
+            <div>
+              <div dangerouslySetInnerHTML={{ __html: surveyQr }} />
+              <p className="mt-1 text-center text-xs font-semibold">{t("Rate our service")}</p>
+            </div>
+          </div>
           <p className="min-w-0 text-sm">
             {t("Scan the code, or go to")} <strong className="[overflow-wrap:anywhere]">{origin.replace(/^https?:\/\//, "")}/track</strong> {t("and type the tracking number and code to see where your document is.")}
           </p>

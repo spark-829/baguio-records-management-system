@@ -69,6 +69,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       </div>
       <nav aria-label={t("More reports")} className="no-print flex flex-wrap gap-2">
         {me.role !== "viewer" && <Link href="/reports/offices" className="btn-secondary">{t("Office workload")}</Link>}
+        {(isCentral(me) || me.role === "dept_head") && <Link href="/reports/satisfaction" className="btn-secondary">{t("Client satisfaction")}</Link>}
         {isCentral(me) && <Link href="/reports/retention" className="btn-secondary">{t("Retention schedule")}</Link>}
       </nav>
 

@@ -5,6 +5,8 @@ import { BrandLockup, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
 import { Rich } from "@/components/rich";
 import { fmtDate, fmtDateTime } from "@/lib/labels";
+import { ComplaintChannels } from "@/components/complaint-channels";
+import { COMPLAINT_TYPE, replyDueAt } from "@/lib/complaint";
 import { collapseSteps } from "@/lib/history";
 import type { Status } from "@/lib/types";
 
@@ -106,6 +108,9 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
                   {result.due && !FINISHED_STATUS.includes(result.status) && (
                     <p className="text-slate-700">{t("Target date: {date}", { date: fmtDate(result.due) })}</p>
                   )}
+                  {result.doc_type === COMPLAINT_TYPE && !FINISHED_STATUS.includes(result.status) && (
+                    <p className="mt-2">{t("The office must reply within 72 hours, by {date}.", { date: fmtDateTime(replyDueAt(result.received).toISOString()) })}</p>
+                  )}
                   {/* Like parcel tracking's "delayed" note: say plainly when the target date has passed (QA-008). */}
                   {result.due && !FINISHED_STATUS.includes(result.status) && result.due.slice(0, 10) < manilaToday() && (
                     <p className="mt-2 font-semibold text-amber-900">
@@ -125,10 +130,14 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
                     ))}
                   </ol>
                 </section>
+                {FINISHED_STATUS.includes(result.status as Status) && (
+                  <Link className="btn-secondary" href={`/survey?no=${encodeURIComponent(result.tracking_no)}&code=${encodeURIComponent(code.slice(0, 12))}`}>{t("Rate our service")}</Link>
+                )}
               </>
             )}
           </section>
         )}
+        <ComplaintChannels />
         <p className="text-slate-700">
           {t("City staff?")} <Link href="/login">{t("Sign in here")}</Link>.
         </p>

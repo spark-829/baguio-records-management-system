@@ -27,6 +27,12 @@ For an incoming document, open the record and click **Print receipt for the send
 
 Anyone with both the number and the code can open **/track** (no account needed) and see the document's status, the office that has it and the dates. Names, the subject, remarks and files are never shown there. For Confidential records the page only says the document is being processed. After 10 wrong tries in 15 minutes from the same computer, the page asks the person to wait.
 
+## Client satisfaction survey
+The receipt has a second QR code, **Rate our service**. The citizen can also press **Rate our service** on /track once the document is finished. The survey is anonymous: five agree/disagree questions, whether they saw the Citizen's Charter, and an optional comment. Each document can be rated once. Department heads (own office) and the records desk and admin (all offices) open **Reports**, then **Client satisfaction**, to see the answers for a month, download a CSV or print the report with lines for **Actions taken**. It is due at the City Human Resource Management Office by the 7th of the next month.
+
+## Complaints
+Register a complaint with the document type **Complaint**. The reply is due 72 hours after it is logged, and the record page shows the hours left, or in red how late it is. The clock stops when the record is finished or a reply is linked. /track and **Help** list other ways to complain: the OPACD online portal (opacd.baguio.gov.ph), PACD email (pacd.baguiogovph@gmail.com), Hotline 8888 and the Anti-Red Tape Authority (complaints@arta.gov.ph).
+
 ## Acting on a record
 Open the record. The box at the top shows who has it now, what needs to be done, and how many days are left or how late it is.
 
