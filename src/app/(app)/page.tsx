@@ -102,7 +102,7 @@ export default async function Dashboard() {
                   <li key={r.id}>
                     <Link prefetch={false} href={`/records/${r.id}`} className="grid gap-x-4 gap-y-1 px-4 py-3 hover:bg-brand-50 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5">
                       <span className="font-semibold text-ink">{r.subject}</span>
-                      <span className="flex flex-wrap gap-2 sm:justify-end">
+                      <span className="flex flex-wrap items-start gap-2 self-start sm:justify-end">
                         {late && <OverdueBadge />}
                         <PriorityBadge priority={r.priority} />
                         <StatusBadge status={r.status} />
