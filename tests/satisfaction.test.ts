@@ -26,10 +26,10 @@ describe("helpers", () => {
     expect(pct(0, 0)).toBeNull();
     expect(pct(1, 3)).toBe(33);
   });
-  it("monthParam defaults to the previous month", () => {
-    expect(monthParam(undefined, "2026-11-24")).toBe("2026-10");
-    expect(monthParam("", "2026-01-05")).toBe("2025-12");
-    expect(monthParam("2026-13", "2026-11-24")).toBe("2026-10");
+  it("monthParam defaults to the current month", () => {
+    expect(monthParam(undefined, "2026-11-24")).toBe("2026-11");
+    expect(monthParam("", "2026-01-05")).toBe("2026-01");
+    expect(monthParam("2026-13", "2026-11-24")).toBe("2026-11");
     expect(monthParam("2026-03", "2026-11-24")).toBe("2026-03");
   });
   it("hrmoDeadline is the 7th of the next month", () => {

@@ -52,7 +52,10 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
         </dl>
         <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-300 pt-4">
           <div className="flex shrink-0 gap-4">
-            <div dangerouslySetInnerHTML={{ __html: qr }} />
+            <div>
+              <div dangerouslySetInnerHTML={{ __html: qr }} />
+              <p className="mt-1 text-center text-xs font-semibold">{t("Track your document")}</p>
+            </div>
             <div>
               <div dangerouslySetInnerHTML={{ __html: surveyQr }} />
               <p className="mt-1 text-center text-xs font-semibold">{t("Rate our service")}</p>

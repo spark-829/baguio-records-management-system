@@ -54,11 +54,10 @@ export function parseSatisfactionReport(data: unknown): SatReport {
 /** Whole-number percent, or null when nobody answered. */
 export const pct = (yes: number, n: number): number | null => (n > 0 ? Math.round((yes / n) * 100) : null);
 
-/** A valid YYYY-MM, or the previous Manila month. */
+/** A valid YYYY-MM, or the current Manila month. */
 export function monthParam(s?: string, today: string = manilaDay()): string {
   if (s && /^\d{4}-(0[1-9]|1[0-2])$/.test(s)) return s;
-  const [y, m] = today.split("-").map(Number);
-  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+  return today.slice(0, 7);
 }
 
 /** Report for month "YYYY-MM" goes to the City HRMO by the 7th of the next month. */
