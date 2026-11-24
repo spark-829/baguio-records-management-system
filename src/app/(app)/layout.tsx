@@ -62,7 +62,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="min-w-0 flex-1">
             <NavLinks links={links} phoneOnly={[{ href: "/security", label: t("My account") }]} />
           </div>
-          <AssistantLauncher />
+          <AssistantLauncher userId={me.id} />
         </div>
       </div>
       <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:py-8">{children}</main>

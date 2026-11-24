@@ -116,6 +116,7 @@ export function chatAnswerRequest(
   question: string,
   contextJson: string,
   excludeConfidential: boolean,
+  summary = "",
 ): AiRequest<{ answer: string }> {
   const system =
     `You are the records assistant of a city government Records Management System. Today is ${todayManila()} (Asia/Manila). ` +
@@ -135,7 +136,7 @@ export function chatAnswerRequest(
     messages: [
       { role: "system", content: system },
       ...turns.slice(-4).map((t) => ({ role: t.role, content: t.content.slice(0, 800) })),
-      { role: "user", content: `Question: ${question}\n\nRecords you may use (json): ${contextJson}` },
+      { role: "user", content: `${summary ? `Earlier in this chat (context only, not records): ${summary}\n\n` : ""}Question: ${question}\n\nRecords you may use (json): ${contextJson}` },
     ],
     schema: chatAnswerSchema,
     ...limits("chat"),

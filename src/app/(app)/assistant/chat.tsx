@@ -2,14 +2,14 @@
 
 import { StatusBadge } from "@/components/badges";
 import { splitCitations, type ChatSource } from "@/lib/chat-refs";
+import { buildChatRequest, type StoredTurn } from "@/lib/chat-memory";
+import { clearChat, readChat, useChatHistory, writeChat } from "@/lib/chat-store";
 import { useT } from "@/lib/i18n/client";
 import { dueText } from "@/lib/labels";
 import { isOverdue } from "@/lib/workflow";
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-
-type Turn = { role: "user" | "assistant"; content: string; demo?: boolean; note?: string; sources?: ChatSource[] };
 
 const EXAMPLES = [
   "What documents came from the Punong Barangay?",
@@ -71,24 +71,34 @@ function Sources({ sources, onNavigate }: { sources: ChatSource[]; onNavigate?: 
   );
 }
 
-export function Chat({ compact = false, inputId = "ask", onNavigate }: { compact?: boolean; inputId?: string; onNavigate?: () => void }) {
+export function Chat({ userId, compact = false, inputId = "ask", onNavigate }: { userId: string; compact?: boolean; inputId?: string; onNavigate?: () => void }) {
   const t = useT();
-  const [turns, setTurns] = useState<Turn[]>([]);
+  const turns = useChatHistory(userId);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
+  const first = useRef(true);
 
   useEffect(() => {
     // Only scroll once a conversation has started, so the page doesn't jump on first load.
     if (turns.length === 0) return;
-    end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    // A restored chat jumps to the end instead of animating.
+    end.current?.scrollIntoView({ behavior: first.current ? "auto" : "smooth", block: "nearest" });
+    first.current = false;
   }, [turns, busy]);
+
+  function newChat() {
+    clearChat(userId);
+    setError(null);
+    document.getElementById(inputId)?.focus();
+  }
 
   async function send(question: string) {
     if (!question.trim() || busy) return;
-    const next = [...turns, { role: "user" as const, content: question.trim() }];
-    setTurns(next);
+    const userTurn: StoredTurn = { role: "user", content: question.trim() };
+    const next = [...turns, userTurn];
+    writeChat(userId, next);
     setText("");
     setBusy(true);
     setError(null);
@@ -96,11 +106,15 @@ export function Chat({ compact = false, inputId = "ask", onNavigate }: { compact
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: next.map(({ role, content }) => ({ role, content })) }),
+        body: JSON.stringify(buildChatRequest(next.map(({ role, content }) => ({ role, content })))),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "The assistant is unavailable");
-      setTurns([...next, { role: "assistant", content: json.answer, demo: Boolean(json.demo), note: typeof json.note === "string" ? json.note : undefined, sources: Array.isArray(json.sources) ? json.sources : [] }]);
+      // The user may have pressed New chat or signed out while waiting.
+      const now = readChat(userId);
+      if (now.at(-1) !== userTurn) return;
+      const assistantTurn: StoredTurn = { role: "assistant", content: json.answer, demo: Boolean(json.demo), note: typeof json.note === "string" ? json.note : undefined, sources: Array.isArray(json.sources) ? json.sources : [] };
+      writeChat(userId, [...now, assistantTurn]);
     } catch (err) {
       setError(err instanceof Error ? err.message : "The assistant is unavailable");
     } finally {
@@ -119,6 +133,12 @@ export function Chat({ compact = false, inputId = "ask", onNavigate }: { compact
                 <button key={e} onClick={() => send(e)} className="min-h-11 rounded-full border-2 border-brand-200 bg-white px-4 py-1.5 text-left text-sm font-medium text-brand-900 hover:border-brand-700 hover:bg-brand-50">{e}</button>
               ))}
             </div>
+          </div>
+        )}
+        {turns.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-slate-500">{t("Kept until you sign out or close this tab.")}</p>
+            <button type="button" onClick={newChat} disabled={busy} className="min-h-11 rounded-lg px-3 text-sm font-semibold text-brand-800 underline underline-offset-4 hover:bg-brand-50">{t("New chat")}</button>
           </div>
         )}
         {turns.map((turn, i) =>
@@ -149,7 +169,7 @@ export function Chat({ compact = false, inputId = "ask", onNavigate }: { compact
         className="flex gap-2 border-t border-slate-200 p-3"
       >
         <label htmlFor={inputId} className="sr-only">{t("Your question")}</label>
-        <input id={inputId} className="input flex-1" value={text} onChange={(e) => setText(e.target.value)} placeholder={t("Type your question")} />
+        <input id={inputId} className="input flex-1" maxLength={4000} value={text} onChange={(e) => setText(e.target.value)} placeholder={t("Type your question")} />
         <button className="btn-primary" disabled={busy}>{t("Send")}</button>
       </form>
     </div>

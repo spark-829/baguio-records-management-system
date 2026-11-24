@@ -24,7 +24,7 @@ function CloseIcon() {
 }
 
 /** Assistant button at the right end of the nav bar (icon only below 2xl) with a chat panel: bottom-right on wider screens, full screen on phones. Hidden on the full assistant page and the register form. */
-export function AssistantLauncher() {
+export function AssistantLauncher({ userId }: { userId: string }) {
   const t = useT();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -127,7 +127,7 @@ export function AssistantLauncher() {
             </button>
           </div>
           <div className="min-h-0 flex-1">
-            <Chat compact inputId="ask-popup" onNavigate={closeOnPhone} />
+            <Chat userId={userId} compact inputId="ask-popup" onNavigate={closeOnPhone} />
           </div>
         </div>
       )}
