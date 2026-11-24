@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Chat } from "@/app/(app)/assistant/chat";
+import { readChat } from "@/lib/chat-store";
 import { useT } from "@/lib/i18n/client";
 
 function ChatIcon() {
@@ -24,7 +25,7 @@ function CloseIcon() {
 }
 
 /** Assistant button at the right end of the nav bar (icon only below 2xl) with a chat panel: bottom-right on wider screens, full screen on phones. Hidden on the full assistant page and the register form. */
-export function AssistantLauncher() {
+export function AssistantLauncher({ userId }: { userId: string }) {
   const t = useT();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -54,6 +55,11 @@ export function AssistantLauncher() {
   useEffect(() => {
     if (hideHere) setOpen(false);
   }, [hideHere]);
+
+  // Purge any other user's stored chat as soon as the signed-in shell loads, not only when the chat opens.
+  useEffect(() => {
+    readChat(userId);
+  }, [userId]);
 
   useEffect(() => {
     if (!open && returnFocus.current) {
@@ -127,7 +133,7 @@ export function AssistantLauncher() {
             </button>
           </div>
           <div className="min-h-0 flex-1">
-            <Chat compact inputId="ask-popup" onNavigate={closeOnPhone} />
+            <Chat userId={userId} compact inputId="ask-popup" onNavigate={closeOnPhone} />
           </div>
         </div>
       )}

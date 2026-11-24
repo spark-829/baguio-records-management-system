@@ -1,12 +1,16 @@
 "use client";
 
+import { wipeAllChats } from "@/lib/chat-store";
 import { useT } from "@/lib/i18n/client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { signIn } from "./actions";
 
 export function LoginForm({ next = "" }: { next?: string }) {
   const t = useT();
+  useEffect(() => {
+    wipeAllChats();
+  }, []);
   const [state, action, pending] = useActionState(signIn, undefined);
   return (
     <form action={action} className="mt-5 space-y-5">

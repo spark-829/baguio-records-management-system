@@ -1,9 +1,10 @@
 import { getT } from "@/lib/i18n/server";
 import { isAiDemo } from "@/lib/ai-demo";
+import { getProfile } from "@/lib/session";
 import { Chat } from "./chat";
 
 export default async function AssistantPage() {
-  const { t } = await getT();
+  const [{ t }, me] = await Promise.all([getT(), getProfile()]);
   return (
     <div className="space-y-4">
       <div>
@@ -17,7 +18,7 @@ export default async function AssistantPage() {
           <strong>{t("Practice version:")}</strong> {t("answers here are simpler than the full assistant, but they come from the real records you are allowed to see. You can ask in English or Taglish.")}
         </p>
       )}
-      <Chat />
+      <Chat userId={me.id} />
     </div>
   );
 }

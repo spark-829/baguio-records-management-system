@@ -91,6 +91,8 @@ export const FIL: Record<string, string> = {
   "Save": "I-save",
   "Add a user": "Magdagdag ng user",
   "Try one of these:": "Subukan ang isa rito:",
+  "New chat": "Bagong usapan",
+  "Kept until you sign out or close this tab.": "Nakatago hanggang mag-sign out ka o isara ang tab na ito.",
   "Practice answer": "Pagsasanay na sagot",
   "Sources": "Mga pinagkunan",
   "Source {n}: {tn}": "Pinagkunan {n}: {tn}",

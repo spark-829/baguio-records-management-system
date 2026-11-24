@@ -8,10 +8,12 @@ import { demoChat, isAiDemo } from "@/lib/ai-demo";
 export async function POST(req: Request) {
   const ctx = await apiContext();
   if ("error" in ctx) return ctx.error;
-  const { messages } = (await req.json()) as { messages?: ChatTurn[] };
-  const history = (messages ?? [])
+  const body = (await req.json()) as { messages?: ChatTurn[]; summary?: unknown };
+  const history = (body.messages ?? [])
     .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string" && m.content.trim())
-    .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }))
+    .slice(-5);
+  const summary = typeof body.summary === "string" ? body.summary.slice(0, 2000).replace(/\s+/g, " ").trim().slice(0, 600) : "";
   if (history.length === 0 || history.at(-1)!.role !== "user") {
     return NextResponse.json({ error: "Ask a question" }, { status: 400 });
   }
@@ -28,7 +30,7 @@ export async function POST(req: Request) {
     if (demo) {
       result = await demoChat(ctx.supabase, question, exclude, ctx.me.office?.code);
     } else {
-      const out = await askAssistant(ctx.supabase, ctx.me, history, exclude, offices ?? [], (types ?? []).map((t) => t.name));
+      const out = await askAssistant(ctx.supabase, ctx.me, history, exclude, offices ?? [], (types ?? []).map((t) => t.name), summary);
       if (out.mode === "ai") {
         result = out.data;
       } else {

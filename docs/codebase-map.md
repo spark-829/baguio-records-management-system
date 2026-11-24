@@ -48,6 +48,8 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking),
 | `ai-gate.ts` | `runAi` (reserve budget, cache, demo fallback) |
 | `ai.ts`, `deepseek.ts`, `ai-schemas.ts`, `ai-demo.ts` (430 lines), `ai-budget.ts` | AI prompts, client, zod schemas, demo output, cost math |
 | `assistant.ts` | records assistant chat (search + answer) |
+| `chat-memory.ts` | pure chat history caps, older-turn summary, request trimming |
+| `chat-store.ts` | assistant chat kept in sessionStorage per user, wiped at /login |
 | `api.ts` | `apiContext`, `aiError` for routes |
 | `i18n/` | `core.ts` (`makeT`), `server.ts` (`getT`), `client.tsx` (`useT`), `fil.ts` (dictionary, grep only) |
 | `qr.ts`, `watermark.ts`, `shrink-image.ts`, `image-size.ts` | QR, PDF stamp, image helpers |

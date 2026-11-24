@@ -25,6 +25,7 @@ export async function askAssistant(
   excludeConfidential: boolean,
   offices: { code: string; name: string }[],
   docTypes: string[],
+  summary = "",
 ): Promise<AiOutcome<AssistantResult>> {
   const question = history.at(-1)!.content;
   const f = await getSearchFilters(supabase, question, offices, docTypes);
@@ -91,7 +92,7 @@ export async function askAssistant(
   }
 
   const turns = history.slice(0, -1).filter((t) => t.content.trim());
-  const out = await runAi(supabase, chatAnswerRequest(me, turns, question, JSON.stringify(context), excludeConfidential));
+  const out = await runAi(supabase, chatAnswerRequest(me, turns, question, JSON.stringify(context), excludeConfidential, summary));
   if (out.mode === "demo") return out;
   return { mode: "ai", data: { answer: out.data.answer, records: [...used].map(([id, tracking_no]) => ({ id, tracking_no })) } };
 }
