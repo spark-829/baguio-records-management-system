@@ -42,7 +42,7 @@ export default async function HelpPage() {
         <Topic id="log" title={t("Log a letter that just arrived")}>
           {S("Click [[Register]] at the top of the screen.")}
           {S("No scan? Skip part 1. Go straight to the form.")}
-          {S("Fill in the boxes marked with a red <req>. The other boxes are optional.")}
+          {S("Fill in every box unless it says (optional).")}
           {S("Choose the _Kind of transaction (ARTA)_. The due date fills in by itself, counting only working days. You can still change it.")}
           {S("To send it to an office right away, choose the office under _Send to office_.")}
           {S("Press [[Save and get tracking number]].")}
@@ -55,7 +55,7 @@ export default async function HelpPage() {
         <Topic id="memo" title={t("Log a memo or letter your office sends")}>
           {S("Click [[Register]] at the top.")}
           {S("It is already set to _Outgoing_. Letters that arrive from outside are logged by the Records Section, not here.")}
-          {S("Fill in the boxes marked with a red <req>.")}
+          {S("Fill in every box unless it says (optional).")}
           {S("Choose the office under _Send to office_ if it goes to another City office.")}
           {S("Answering a letter? Open it and press [[Write a reply]], or type its tracking number under _In reply to_.")}
           {S("Press [[Save and get tracking number]], then write the tracking number on the paper.")}
