@@ -11,6 +11,7 @@ export default async function NewRecordPage({ searchParams }: { searchParams: Pr
   const me = await getProfile();
   const replyTo = parseReplyTo((await searchParams).reply_to);
   if (me.role === "viewer") redirect("/records");
+  if (me.role === "admin") redirect("/");
   const supabase = await createClient();
   const [{ data: types }, { data: offices }, barangayCheck] = await Promise.all([
     supabase.from("rms_document_types").select("id, name").eq("is_active", true).order("name"),

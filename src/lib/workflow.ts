@@ -52,8 +52,9 @@ export function allowedActions(opts: {
   currentOfficeId: string;
 }): ActionKind[] {
   const { status, direction, role, userOfficeId, currentOfficeId } = opts;
-  if (role === "viewer") return [];
-  const central = role === "admin" || role === "records_officer";
+  // Separation of duties: admins look after accounts and security, not records (DB guard: 20261124000300).
+  if (role === "viewer" || role === "admin") return [];
+  const central = role === "records_officer";
   const holdsIt = userOfficeId !== null && userOfficeId === currentOfficeId;
   if (!central && !holdsIt) return [];
   let actions = BY_STATUS[status];
@@ -78,6 +79,17 @@ export function isOverdue(due: string | null, status: Status, today = new Date()
 /** The record already sits received (or in progress) at an office this user acts for, so another "receive" changes nothing (QA-017). */
 export function isAlreadyReceived(o: { status: Status; role: Role; userOfficeId: string | null; currentOfficeId: string }): boolean {
   if (o.status !== "received" && o.status !== "under_action") return false;
-  if (o.role === "admin" || o.role === "records_officer") return true;
+  if (o.role === "admin") return false;
+  if (o.role === "records_officer") return true;
   return o.role !== "viewer" && o.userOfficeId !== null && o.userOfficeId === o.currentOfficeId;
+}
+
+/** Mirror of rms_can_attach (20261124000300) plus the page's archived/deleted rule. Admins never attach. */
+export function canAttach(o: { role: Role; userOfficeId: string | null; currentOfficeId: string; originOfficeId: string; status: Status; deleted: boolean }): boolean {
+  if (o.deleted || o.status === "archived") return false;
+  if (o.role === "records_officer") return true;
+  if (o.role === "dept_head" || o.role === "staff") {
+    return o.userOfficeId !== null && (o.userOfficeId === o.currentOfficeId || o.userOfficeId === o.originOfficeId);
+  }
+  return false;
 }

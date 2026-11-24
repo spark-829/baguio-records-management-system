@@ -53,7 +53,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         <div className="flex flex-wrap gap-2">
           <ScanQrButton />
           <a href={exportHref} className="btn-secondary">{t("Download for Excel (CSV)")}</a>
-          {me.role !== "viewer" && <Link prefetch={false} href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
+          {me.role !== "viewer" && me.role !== "admin" && <Link prefetch={false} href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
         </div>
       </div>
 

@@ -8,6 +8,7 @@ import type { Status } from "@/lib/types";
 import { OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
 import { sortNeedsAction } from "@/lib/needs-action";
 import { DueCalendar } from "@/components/due-calendar";
+import { SecurityHub } from "./security-hub";
 
 type Row = {
   id: string;
@@ -22,9 +23,15 @@ type Row = {
   current_office: { code: string; name: string } | null;
 };
 
+export async function generateMetadata() {
+  const me = await getProfile();
+  return { title: me.role === "admin" ? "Security overview" : "Dashboard" };
+}
+
 export default async function Dashboard() {
   const { t } = await getT();
   const me = await getProfile();
+  if (me.role === "admin") return <SecurityHub me={me} />;
   const supabase = await createClient();
   const [{ data }, { data: totalsData, error: totalsError }] = await Promise.all([
     supabase

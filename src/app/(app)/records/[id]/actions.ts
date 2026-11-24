@@ -77,6 +77,7 @@ export async function recordAction(_prev: ActState, form: FormData): Promise<Act
 
 export async function addAttachment(_prev: ActState, form: FormData): Promise<ActState> {
   const me = await getProfile();
+  if (me.role === "admin") return { error: "Administrators do not add files to records." };
   const recordId = String(form.get("record_id") ?? "");
   const file = form.get("file");
   if (!(file instanceof File) || file.size === 0) return { error: "Choose a file" };
