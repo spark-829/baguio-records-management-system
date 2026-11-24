@@ -52,7 +52,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3 px-4 py-4">
           <PineMark className="h-10 w-10" />
           <div>
-            <p className="text-lg font-bold">{t("Track your document")}</p>
+            <h1 className="text-lg font-bold text-white">{t("Track your document")}</h1>
             <p className="text-sm text-brand-100">{t("Baguio RMS demo")}</p>
           </div>
           <div className="ml-auto">
@@ -88,7 +88,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
           <section className="card space-y-4 p-5" aria-live="polite">
             <div>
               <p className="font-mono text-sm text-slate-600">{result.tracking_no}</p>
-              <h1 className="text-2xl font-bold">{result.doc_type}</h1>
+              <h2 className="text-2xl font-bold">{result.doc_type}</h2>
               <p className="text-slate-700">{t("Received on {date}", { date: fmtDate(result.received) })}</p>
             </div>
             {result.status === "binned" ? (
