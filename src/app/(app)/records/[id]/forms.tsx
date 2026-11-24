@@ -5,7 +5,7 @@ import { useT } from "@/lib/i18n/client";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useUploadPrep } from "@/components/use-upload-prep";
 import { ACTIONS, type ActionKind } from "@/lib/workflow";
-import { addAttachment, deleteRecord, recordAction } from "./actions";
+import { addAttachment, assignRecord, deleteRecord, recordAction } from "./actions";
 
 type Office = { id: string; code: string; name: string };
 
@@ -191,6 +191,26 @@ export function AttachForm({ recordId }: { recordId: string }) {
       {state?.error && <p className="text-sm text-red-700">{t(state.error, state.vars)}</p>}
       {state?.ok && <p className="text-sm text-emerald-700">{t(state.ok)}</p>}
       <button className="btn-secondary w-full" disabled={pending || prep.busy || prep.tooBig}>{t(pending ? "Uploading…" : "Attach file")}</button>
+    </form>
+  );
+}
+
+export function AssignForm({ recordId, people, currentId }: { recordId: string; people: { id: string; full_name: string }[]; currentId: string | null }) {
+  const t = useT();
+  const [state, action, pending] = useActionState(assignRecord, undefined);
+  return (
+    <form action={action} className="space-y-2">
+      <input type="hidden" name="record_id" value={recordId} />
+      <label className="label" htmlFor="as-person">{t("Staff member")}</label>
+      <select id="as-person" name="assignee" className="input" required defaultValue={currentId ?? ""}>
+        <option value="" disabled>{t("Choose…")}</option>
+        {people.map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+      </select>
+      <div role="status">
+        {state?.error && <p className="text-sm text-red-700">{t(state.error, state.vars)}</p>}
+        {!pending && state?.ok && <p className="text-sm text-emerald-700">{t(state.ok, state.vars)}</p>}
+      </div>
+      <button className="btn-secondary w-full" disabled={pending} aria-busy={pending}>{t(pending ? "Saving…" : "Assign")}</button>
     </form>
   );
 }

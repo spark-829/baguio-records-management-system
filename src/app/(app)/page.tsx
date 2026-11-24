@@ -20,6 +20,7 @@ type Row = {
   due_date: string | null;
   created_at: string;
   current_office_id: string;
+  assigned_to?: string | null;
   current_office: { code: string; name: string } | null;
 };
 
@@ -33,14 +34,24 @@ export default async function Dashboard() {
   const me = await getProfile();
   if (me.role === "admin") return <SecurityHub me={me} />;
   const supabase = await createClient();
-  const [{ data }, { data: totalsData, error: totalsError }] = await Promise.all([
+  const [{ data }, { data: totalsData, error: totalsError }, { data: mineData }] = await Promise.all([
     supabase
     .from("rms_records")
-    .select("id, tracking_no, subject, status, priority, direction, due_date, created_at, current_office_id, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
+    .select("id, tracking_no, subject, status, priority, direction, due_date, created_at, current_office_id, assigned_to, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(500),
     supabase.rpc("rms_dashboard_totals"),
+    // Records assigned to me that are still being worked on (indexed on assigned_to).
+    me.role === "viewer"
+      ? Promise.resolve({ data: [] })
+      : supabase
+          .from("rms_records")
+          .select("id, tracking_no, subject, status, priority, direction, due_date, created_at, current_office_id, assigned_to, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
+          .eq("assigned_to", me.id)
+          .is("deleted_at", null)
+          .in("status", ["registered", "received", "under_action"])
+          .limit(20),
   ]);
   if (totalsError) console.error("rms_dashboard_totals failed", totalsError.message);
   const rows = (data ?? []) as unknown as Row[];
@@ -54,6 +65,7 @@ export default async function Dashboard() {
     (r) => r.current_office_id === me.office_id && ["registered", "forwarded", "received", "under_action"].includes(r.status),
   );
   const needsAction = sortNeedsAction(inbox, today).slice(0, 8);
+  const mine = sortNeedsAction((mineData ?? []) as unknown as Row[], today);
   const officeHref = me.office ? `/records?office=${encodeURIComponent(me.office.code)}&here=1&open=1` : null;
   // First day of this month in Manila time, whatever the server's clock zone is
   const monthFrom = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date()).slice(0, 8) + "01";
@@ -66,6 +78,31 @@ export default async function Dashboard() {
     ...(officeHref ? [{ label: t("In my office"), value: officeTotal, href: officeHref, alert: false }] : []),
     { label: t("Logged this month"), value: Number(totals.this_month) || 0, href: `/records?from=${monthFrom}`, alert: false },
   ];
+
+  const RecordRow = ({ r, hint }: { r: Row; hint: string | null }) => {
+    const late = isOverdue(r.due_date, r.status);
+    return (
+      <li>
+        <Link prefetch={false} href={`/records/${r.id}`} className="grid gap-x-4 gap-y-1 px-4 py-3 hover:bg-brand-50 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5">
+          <span className="font-semibold text-ink">{r.subject}</span>
+          <span className="flex flex-wrap items-start gap-2 self-start sm:justify-end">
+            {late && <OverdueBadge />}
+            <PriorityBadge priority={r.priority} />
+            <StatusBadge status={r.status} />
+          </span>
+          <span className="text-sm text-slate-600 sm:col-span-2">
+            <span className="font-mono">{r.tracking_no}</span> ·{" "}
+            {r.due_date ? (
+              <span className={late ? "font-semibold text-red-700" : undefined}>{dueText(r.due_date, undefined, t)}</span>
+            ) : (
+              t("Logged {date}", { date: fmtDate(r.created_at) })
+            )}
+            {hint ? ` · ${hint}` : ""}
+          </span>
+        </Link>
+      </li>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -93,7 +130,22 @@ export default async function Dashboard() {
       </section>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <section className="card lg:col-span-2" aria-labelledby="needs-action-title">
+        <div className="space-y-6 lg:col-span-2">
+        {me.role !== "viewer" && (
+          <section className="card" aria-labelledby="assigned-title">
+            <div className="border-b border-line px-4 py-3 sm:px-5">
+              <h2 id="assigned-title" className="text-lg font-bold">{t("Assigned to me")}</h2>
+            </div>
+            {mine.length === 0 ? (
+              <p className="px-4 py-6 text-sm text-slate-600 sm:px-5">{t("Nothing is assigned to you right now.")}</p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {mine.map((r) => <RecordRow key={r.id} r={r} hint={null} />)}
+              </ul>
+            )}
+          </section>
+        )}
+        <section className="card" aria-labelledby="needs-action-title">
           <div className="border-b border-line px-4 py-3 sm:px-5">
             <h2 id="needs-action-title" className="text-lg font-bold">{t("Waiting in my office")}</h2>
             <p className="text-sm text-slate-600">{t("Late and due-soon records come first.")}</p>
@@ -103,29 +155,9 @@ export default async function Dashboard() {
           )}
           {needsAction.length > 0 && (
             <ul className="divide-y divide-line">
-              {needsAction.map((r) => {
-                const late = isOverdue(r.due_date, r.status);
-                return (
-                  <li key={r.id}>
-                    <Link prefetch={false} href={`/records/${r.id}`} className="grid gap-x-4 gap-y-1 px-4 py-3 hover:bg-brand-50 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5">
-                      <span className="font-semibold text-ink">{r.subject}</span>
-                      <span className="flex flex-wrap items-start gap-2 self-start sm:justify-end">
-                        {late && <OverdueBadge />}
-                        <PriorityBadge priority={r.priority} />
-                        <StatusBadge status={r.status} />
-                      </span>
-                      <span className="text-sm text-slate-600 sm:col-span-2">
-                        <span className="font-mono">{r.tracking_no}</span> ·{" "}
-                        {r.due_date ? (
-                          <span className={late ? "font-semibold text-red-700" : undefined}>{dueText(r.due_date, undefined, t)}</span>
-                        ) : (
-                          t("Logged {date}", { date: fmtDate(r.created_at) })
-                        )}
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
+              {needsAction.map((r) => (
+                <RecordRow key={r.id} r={r} hint={me.role === "dept_head" && !r.assigned_to ? t("Not assigned") : null} />
+              ))}
             </ul>
           )}
           {officeHref && officeTotal > 0 && (
@@ -134,6 +166,7 @@ export default async function Dashboard() {
             </p>
           )}
         </section>
+        </div>
         <section className="card lg:self-start">
           <h2 className="border-b border-line px-4 py-3 text-lg font-bold">{t("By status")}</h2>
           <ul className="divide-y divide-line">

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
+import { canAssign } from "@/lib/assign";
 import { saveAttachment } from "@/lib/save-attachment";
 import { ACTIONS, allowedActions, doneText, isAlreadyReceived, nextStatus, type ActionKind } from "@/lib/workflow";
 import type { Direction, Status } from "@/lib/types";
@@ -73,6 +74,50 @@ export async function recordAction(_prev: ActState, form: FormData): Promise<Act
     redirect(`/r/${encodeURIComponent(rec.tracking_no)}?received=1`);
   }
   return { ok: "Saved." };
+}
+
+/** The head of the holding office (or the records desk) assigns a person. Saved as a history step; the database re-checks every rule. */
+export async function assignRecord(_prev: ActState, form: FormData): Promise<ActState> {
+  const me = await getProfile();
+  const recordId = String(form.get("record_id") ?? "");
+  const assignee = String(form.get("assignee") ?? "");
+  if (!UUID.test(recordId)) return { error: "Record not found" };
+  if (!UUID.test(assignee)) return { error: "Choose a staff member." };
+  const supabase = await createClient();
+  const { data: rec } = await supabase
+    .from("rms_records")
+    .select("id, status, current_office_id, deleted_at")
+    .eq("id", recordId)
+    .maybeSingle();
+  if (!rec) return { error: "Record not found" };
+  const allowed = canAssign({
+    role: me.role,
+    userOfficeId: me.office_id,
+    currentOfficeId: rec.current_office_id,
+    status: rec.status as Status,
+    deleted: Boolean(rec.deleted_at),
+  });
+  if (!allowed) return { error: "Only the head of the office holding this record, or the records desk, can assign it." };
+  const { error } = await supabase.from("rms_routes").insert({
+    record_id: rec.id,
+    from_office_id: rec.current_office_id,
+    to_office_id: rec.current_office_id,
+    status: rec.status,
+    action_taken: "Assigned",
+    assigned_to: assignee,
+    acted_by: me.id,
+  });
+  if (error) {
+    if (/confidential/i.test(error.message)) return { error: "A confidential record can be assigned only to the office head." };
+    if (/choose an active staff/i.test(error.message)) return { error: "Choose a staff member." };
+    if (/only the head/i.test(error.message)) return { error: "Only the head of the office holding this record, or the records desk, can assign it." };
+    return { error: error.message };
+  }
+  const { data: person } = await supabase.from("rms_profiles").select("full_name").eq("id", assignee).maybeSingle();
+  const name = person?.full_name ?? "";
+  revalidatePath(`/records/${rec.id}`);
+  revalidatePath("/");
+  return { ok: "Assigned to {name}.", vars: { name } };
 }
 
 export async function addAttachment(_prev: ActState, form: FormData): Promise<ActState> {

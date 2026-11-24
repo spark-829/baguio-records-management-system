@@ -11,7 +11,7 @@ Open the system, read the privacy notice, tick the box and sign in with the emai
 - In lists, people's names are shortened (for example "J*** dela C***"). The full name shows when you open the record.
 
 ## Dashboard
-Shows open and overdue records, what is waiting in your office (with how many days are left or how late it is), counts by status, and the latest registrations. Click a number box to see the list behind it, or click any record to open it.
+Shows open and overdue records, what is waiting in your office (with how many days are left or how late it is), counts by status, and the latest registrations. **Assigned to me** lists the records your office head gave to you. Heads see **Not assigned** on waiting records that have no one yet. Click a number box to see the list behind it, or click any record to open it.
 
 ## Registering a document (records desk)
 1. Click **Register**.
@@ -29,6 +29,8 @@ Anyone with both the number and the code can open **/track** (no account needed)
 
 ## Acting on a record
 Open the record. The box at the top shows who has it now, what needs to be done, and how many days are left or how late it is.
+
+**Assigning a person.** The office head (or the records desk) opens **Assign a person** at the top of **Take action**, picks a staff member of the office holding the record, and presses **Assign**. It is saved in the history. A confidential record can be assigned only to the office head. The assignment is cleared when the record is sent to another office. Administrators cannot assign.
 
 Press **Add a note or send to another office** on the right. The list shows only the actions allowed for the record's status and your office:
 - **Send back to …** returns it to the office that sent it.

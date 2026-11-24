@@ -61,6 +61,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking),
 | `save-attachment.ts` | server: validate, hash, dedupe, upload, insert, clean up (used by register and attach) |
 | `arta.ts` | ARTA classes, PH working-day calendar, `addWorkingDays`, `artaProgress`; authoritative for due dates |
 | `reply-to.ts`, `alerts.ts` | `parseReplyTo`; bell payload `parseAlerts`, `badgeText` |
+| `assign.ts` | `canAssign` (head of the holding office or records desk; mirror of `rms_routes_guard_insert`), `assignableStaff`, `assignmentEvents` (history: assigned / cleared) |
 | `needs-action.ts` | `sortNeedsAction` (dashboard "Waiting in my office" order: late, due soon, forwarded, urgent, newest) |
 | `due.ts`, `retention.ts`, `safe-next.ts` | due dates, retention rules, safe redirects |
 | `reports.ts`, `fetch-pages.ts` | report date bounds, bar merging, RPC result parsers, `onTimeSummary`; `fetchPages` (pages past the 1000-row PostgREST cap) |
@@ -90,16 +91,17 @@ Functions are redefined in later migrations. **Latest definition** lives in:
 | `20261121000200_rms_public_tracking` | `rms_new_track_code` |
 | `20261122000200_rms_qa_wave2` | `rms_search_records`, `rms_public_track`, audit hash function, `rms_today`, `rms_record_bin_history` |
 | `20261122000300_rms_ai_budget_scan` | `rms_audit` (audit trigger), `rms_ai_cap`, `rms_ai_spend_summary`, `rms_ai_cache_get` |
-| `20261123000100_rms_qa_nov23` | `rms_verify_audit_chain`, `rms_from_app`, `rms_ai_spent`, `rms_ai_reserve`, `rms_ai_finalize`, `rms_ai_cache_put`, `rms_client_ip`, `rms_admin_create_user`, `rms_lock_record`, `rms_routes_guard_insert` (moved on to 20261124000300) |
+| `20261123000100_rms_qa_nov23` | `rms_verify_audit_chain`, `rms_from_app`, `rms_ai_spent`, `rms_ai_reserve`, `rms_ai_finalize`, `rms_ai_cache_put`, `rms_client_ip`, `rms_admin_create_user`, `rms_lock_record`, `rms_routes_guard_insert` (moved on to 20261124000500) |
 | `20261123000200_rms_volume_indexes` | `rms_audit_chain` (fast tip lookup), audit/access log indexes, audit hash functions marked parallel safe |
-| `20261123000300_rms_legacy_import` | `rms_legacy_import`, `rms_records_before_insert`, `rms_records_set_search`, `rms_routes_apply`, owner-only `rms_seed_demo`, `rms_seed_demo_access` |
+| `20261123000300_rms_legacy_import` | `rms_legacy_import`, `rms_records_before_insert`, `rms_records_set_search`, `rms_routes_apply` (moved on to 20261124000500), owner-only `rms_seed_demo`, `rms_seed_demo_access` |
 | `20261123000400_rms_rls_speed` | `rms_my_routed_records`; latest `rms_records_select` and `rms_routes_select` policies (set-based, same visibility as `rms_can_view`) |
 | `20261123000500_rms_report_totals` | `rms_report_summary` (moved on to 20261124000400), `rms_report_offices`, `rms_report_retention`, `rms_dashboard_totals` (security invoker, totals only; used by Reports and the dashboard cards) |
 | `20261123000600_rms_attachment_compression` | attachment `sha256`, `original_sha256`, `original_size_bytes`, `thumb_path`; `rms_attachments_guard_insert` (moved on to 20261124000300), `rms_storage_is_orphan`, `rms_storage_delete_orphan` policy |
-| `20261124000100_rms_arta_replies_alerts` | `rms_records.arta_class`, `rms_records.in_reply_to`; `rms_records_guard_insert` (moved on to 20261124000300), `rms_records_guard_update` (latest); `rms_my_alerts` (bell); `rms_report_on_time` |
+| `20261124000100_rms_arta_replies_alerts` | `rms_records.arta_class`, `rms_records.in_reply_to`; `rms_records_guard_insert` (moved on to 20261124000300), `rms_records_guard_update` (moved on to 20261124000500); `rms_my_alerts` (bell); `rms_report_on_time` |
 | `20261124000200_rms_audit_check_fast` | `rms_audit_checkpoint` table, `rms_audit_row_ok`, `rms_verify_audit_chain` (latest; incremental checkpoint + rotating scrub), `rms_audit_check_info` |
-| `20261124000300_rms_admin_hub` | `rms_records_guard_insert`, `rms_routes_guard_insert`, `rms_attachments_guard_insert`, `rms_can_attach` (latest; admin cannot register, route or attach), `rms_after_hours`, `rms_admin_security_summary`, `rms_admin_flow_analytics` |
+| `20261124000300_rms_admin_hub` | `rms_records_guard_insert`, `rms_routes_guard_insert` (moved on to 20261124000500), `rms_attachments_guard_insert`, `rms_can_attach` (latest; admin cannot register, route or attach), `rms_after_hours`, `rms_admin_security_summary`, `rms_admin_flow_analytics` |
 | `20261124000400_rms_charter_offices` | `rms_search_records_v2` (latest; `rms_search_records` kept for the previous app version), `rms_report_summary` (latest, adds `by_tx`), `rms_records.transaction_type`, the 22 charter offices upserted by code, demo Records Officer moved to CGSO |
+| `20261124000500_rms_assignee` | `rms_records.assigned_to`/`assigned_at` (FK to profiles), `rms_routes.assigned_to` (no FK on purpose); latest `rms_routes_guard_insert` (assign step: head of holding office or records desk only), `rms_routes_apply` (sets or clears the assignee), `rms_records_guard_update` |
 
 Seeds: `seed.sql` (offices, types, demo users), `seed_more.sql`,
 `seed_batch3.sql` (generated by `tools/gen_*.py`; large, grep only).

@@ -12,7 +12,8 @@ import { newestFirst } from "@/lib/history";
 import { ARTA_LABEL, artaProgress, artaText, isArtaClass, manilaDay } from "@/lib/arta";
 import type { Direction, Status, Priority, Confidentiality } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
-import { ActionForm, AttachForm, DeleteForm } from "./forms";
+import { ActionForm, AssignForm, AttachForm, DeleteForm } from "./forms";
+import { assignableStaff, assignmentEvents, canAssign } from "@/lib/assign";
 import { restoreRecord } from "./actions";
 import { SummaryBox } from "./summary-box";
 import { recordsBackHref } from "@/lib/back-link";
@@ -48,6 +49,8 @@ type Rec = {
   deleter: { full_name: string } | null;
   doc_type: { name: string } | null;
   transaction_type?: string | null;
+  assigned_to?: string | null;
+  assignee?: { full_name: string } | null;
   current_office: { code: string; name: string } | null;
   origin_office: { code: string; name: string } | null;
   creator: { full_name: string } | null;
@@ -58,6 +61,7 @@ type Route = {
   status: Status;
   action_taken: string | null;
   remarks: string | null;
+  assigned_to?: string | null;
   created_at: string;
   from_office: { id: string; code: string; name: string } | null;
   to_office: { id: string; code: string; name: string } | null;
@@ -74,7 +78,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const { data } = await supabase
     .from("rms_records")
     .select(
-      "*, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name), origin_office:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), deleter:rms_profiles!rms_records_deleted_by_fkey(full_name)",
+      "*, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name), origin_office:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), deleter:rms_profiles!rms_records_deleted_by_fkey(full_name), assignee:rms_profiles!rms_records_assigned_to_fkey(full_name)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -82,12 +86,19 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const rec = data as unknown as Rec;
   const deleted = Boolean(rec.deleted_at);
 
-  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }, { data: parent }, { data: replyRows }] = await Promise.all([
+  const mayAssign = canAssign({
+    role: me.role,
+    userOfficeId: me.office_id,
+    currentOfficeId: rec.current_office_id,
+    status: rec.status,
+    deleted,
+  });
+  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }, { data: parent }, { data: replyRows }, { data: staffRows }] = await Promise.all([
     // Access history: every opened record is logged with who, when and from which IP (in parallel with the reads below).
     supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: rec.id }),
     supabase
       .from("rms_routes")
-      .select("id, status, action_taken, remarks, created_at, from_office:rms_offices!rms_routes_from_office_id_fkey(id, code, name), to_office:rms_offices!rms_routes_to_office_id_fkey(id, code, name), actor:rms_profiles(full_name)")
+      .select("id, status, action_taken, remarks, assigned_to, created_at, from_office:rms_offices!rms_routes_from_office_id_fkey(id, code, name), to_office:rms_offices!rms_routes_to_office_id_fkey(id, code, name), actor:rms_profiles(full_name)")
       .eq("record_id", id)
       .order("created_at", { ascending: false }),
     supabase.from("rms_attachments").select("id, file_name, mime_type, size_bytes, version, thumb_path, uploaded_at, uploader:rms_profiles(full_name)").eq("record_id", id).order("uploaded_at"),
@@ -99,6 +110,10 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
       ? supabase.from("rms_records").select("id, tracking_no").eq("id", rec.in_reply_to).is("deleted_at", null).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from("rms_records").select("id, tracking_no").eq("in_reply_to", id).is("deleted_at", null).order("created_at"),
+    // Who can be assigned: active staff and the head of the office holding the record (only read for those who may assign).
+    mayAssign
+      ? supabase.from("rms_profiles").select("id, full_name, role").eq("office_id", rec.current_office_id).eq("is_active", true).in("role", ["staff", "dept_head"])
+      : Promise.resolve({ data: [] as { id: string; full_name: string; role: string }[] }),
   ]);
   const replies = (replyRows ?? []) as { id: string; tracking_no: string }[];
 
@@ -121,6 +136,17 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   });
   const incoming = rec.direction === "incoming";
   const history = (routes ?? []) as unknown as Route[];
+  const staff = assignableStaff((staffRows ?? []) as { id: string; full_name: string; role: string }[], rec.confidentiality);
+  // Names for people assigned earlier who are not in the list above (usually none).
+  const nameById = new Map<string, string>(staff.map((p) => [p.id, p.full_name]));
+  const missingIds = [...new Set(history.map((h) => h.assigned_to).filter((x): x is string => Boolean(x) && !nameById.has(x as string)))];
+  if (missingIds.length) {
+    const { data: extra } = await supabase.from("rms_profiles").select("id, full_name").in("id", missingIds);
+    for (const p of extra ?? []) nameById.set(p.id, p.full_name);
+  }
+  const assignEvents = assignmentEvents(
+    [...history].reverse().map((h) => ({ id: h.id, assigned_to: h.assigned_to ?? null, from_office_id: h.from_office?.id ?? null, to_office_id: h.to_office?.id ?? null })),
+  );
   type FileRow = { id: string; file_name: string; version: number; uploaded_at: string; uploader: { full_name: string } | null };
   // Uploaded files appear in the history too, placed just above the step they came after (history is newest first).
   const fileEvents = newestFirst((files ?? []) as unknown as FileRow[], (f) => f.uploaded_at).map((f) => ({
@@ -298,6 +324,17 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         {/* DOM order = phone order: Take action first, then the record, then files. On wide screens Take action and Attachments sit on the right. */}
         <section className="card p-4 lg:col-start-3 lg:row-start-1">
           <h2 className="mb-2 font-semibold">{t("Take action")}</h2>
+          <p className="mb-2 text-sm font-medium">{rec.assignee ? t("Assigned to: {name}", { name: rec.assignee.full_name }) : t("No one yet")}</p>
+          {mayAssign && (
+            <details className="mb-3 rounded border border-line p-2 text-sm">
+              <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-700">{t(rec.assigned_to ? "Change person" : "Assign a person")}</summary>
+              {staff.length ? (
+                <AssignForm recordId={rec.id} people={staff} currentId={rec.assigned_to ?? null} />
+              ) : (
+                <p className="mt-2 text-slate-600">{t("No active staff in this office.")}</p>
+              )}
+            </details>
+          )}
           {actions.length > 0 && <p className="mb-2 text-sm text-slate-600">{t("Nothing is saved until you press Save and then confirm.")}</p>}
           {actions.length ? (
             <ActionForm
@@ -379,17 +416,24 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                 <li className="mb-4 ml-4">
                   <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-brand-600" />
                   <div className="flex flex-wrap items-center gap-2 text-sm">
-                    {all[i + 1]?.status !== r.status || (r.status === "forwarded" && r.to_office?.code !== all[i + 1]?.to_office?.code) ? (
+                    {r.assigned_to ? (
+                      <span className="badge bg-white text-slate-600 ring-1 ring-slate-200">{t("Assigned")}</span>
+                    ) : all[i + 1]?.status !== r.status || (r.status === "forwarded" && r.to_office?.code !== all[i + 1]?.to_office?.code) ? (
                       <StatusBadge status={r.status} />
                     ) : (
                       <span className="badge bg-white text-slate-600 ring-1 ring-slate-200">{t("Note")}</span>
                     )}
-                    <span className="font-medium">{actionText(r.action_taken, t)}</span>
+                    <span className="font-medium">
+                      {r.assigned_to
+                        ? t("{head} assigned this to {name}", { head: r.actor?.full_name ?? "—", name: nameById.get(r.assigned_to) ?? "—" })
+                        : actionText(r.action_taken, t)}
+                    </span>
                     {r.status === "forwarded" && r.from_office && r.to_office && r.from_office.code !== r.to_office.code && (
                       <span className="text-slate-700">{t("from {a} to {b}", { a: r.from_office.name, b: r.to_office.name })}</span>
                     )}
                   </div>
                   {r.remarks && <p className="mt-1 text-sm text-slate-700">“{r.remarks}”</p>}
+                  {assignEvents[r.id]?.kind === "cleared" && <p className="mt-1 text-sm text-slate-600">{t("Assignment cleared.")}</p>}
                   <p className="mt-0.5 text-sm text-slate-600">
                     {fmtDateTime(r.created_at)} · {r.actor?.full_name ?? "—"}
                   </p>

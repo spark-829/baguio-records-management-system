@@ -84,6 +84,7 @@ export default async function HelpPage() {
           {S("Choose what you want to do. To return it to the office that sent it, choose _Send back to …_.")}
           {S("Write a short note if needed.")}
           {S("Press [[Save]]. The system asks you to confirm. Press [[Yes, save it]], or [[No, go back]].")}
+          {S("Office heads: to give the work to a staff member, open _Assign a person_ in the _Take action_ box, choose the person and press [[Assign]]. Staff see it under _Assigned to me_ on the Dashboard.")}
         </Topic>
       )}
 
