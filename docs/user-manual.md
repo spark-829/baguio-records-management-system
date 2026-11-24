@@ -16,7 +16,7 @@ Shows open and overdue records, what is waiting in your office (with how many da
 ## Registering a document (records desk)
 1. Click **Register**.
 2. No scan? Skip to step 3. To scan, click **Scan document** and point the camera at the page, or upload a PDF, JPG or PNG from the office scanner. Then click **Read scan with AI**. Boxes filled by the assistant are highlighted. Scans go straight to the record and are not kept on the device; use **Retake** to scan again. For a PDF, the AI reads the first page.
-3. Fill in or check every box. Boxes marked with a red * are required. The assistant can make mistakes; you are responsible for what is saved.
+3. Fill in or check every box unless it says (optional). The assistant can make mistakes; you are responsible for what is saved.
 4. Choose an office in **Send to office** if it should go somewhere right away, and set **Must be acted on by** if there is a deadline.
 5. Click **Save and get tracking number**, or **Cancel** to leave without saving. Print the routing slip with **Print routing slip** and attach it to the paper copy. Its QR code opens the record.
 
@@ -42,7 +42,7 @@ Press **Save**. The system asks you to confirm before anything is saved. Every a
 
 ## Finding records
 - **Records** page: type a word or a tracking number and press **Search**. **More ways to narrow the list** opens the other filters (person, status, office, dates, late only). **Download list (Excel)** saves the results.
-- **Ask in your own words** box: describe what you need in plain words; what it looked for appears on screen.
+- **Ask the assistant to find it**: type a sentence in the search box and press this button; what it looked for appears on screen.
 - **Assistant**: ask questions in English or Taglish, such as "What documents came from Juan dela Cruz?" or "Nasaan na po yung voucher para sa drainage?" The assistant searches only records you are allowed to see and links each one.
 
 ## Reports (department heads, records desk, admin)

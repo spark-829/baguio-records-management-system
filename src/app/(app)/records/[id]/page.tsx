@@ -162,7 +162,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   return (
     <div className="space-y-4">
       {deleted && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-l-4 border-red-300 border-l-red-700 bg-red-50 px-4 py-3 text-sm text-red-900">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
           <span>
             {t("In the deleted-records bin since {date} by {name}. Reason:", { date: fmtDateTime(rec.deleted_at), name: rec.deleter?.full_name ?? "—" })} “{rec.delete_reason}”
           </span>
@@ -173,7 +173,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         </div>
       )}
       {isNew && (
-        <div className="space-y-3 rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+        <div className="space-y-3 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
         <p>
           {scan === "1" && <>{t("Created from your scan.")}{" "}</>}
           {t("Saved. Tracking number")} <strong>{rec.tracking_no}</strong>.{" "}
@@ -186,12 +186,16 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         </div>
       )}
       {file === "failed" && (
-        <div className="rounded-lg border border-l-4 border-amber-300 border-l-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           {t("The record was saved, but the file could not be attached. Attach it again under Attachments below.")}
         </div>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
+          <Link href="/records" className="inline-flex min-h-11 items-center gap-1 font-semibold text-brand-700 underline underline-offset-4">
+            <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3 5 8l5 5" /></svg>
+            {t("Back to records")}
+          </Link>
           <p className="font-mono text-sm text-slate-500">{rec.tracking_no}</p>
           <h1 className="text-2xl font-bold">{rec.subject}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -231,14 +235,13 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           {incoming && !deleted && me.role !== "viewer" && (
             <Link href={`/records/new?reply_to=${encodeURIComponent(rec.tracking_no)}`} className="btn-secondary">{t("Write a reply")}</Link>
           )}
-          <Link href="/records" className="btn-secondary">{t("Back to records")}</Link>
         </div>
       </div>
 
       {!deleted && (
-        <section className="card border-l-4 border-l-brand-700 p-4" aria-label={t("Where this record is now")}>
-          <dl className="grid gap-3 sm:grid-cols-3">
-            <div>
+        <section className="card p-5" aria-label={t("Where this record is now")}>
+          <dl className="grid gap-3 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-line">
+            <div className="sm:px-4 first:pl-0 last:pr-0">
               <dt className="text-sm text-slate-600">{t("Now with")}</dt>
               <dd className="text-lg font-semibold">{officeName(rec.current_office)}</dd>
               {latest && (
@@ -247,7 +250,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                 </dd>
               )}
             </div>
-            <div>
+            <div className="sm:px-4 first:pl-0 last:pr-0">
               <dt className="text-sm text-slate-600">{t("What needs to be done")}</dt>
               <dd className="font-medium">
                 {!open
@@ -260,13 +263,13 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               </dd>
               {arrival && open && <dd className="text-sm text-slate-700">{t("Sent by {office}", { office: officeName(arrival.from_office) })}</dd>}
               {latestNote && open && latestNote !== arrival && (
-                <dd className="mt-2 rounded-md border-l-4 border-gold-500 bg-amber-50 px-3 py-2 text-sm text-slate-800">
+                <dd className="mt-2 rounded-md bg-gold-100 px-3 py-2 text-sm text-slate-800">
                   <span className="font-semibold">{t("Latest note:")}</span> “{latestNote.remarks || latestNote.action_taken}”
                   <span className="block text-slate-600">{latestNote.actor?.full_name ?? "—"}, {fmtDate(latestNote.created_at)}</span>
                 </dd>
               )}
             </div>
-            <div>
+            <div className="sm:px-4 first:pl-0 last:pr-0">
               <dt className="text-sm text-slate-600">{t("Due")}</dt>
               <dd className={`text-lg font-semibold ${isLate ? "text-red-700" : ""}`}>
                 {rec.due_date ? fmtDate(rec.due_date) : t("No due date")}
@@ -282,8 +285,33 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         </section>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
+      <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-[auto_1fr] lg:items-start">
+        {/* DOM order = phone order: Take action first, then the record, then files. On wide screens Take action and Attachments sit on the right. */}
+        <section className="card p-4 lg:col-start-3 lg:row-start-1">
+          <h2 className="mb-2 font-semibold">{t("Take action")}</h2>
+          {actions.length > 0 && <p className="mb-2 text-sm text-slate-600">{t("Nothing is saved until you press Save and then confirm.")}</p>}
+          {actions.length ? (
+            <ActionForm
+              recordId={rec.id}
+              trackingNo={rec.tracking_no}
+              actions={actions}
+              offices={(offices ?? []).filter((o) => o.id !== rec.current_office_id)}
+              returnTo={arrival?.from_office ?? null}
+            />
+          ) : (
+            <p className="text-sm text-slate-500">
+              {deleted
+                ? t("Deleted records are read-only until restored.")
+                : me.role === "viewer"
+                  ? t("Your account is read-only.")
+                  : rec.status === "archived"
+                    ? t("This record is archived and read-only.")
+                    : t("Only the office holding this record, or the records desk, can act on it.")}
+            </p>
+          )}
+        </section>
+
+        <div className="space-y-4 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           <SummaryBox recordId={rec.id} initial={rec.ai_summary} aiBlocked={rec.confidentiality === "confidential" && settings.aiExcludeConfidential} />
 
           <section className="card p-4">
@@ -361,72 +389,45 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           </section>
         </div>
 
-        {/* On narrow screens (phones, zoomed-in laptops) the action panel comes right after "Now with", not below the history */}
-        <div className="order-first space-y-4 lg:order-none">
-          <section className="card p-4">
-            <h2 className="mb-2 font-semibold">{t("Take action")}</h2>
-            {actions.length > 0 && <p className="mb-2 text-sm text-slate-600">{t("Nothing is saved until you press Save and then confirm.")}</p>}
-            {actions.length ? (
-              <ActionForm
-                recordId={rec.id}
-                trackingNo={rec.tracking_no}
-                actions={actions}
-                offices={(offices ?? []).filter((o) => o.id !== rec.current_office_id)}
-                returnTo={arrival?.from_office ?? null}
-              />
-            ) : (
-              <p className="text-sm text-slate-500">
-                {deleted
-                  ? t("Deleted records are read-only until restored.")
-                  : me.role === "viewer"
-                    ? t("Your account is read-only.")
-                    : rec.status === "archived"
-                      ? t("This record is archived and read-only.")
-                      : t("Only the office holding this record, or the records desk, can act on it.")}
-              </p>
-            )}
-          </section>
-
-          <section className="card p-4">
-            <h2 className="mb-2 font-semibold">{t("Attachments")}</h2>
-            <ul className="mb-3 space-y-2 text-sm">
-              {(files ?? []).map((f) => (
-                <li key={f.id} className="flex items-center justify-between gap-2">
-                  <a href={`/api/attachments/${f.id}`} target="_blank" className="flex min-w-0 items-center gap-2 text-brand-700 hover:underline">
-                    {f.thumb_path ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={`/api/attachments/${f.id}?thumb=1`} alt="" loading="lazy" width={40} height={40} className="h-10 w-10 shrink-0 rounded border border-slate-200 object-cover" />
-                    ) : (
-                      <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-500">
-                        {f.mime_type === "application/pdf" ? "PDF" : "IMG"}
-                      </span>
-                    )}
-                    <span className="truncate">{f.file_name}</span>
-                  </a>
-                  <span className="shrink-0 text-xs text-slate-500">
-                    v{f.version} · {Math.max(1, Math.round(f.size_bytes / 1024))} KB
-                  </span>
-                </li>
-              ))}
-              {(files ?? []).length === 0 && <li className="text-slate-500">{t("No files attached.")}</li>}
-            </ul>
-            {canAttach ? (
-              <AttachForm recordId={rec.id} />
-            ) : (
-              !deleted && rec.status !== "archived" && <p className="text-sm text-slate-500">{t("Only the office holding this record, the office that sent it, or the records desk can add files.")}</p>
-            )}
-            <p className="mt-2 text-xs text-slate-500">
-              {t(settings.watermarkDownloads ? "Files open through a link that expires in 60 seconds and are stamped with your name and the date. Each download is logged." : "Files open through a link that expires in 60 seconds. Each download is logged.")}
-            </p>
-          </section>
-
-          {isCentral(me) && !deleted && (
-            <section className="card p-4">
-              <DeleteForm recordId={rec.id} />
-            </section>
+        <section className="card p-4 lg:col-start-3 lg:row-start-2">
+          <h2 className="mb-2 font-semibold">{t("Attachments")}</h2>
+          <ul className="mb-3 space-y-2 text-sm">
+            {(files ?? []).map((f) => (
+              <li key={f.id} className="flex items-center justify-between gap-2">
+                <a href={`/api/attachments/${f.id}`} target="_blank" className="flex min-w-0 items-center gap-2 text-brand-700 hover:underline">
+                  {f.thumb_path ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={`/api/attachments/${f.id}?thumb=1`} alt="" loading="lazy" width={40} height={40} className="h-10 w-10 shrink-0 rounded border border-slate-200 object-cover" />
+                  ) : (
+                    <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+                      {f.mime_type === "application/pdf" ? "PDF" : "IMG"}
+                    </span>
+                  )}
+                  <span className="truncate">{f.file_name}</span>
+                </a>
+                <span className="shrink-0 text-xs text-slate-500">
+                  v{f.version} · {Math.max(1, Math.round(f.size_bytes / 1024))} KB
+                </span>
+              </li>
+            ))}
+            {(files ?? []).length === 0 && <li className="text-slate-500">{t("No files attached.")}</li>}
+          </ul>
+          {canAttach ? (
+            <AttachForm recordId={rec.id} />
+          ) : (
+            !deleted && rec.status !== "archived" && <p className="text-sm text-slate-500">{t("Only the office holding this record, the office that sent it, or the records desk can add files.")}</p>
           )}
-        </div>
+          <p className="mt-2 text-xs text-slate-500">
+            {t(settings.watermarkDownloads ? "Files open through a link that expires in 60 seconds and are stamped with your name and the date. Each download is logged." : "Files open through a link that expires in 60 seconds. Each download is logged.")}
+          </p>
+        </section>
       </div>
+
+      {isCentral(me) && !deleted && (
+        <section className="border-t border-line pt-6">
+          <DeleteForm recordId={rec.id} />
+        </section>
+      )}
     </div>
   );
 }

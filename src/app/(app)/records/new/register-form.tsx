@@ -240,7 +240,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
 
       <section className="card grid gap-4 p-5 md:grid-cols-2 lg:col-span-2">
         <h2 className="text-lg font-bold md:col-span-2">{t("2. About the document")}</h2>
-        <p className="text-sm text-slate-600 md:col-span-2">{t("Boxes marked")} <span className="font-semibold text-red-700">*</span> {t("must be filled in. The rest are optional.")}</p>
+        <p className="text-sm text-slate-600 md:col-span-2">{t("Fill in every box unless it says (optional).")}</p>
         <div>
           <label className="label" htmlFor="f-direction">{t("Received or sent out?")}</label>
           <select id="f-direction" name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => set("direction", e.target.value as Fields["direction"])}>
@@ -252,39 +252,39 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           )}
         </div>
         <div>
-          <label className="label" htmlFor="f-document_type_id">{t("Kind of document")} <Req /></label>
+          <label className="label" htmlFor="f-document_type_id">{t("Kind of document")}</label>
           <select id="f-document_type_id" name="document_type_id" required className={`input ${hl("document_type_id")}`} value={f.document_type_id} onChange={(e) => set("document_type_id", e.target.value)}>
             <option value="">{t("Choose…")}</option>
             {props.types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
         <div className="md:col-span-2">
-          <label className="label" htmlFor="f-subject">{t("Subject (what it is about)")} <Req /></label>
+          <label className="label" htmlFor="f-subject">{t("Subject (what it is about)")}</label>
           <input id="f-subject" name="subject" required className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />
         </div>
         <div className="md:col-span-2">
-          <label className="label" htmlFor="f-description">{t("Short description")}</label>
+          <label className="label" htmlFor="f-description">{t("Short description (optional)")}</label>
           <textarea id="f-description" name="description" rows={2} className={`input ${hl("description")}`} value={f.description} onChange={(e) => set("description", e.target.value)} />
         </div>
         {incoming ? (
           <>
             <div>
-              <label className="label" htmlFor="f-sender_name">{t("Name of sender")}</label>
+              <label className="label" htmlFor="f-sender_name">{t("Name of sender (optional)")}</label>
               <input id="f-sender_name" name="sender_name" className={`input ${hl("sender_name")}`} value={f.sender_name} onChange={(e) => set("sender_name", e.target.value)} />
             </div>
             <div>
-              <label className="label" htmlFor="f-sender_org">{t("Sender's office, barangay or company")}</label>
+              <label className="label" htmlFor="f-sender_org">{t("Sender's office, barangay or company (optional)")}</label>
               <input id="f-sender_org" name="sender_org" className={`input ${hl("sender_org")}`} value={f.sender_org} onChange={(e) => set("sender_org", e.target.value)} />
             </div>
           </>
         ) : (
           <>
             <div>
-              <label className="label" htmlFor="f-recipient_name">{t("Name of recipient")}</label>
+              <label className="label" htmlFor="f-recipient_name">{t("Name of recipient (optional)")}</label>
               <input id="f-recipient_name" name="recipient_name" className={`input ${hl("recipient_name")}`} value={f.recipient_name} onChange={(e) => set("recipient_name", e.target.value)} />
             </div>
             <div>
-              <label className="label" htmlFor="f-recipient_org">{t("Recipient's office, barangay or company")}</label>
+              <label className="label" htmlFor="f-recipient_org">{t("Recipient's office, barangay or company (optional)")}</label>
               <input id="f-recipient_org" name="recipient_org" className={`input ${hl("recipient_org")}`} value={f.recipient_org} onChange={(e) => set("recipient_org", e.target.value)} />
             </div>
             <div className="md:col-span-2">
@@ -304,7 +304,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           </div>
         )}
         <div>
-          <label className="label" htmlFor="f-document_date">{t("Date written on the document")}</label>
+          <label className="label" htmlFor="f-document_date">{t("Date written on the document (optional)")}</label>
           <input id="f-document_date" name="document_date" type="date" className={`input ${hl("document_date")}`} value={f.document_date} onChange={(e) => set("document_date", e.target.value)} />
         </div>
         <div>
@@ -365,21 +365,12 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
           )}
         </div>
 
-        <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-xl border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
+        <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-lg border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
           {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{t(state.error)}</p>}
-          <Link href="/records" className="btn-secondary">{t("Cancel")}<span className="hidden sm:inline">{t(" (nothing is saved)")}</span></Link>
-          <button className="btn-primary" disabled={pending || prep.busy || prep.tooBig}>{pending ? t("Saving…") : <>{t("Save")}<span className="hidden sm:inline">{t(" and get tracking number")}</span></>}</button>
+          <Link href="/records" className="btn-secondary"><span className="sm:hidden">{t("Cancel")}</span><span className="hidden sm:inline">{t("Cancel (nothing is saved)")}</span></Link>
+          <button className="btn-primary" disabled={pending || prep.busy || prep.tooBig}>{pending ? t("Saving…") : <><span className="sm:hidden">{t("Save")}</span><span className="hidden sm:inline">{t("Save and get tracking number")}</span></>}</button>
         </div>
       </section>
     </form>
-  );
-}
-
-function Req() {
-  const t = useT();
-  return (
-    <span className="font-semibold text-red-700" aria-label={t("required")}>
-      *
-    </span>
   );
 }

@@ -66,7 +66,7 @@ export default async function HelpPage() {
         {S("Click [[Records]] at the top.")}
         {S("Type a word from the subject (for example _drainage_) or the tracking number (for example _IN-2026-0001_).")}
         {S("Press [[Search]]. Click the subject to open it.")}
-        {S("You can also type a whole sentence in _Ask in your own words_, such as “road repair letters from last week”.")}
+        {S("You can also type a whole sentence in the search box and press [[Ask the assistant to find it]], such as “road repair letters from last week”.")}
       </Topic>
 
       <Topic id="where" title={t("See where a document is now")}>

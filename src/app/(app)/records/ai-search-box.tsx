@@ -5,16 +5,20 @@ import { useT } from "@/lib/i18n/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function AiSearchBox() {
+/** Sends the words typed in the records search box (input `inputId`) to the assistant, which turns them into list filters. */
+export function AiSearchButton({ inputId }: { inputId: string }) {
   const t = useT();
   const router = useRouter();
-  const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(e: React.FormEvent) {
-    e.preventDefault();
-    if (!text.trim()) return;
+  async function run() {
+    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    const text = input?.value ?? "";
+    if (!text.trim()) {
+      input?.focus();
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -34,17 +38,11 @@ export function AiSearchBox() {
   }
 
   return (
-    <form onSubmit={run} className="card flex flex-col gap-2 p-3 sm:flex-row sm:items-center">
-      <label htmlFor="ai-q" className="font-semibold text-ink">{t("Ask in your own words")}</label>
-      <input
-        id="ai-q"
-        className="input flex-1"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder={t("e.g. “urgent road requests from barangays last month”")}
-      />
-      <button className="btn-primary" disabled={busy}>{t(busy ? "Looking…" : "Find")}</button>
-      {error && <p className="text-sm text-red-700">{t(error)}</p>}
-    </form>
+    <>
+      <button type="button" className="btn-secondary" onClick={run} disabled={busy}>
+        {t(busy ? "Looking…" : "Ask the assistant to find it")}
+      </button>
+      {error && <p role="alert" className="basis-full text-sm text-red-700">{t(error)}</p>}
+    </>
   );
 }
