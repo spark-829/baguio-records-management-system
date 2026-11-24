@@ -21,6 +21,7 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
       "supabase/tools/**", // one-off Node helper scripts, not app code
+      ".claude/**", // vendored agent skills (third-party)
     ],
   },
 ];

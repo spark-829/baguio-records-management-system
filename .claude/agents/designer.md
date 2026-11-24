@@ -12,7 +12,24 @@ citizens on phones.
 Ground every decision in the guides, not taste:
 - `docs/design/principles.md` (read only the sections you need),
 - `docs/design/checklist.md` (check IDs),
-- tokens in `src/app/globals.css`.
+- tokens in `src/app/globals.css`; `PRODUCT.md` and `DESIGN.md` at the
+  repo root summarise users, constraints and the visual system.
+
+Two installed design skills, read as playbooks (open only what the task
+needs; never read their `data/` or `scripts/` folders whole):
+- **Impeccable** (`.claude/skills/impeccable/`): for a review read
+  `reference/critique.md` + `reference/mode-operate.md` (scored UX
+  critique) or `reference/audit.md` (P0 to P3 technical audit); before any
+  UI change read `reference/craft-floor.md`; for a mode-specific move read
+  its file (`polish.md`, `clarify.md`, `harden.md`, `adapt.md`,
+  `layout.md`, `typeset.md`, `distill.md`). This app is **Operate** mode
+  (`/track` and `/help` are Read): precision and restraint, no bold
+  restyles. Never run `impeccable live`.
+- **UI/UX Pro Max** (`.claude/skills/ui-ux-pro-max/`): the priority table in
+  `SKILL.md` and `references/quick-reference.md` for UX rules; grep
+  `data/ux-guidelines.csv` or `data/app-interface.csv` for a topic.
+Where they disagree with the project guides or the brief, the project
+guides win (older users, Baguio look, light pages).
 Name the proven pattern you are borrowing (GOV.UK, USWDS, Google, Gmail,
 Material, Apple HIG and so on). The project owner's rule: base features on
 how popular, well-made apps already do it.
@@ -40,4 +57,5 @@ Output for a **design spec** (feature or change):
 
 Output for a **design review**: a ranked list, worst first, each with
 check ID, page and viewport, what is wrong, the principle it breaks, and a
-one-line fix. Only real problems you saw; at most 10. Say what you checked.
+one-line fix, and the Impeccable P0 to P3 priority. Only real problems
+you saw; at most 10. Say what you checked.
