@@ -26,8 +26,12 @@ export default async function OfficeWorkloadPage() {
   const me = await getProfile();
   if (me.role === "staff" || me.role === "viewer") redirect("/");
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("rms_report_offices");
+  const [{ data, error }, { data: winData }] = await Promise.all([
+    supabase.rpc("rms_report_offices"),
+    supabase.rpc("rms_report_window_counts"),
+  ]);
   if (error) throw new Error("Office workload failed");
+  const windowBy = new Map(((winData ?? []) as { office_id: string; n: number }[]).map((w) => [w.office_id, Number(w.n)]));
   const stats = ((data ?? []) as OfficeRow[]).map((o) => ({
     id: o.id,
     code: o.code,
@@ -38,6 +42,7 @@ export default async function OfficeWorkloadPage() {
     oldest: o.oldest_days,
     avgDone: o.avg_done_days,
     doneCount: o.done_count,
+    atWindow: windowBy.get(o.id) ?? 0,
   }));
   stats.sort((a, b) => b.late - a.late || b.waiting + b.working - (a.waiting + a.working));
   const fmtDays = (d: number | null) => (d === null ? "—" : d < 1 ? t("less than a day") : t(Math.round(d) === 1 ? "{n} day" : "{n} days", { n: Math.round(d) }));
@@ -66,6 +71,7 @@ export default async function OfficeWorkloadPage() {
               <th className="px-4 py-2 text-right">{t("Late")}</th>
               <th className="px-4 py-2">{t("Longest time in the office")}</th>
               <th className="px-4 py-2">{t("Average time to finish (last 90 days)")}</th>
+              <th className="px-4 py-2 text-right">{t("Received at own window")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -81,6 +87,7 @@ export default async function OfficeWorkloadPage() {
                 </td>
                 <td className="px-4 py-2">{fmtDays(s.oldest)}</td>
                 <td className="px-4 py-2">{s.doneCount ? `${fmtDays(s.avgDone)} (${t("{n} finished", { n: s.doneCount })})` : "—"}</td>
+                <td className="px-4 py-2 text-right tabular-nums">{s.atWindow}</td>
               </tr>
             ))}
           </tbody>

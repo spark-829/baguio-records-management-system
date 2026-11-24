@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDateTime } from "@/lib/labels";
 import { PrintButton } from "../slip/print-button";
+import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 
 /**
  * Acknowledgment receipt for the person who filed the document: tracking number, tracking code
@@ -16,14 +17,14 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
   const supabase = await createClient();
   const { data } = await supabase
     .from("rms_records")
-    .select("id, tracking_no, track_code, direction, created_at, sender_name, doc_type:rms_document_types(name), creator:rms_profiles!rms_records_created_by_fkey(full_name)")
+    .select("id, tracking_no, track_code, direction, created_at, sender_name, reference_no, reference_label, doc_type:rms_document_types(name), creator:rms_profiles!rms_records_created_by_fkey(full_name)")
     .eq("id", id)
     .maybeSingle();
   if (!data) notFound();
   // The receipt shows the filer's name, so opening it goes in the access history like the record page.
   await supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: data.id, p_detail: { page: "receipt" } });
   const r = data as unknown as {
-    tracking_no: string; track_code: string; direction: string; created_at: string; sender_name: string | null;
+    tracking_no: string; track_code: string; direction: string; created_at: string; sender_name: string | null; reference_no: string | null; reference_label: string | null;
     doc_type: { name: string } | null; creator: { full_name: string } | null;
   };
   const h = await headers();
@@ -47,6 +48,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <dt className="font-semibold">{t("Tracking code")}</dt><dd className="font-mono text-lg font-bold tracking-widest">{r.track_code}</dd>
           <dt className="font-semibold">{t("Document")}</dt><dd>{r.doc_type?.name}</dd>
           {r.sender_name && (<><dt className="font-semibold">{t("Filed by")}</dt><dd>{r.sender_name}</dd></>)}
+          {r.reference_no && (<><dt className="font-semibold">{t(r.reference_label ?? DEFAULT_REF_LABEL)}</dt><dd className="font-mono">{r.reference_no}</dd></>)}
           <dt className="font-semibold">{t("Received")}</dt><dd>{fmtDateTime(r.created_at)}</dd>
           <dt className="font-semibold">{t("Received by")}</dt><dd>{r.creator?.full_name?.split(" (")[0]}</dd>
         </dl>

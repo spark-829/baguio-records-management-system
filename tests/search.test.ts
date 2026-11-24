@@ -38,3 +38,14 @@ describe("box filter", () => {
     expect(filtersFromParams(Object.fromEntries(filtersToParams(f))).box).toBe("CGSO-2026-012");
   });
 });
+
+describe("received-at filter", () => {
+  it("round-trips window and desk, drops anything else", () => {
+    expect(filtersFromParams({ at: "window" }).at).toBe("window");
+    expect(filtersFromParams({ at: "desk" }).at).toBe("desk");
+    expect(filtersFromParams({ at: "x'; drop" }).at).toBeUndefined();
+    expect(filtersFromParams({}).at).toBeUndefined();
+    expect(filtersToParams({ at: "window" }).get("at")).toBe("window");
+    expect(filtersToParams({}).has("at")).toBe(false);
+  });
+});

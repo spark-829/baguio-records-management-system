@@ -118,6 +118,104 @@ select pg_temp.as_user('records@rms-demo.test');
 select pg_temp.expect('restored record visible again', (select count(*) from rms_records where tracking_no = 'IN-2026-0005'), 1);
 reset role;
 
+-- Office window, charter steps and city views (run after seed_departments.sql; everything is rolled back at the end)
+create or replace function pg_temp.expect_error(p_label text, p_sql text) returns void language plpgsql as $$
+begin
+  begin
+    execute p_sql;
+  exception when others then
+    raise notice 'ok  % (%)', p_label, sqlerrm;
+    return;
+  end;
+  raise exception 'FAILED %: no error', p_label;
+end $$;
+
+create or replace function pg_temp.window_insert(p_email text) returns text language sql as $$
+  select format($f$insert into rms_records (direction, subject, document_type_id, transaction_type, priority, confidentiality,
+      origin_office_id, current_office_id, created_by, tracking_no)
+    values ('incoming', 'Window test', (select id from rms_document_types where name = 'Letter'), 'G2C', 'normal', 'internal',
+      (select office_id from rms_profiles where id = %L), (select office_id from rms_profiles where id = %L), %L, 'pending')$f$,
+    (select id from auth.users where email = p_email), (select id from auth.users where email = p_email), (select id from auth.users where email = p_email))
+$$;
+
+select pg_temp.as_user('treasury.staff@rms-demo.test');
+select pg_temp.expect_error('treasury staff cannot log incoming while the window flag is off', pg_temp.window_insert('treasury.staff@rms-demo.test'));
+reset role;
+update rms_profiles set window_intake = true where id = (select id from auth.users where email = 'treasury.staff@rms-demo.test');
+select pg_temp.as_user('treasury.staff@rms-demo.test');
+do $$ begin execute pg_temp.window_insert('treasury.staff@rms-demo.test'); end $$;
+select pg_temp.expect('window record is marked intake_window', (select count(*) from rms_records where subject = 'Window test' and intake_window), 1);
+reset role;
+
+select pg_temp.as_user('budget.head@rms-demo.test');
+select pg_temp.expect_error('cbo head (window off) cannot log incoming', pg_temp.window_insert('budget.head@rms-demo.test'));
+reset role;
+select pg_temp.as_user('admin@rms-demo.test');
+select pg_temp.expect_error('admin still cannot register', pg_temp.window_insert('admin@rms-demo.test'));
+reset role;
+
+-- Charter steps: another office cannot mark them; out of order is refused; nobody edits them directly
+select set_config('rms.test_rec', (select r.id::text from rms_records r where r.service_steps is not null and r.status = 'registered'
+  and r.origin_office_id = (select id from rms_offices where code = 'CCRO') limit 1), false);
+select pg_temp.as_user('ccro.head@rms-demo.test');
+select pg_temp.expect_error('direct edit of service_steps is refused',
+  $q$update rms_records set service_steps = '[]'::jsonb where id = current_setting('rms.test_rec')::uuid$q$);
+reset role;
+select pg_temp.as_user('engineering.head@rms-demo.test');
+select pg_temp.expect_error('another office cannot mark a charter step (only the office holding)',
+  $q$select rms_mark_charter_step(current_setting('rms.test_rec')::uuid, 2)$q$);
+reset role;
+select pg_temp.as_user('ccro.window@rms-demo.test');
+select pg_temp.expect_error('steps must be marked in order',
+  $q$select rms_mark_charter_step((select id from rms_records where service_steps is not null and status = 'registered' limit 1), 3)$q$);
+reset role;
+
+-- A window clerk reads the confidential record they logged (INSERT ... RETURNING); nobody else does
+update rms_profiles set window_intake = true where id = (select id from auth.users where email = 'engineering.staff@rms-demo.test');
+select pg_temp.as_user('engineering.staff@rms-demo.test');
+do $$
+declare v_id uuid;
+begin
+  insert into rms_records (direction, subject, document_type_id, transaction_type, priority, confidentiality,
+      origin_office_id, current_office_id, created_by, tracking_no)
+    values ('incoming', 'Confidential window test', (select id from rms_document_types where name = 'Letter'), 'G2C', 'normal', 'confidential',
+      (select rms_my_office()), (select rms_my_office()), auth.uid(), 'pending')
+    returning id into v_id;
+end $$;
+select pg_temp.expect('window clerk sees own confidential window record', (select count(*) from rms_records where subject = 'Confidential window test'), 1);
+reset role;
+select pg_temp.as_user('engineering.head@rms-demo.test');
+select pg_temp.expect('head of the office still sees it', (select count(*) from rms_records where subject = 'Confidential window test'), 1);
+reset role;
+-- Moved to another office (rolled back at the end): no more access
+update rms_profiles set office_id = (select id from rms_offices where code = 'CEO') where id = (select id from auth.users where email = 'treasury.staff@rms-demo.test');
+select pg_temp.as_user('treasury.staff@rms-demo.test');
+select pg_temp.expect('another staff member does not see it', (select count(*) from rms_records where subject = 'Confidential window test'), 0);
+reset role;
+update rms_profiles set locked_until = now() + interval '1 hour' where id = (select id from auth.users where email = 'engineering.staff@rms-demo.test');
+select pg_temp.as_user('engineering.staff@rms-demo.test');
+select pg_temp.expect('a locked clerk sees nothing', (select count(*) from rms_records where subject = 'Confidential window test'), 0);
+reset role;
+update rms_profiles set locked_until = null where id = (select id from auth.users where email = 'engineering.staff@rms-demo.test');
+
+-- HRMO sees satisfaction answers of several offices; an office head only their own
+select set_config('rms.test_sat', (select count(distinct office_id)::text from rms_satisfaction), false);
+select pg_temp.as_user('hrmo.head@rms-demo.test');
+select pg_temp.expect('hrmo head sees the satisfaction answers of every office', (select count(distinct office_id) from rms_satisfaction), current_setting('rms.test_sat')::bigint);
+reset role;
+select pg_temp.as_user('engineering.head@rms-demo.test');
+select pg_temp.expect('engineering head sees only CEO answers', (select count(*) from rms_satisfaction where office_id <> (select id from rms_offices where code = 'CEO')), 0);
+select pg_temp.expect_error('city overview is refused for an office head', 'select rms_oversight_overview()');
+reset role;
+select pg_temp.as_user('cmo.head@rms-demo.test');
+select pg_temp.expect('city overview works for the mayor''s office head', (select jsonb_typeof(rms_oversight_overview()) = 'object')::int, 1);
+select pg_temp.expect('city view hides the subject of a confidential record',
+  (select count(*) from rms_oversight_records() where confidential and subject is not null), 0);
+select pg_temp.expect('city record shows no subject and no action text when confidential',
+  (select count(*) from (select rms_oversight_record(r.id) as j from rms_oversight_records(null, null, false, 100) r where r.confidential limit 1) q
+    where j ->> 'subject' is not null), 0);
+reset role;
+
 -- Lockout: 5 failed sign-ins lock the account and void its access
 set local role anon;
 select rms_login_failed('treasury.staff@rms-demo.test') from generate_series(1, 5);

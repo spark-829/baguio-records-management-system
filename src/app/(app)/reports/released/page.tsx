@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { fmtDate } from "@/lib/labels";
 import { manilaDay } from "@/lib/arta";
 import { METHOD_LABEL, isDay, manilaTime, parseLogbook, receivedText, type SendMethod } from "@/lib/dispatch";
+import { hasFeature } from "@/lib/office-features";
+import { FeatureOff } from "@/components/feature-off";
 import { PrintButton } from "../../records/[id]/slip/print-button";
 
 export const metadata = { title: "Released documents logbook" };
@@ -15,6 +17,7 @@ export default async function ReleasedLogbookPage({ searchParams }: { searchPara
   const { t } = await getT();
   const me = await getProfile();
   if (me.role !== "records_officer" && me.role !== "dept_head") redirect("/reports");
+  if (!hasFeature(me, "logbook")) return <FeatureOff feature="logbook" />;
   const sp = await searchParams;
   const day = isDay(sp.day ?? "") ? (sp.day as string) : manilaDay();
   const supabase = await createClient();

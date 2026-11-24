@@ -287,3 +287,27 @@ export async function recordDelivery(_prev: ActState, form: FormData): Promise<A
   revalidatePath(`/records/${recordId}`);
   redirect(`/records/${recordId}?delivered=1#sending`);
 }
+
+/** Mark a charter step done, or undo the last one within 10 minutes. The database re-checks every rule and saves a history line. */
+const CHARTER_ERRORS: [RegExp, string][] = [
+  [/mark the steps in order/i, "Mark the steps in order."],
+  [/can no longer be undone/i, "This step can no longer be undone."],
+  [/only the office holding/i, "Only the office holding this record can mark its charter steps."],
+  [/no charter steps/i, "This record has no charter steps."],
+  [/only while the office is working/i, "Charter steps can be marked only while the office is working on the record."],
+  [/record not found/i, "Record not found"],
+];
+
+export async function markCharterStep(_prev: ActState, form: FormData): Promise<ActState> {
+  await getProfile();
+  const recordId = String(form.get("record_id") ?? "");
+  if (!UUID.test(recordId)) return { error: "Record not found" };
+  const step = Number(form.get("step"));
+  if (!Number.isInteger(step) || step < 1 || step > 50) return { error: "Choose a step." };
+  const undo = form.get("undo") === "1";
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("rms_mark_charter_step", { p_record_id: recordId, p_step: step, p_undo: undo });
+  if (error) return { error: CHARTER_ERRORS.find(([re]) => re.test(error.message))?.[1] ?? "Could not save the step. Try again." };
+  revalidatePath(`/records/${recordId}`);
+  return undo ? { ok: "Step {n} is not done any more.", vars: { n: String(step) } } : { ok: "Step {n} marked done.", vars: { n: String(step) } };
+}

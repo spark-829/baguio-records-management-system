@@ -72,3 +72,18 @@ export function satisfactionCsv(report: SatReport, month: string): string {
   const rows = report.offices.map((o) => [month, o.office, o.responses, p(o.sat_yes, o.sat_n), p(o.time_yes, o.time_n), p(o.steps_yes, o.steps_n), p(o.fair_yes, o.fair_n), p(o.staff_yes, o.staff_n), p(o.charter_yes, o.charter_n)]);
   return csvDocument(header, rows);
 }
+
+export type CssState = "sent" | "not_sent" | "late";
+
+/** Monthly summary to HRMO: sent, not sent yet, or late (not sent and the deadline has passed). */
+export function cssStatus(o: { sentAt: string | null | undefined; deadline: string; today: string }): CssState {
+  if (o.sentAt) return "sent";
+  return o.today > o.deadline ? "late" : "not_sent";
+}
+
+const CSS_ORDER: Record<CssState, number> = { late: 0, not_sent: 1, sent: 2 };
+
+/** Late first, then not sent, then sent; each group by office name. */
+export function sortCssRows<T extends { state: CssState; office: string }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => CSS_ORDER[a.state] - CSS_ORDER[b.state] || a.office.localeCompare(b.office));
+}

@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { scanUrl } from "@/lib/qr";
 import { CONF_LABEL, PRIORITY_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import { PrintButton } from "./print-button";
+import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 
 const shortStamp = (iso: string) =>
   new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "Asia/Manila" }).format(new Date(iso));
@@ -20,7 +21,7 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
   const supabase = await createClient();
   const { data: rec } = await supabase
     .from("rms_records")
-    .select("id, tracking_no, direction, subject, priority, confidentiality, sender_name, sender_org, recipient_name, recipient_org, document_date, due_date, created_at, doc_type:rms_document_types(name), origin:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), assignee:rms_profiles!rms_records_assigned_to_fkey(full_name)")
+    .select("id, tracking_no, direction, subject, priority, confidentiality, sender_name, sender_org, recipient_name, recipient_org, document_date, due_date, created_at, reference_no, reference_label, doc_type:rms_document_types(name), origin:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), assignee:rms_profiles!rms_records_assigned_to_fkey(full_name)")
     .eq("id", id)
     .maybeSingle();
   if (!rec) notFound();
@@ -41,7 +42,7 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
   const r = rec as unknown as {
     tracking_no: string; direction: string; subject: string; priority: "low" | "normal" | "urgent"; confidentiality: "public" | "internal" | "confidential";
     sender_name: string | null; sender_org: string | null; recipient_name: string | null; recipient_org: string | null;
-    document_date: string | null; due_date: string | null; created_at: string;
+    document_date: string | null; due_date: string | null; created_at: string; reference_no: string | null; reference_label: string | null;
     doc_type: { name: string } | null; origin: { code: string; name: string } | null; creator: { full_name: string } | null; assignee: { full_name: string } | null;
   };
   const party = r.direction === "incoming" ? [r.sender_name, r.sender_org] : [r.recipient_name, r.recipient_org];
@@ -96,6 +97,7 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
         <dl className="grid grid-cols-3 gap-y-1 py-3 text-sm">
           <dt className="font-semibold">{t("Subject")}</dt><dd className="col-span-2">{r.subject}</dd>
           <dt className="font-semibold">{t(r.direction === "incoming" ? "From" : "To")}</dt><dd className="col-span-2">{party.filter(Boolean).join(", ") || "—"}</dd>
+          {r.reference_no && (<><dt className="font-semibold">{t(r.reference_label ?? DEFAULT_REF_LABEL)}</dt><dd className="col-span-2 font-mono">{r.reference_no}</dd></>)}
           <dt className="font-semibold">{t("Date on document")}</dt><dd className="col-span-2">{fmtDate(r.document_date)}</dd>
           <dt className="font-semibold">{t("Registered")}</dt><dd className="col-span-2">{fmtDateTime(r.created_at)} · {r.origin?.name} · {r.creator?.full_name}</dd>
           <dt className="font-semibold">{t("Action due")}</dt><dd className="col-span-2">{fmtDate(r.due_date)}</dd>

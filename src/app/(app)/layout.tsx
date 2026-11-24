@@ -9,6 +9,7 @@ import { BrandLockup, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
 import { getT } from "@/lib/i18n/server";
 import { AlertBell } from "@/components/alert-bell";
+import { hasFeature, isHrmoCss } from "@/lib/office-features";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [me, settings, { t }] = await Promise.all([getProfile(), getSettings(), getT()]);
@@ -16,6 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? [
         { href: "/", label: t("Security") },
         { href: "/admin/users", label: t("Users") },
+        { href: "/admin/offices", label: t("Offices") },
         { href: "/admin/access", label: t("Access history") },
         { href: "/admin/audit", label: t("Audit log") },
         { href: "/admin/analytics", label: t("Analytics") },
@@ -29,10 +31,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         { href: "/records", label: t("Records") },
         ...(me.role !== "viewer" ? [{ href: "/records/new", label: t("Register") }] : []),
         ...(me.role === "records_officer" ? [{ href: "/boxes", label: t("Boxes") }] : []),
-        { href: "/map", label: t("Map") },
+        ...(hasFeature(me, "map") ? [{ href: "/map", label: t("Map") }] : []),
         { href: "/assistant", label: t("Assistant") },
         { href: "/help", label: t("Help") },
         ...(me.role !== "staff" ? [{ href: "/reports", label: t("Reports") }] : []),
+        ...(me.role === "staff" && isHrmoCss({ role: me.role, officeCode: me.office?.code, windowFlag: me.window_intake })
+          ? [{ href: "/reports/satisfaction", label: t("Client satisfaction") }]
+          : []),
       ];
   const roleLabel = ROLE_LABEL[me.role];
   const showRole = !me.full_name.includes(roleLabel);

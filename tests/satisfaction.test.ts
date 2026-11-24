@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hrmoDeadline, monthParam, parseSurveyForm, pct, satisfactionCsv } from "../src/lib/satisfaction";
+import { cssStatus, sortCssRows, hrmoDeadline, monthParam, parseSurveyForm, pct, satisfactionCsv } from "../src/lib/satisfaction";
 
 describe("parseSurveyForm", () => {
   it("needs the first answer", () => {
@@ -41,5 +41,20 @@ describe("helpers", () => {
     const lines = csv.split("\r\n");
     expect(lines[0]).toContain('"Satisfied %"');
     expect(lines[1]).toBe('"2026-10","CGSO","2","50","","","","","100"');
+  });
+});
+
+describe("cssStatus and sortCssRows", () => {
+  it("is late only the day after the deadline", () => {
+    expect(cssStatus({ sentAt: null, deadline: "2026-12-07", today: "2026-12-07" })).toBe("not_sent");
+    expect(cssStatus({ sentAt: null, deadline: "2026-12-07", today: "2026-12-08" })).toBe("late");
+    expect(cssStatus({ sentAt: "2026-12-09T01:00:00Z", deadline: "2026-12-07", today: "2026-12-10" })).toBe("sent");
+  });
+  it("sorts late, not sent, sent, then by office", () => {
+    const rows = [
+      { state: "sent" as const, office: "A" }, { state: "late" as const, office: "Z" },
+      { state: "not_sent" as const, office: "M" }, { state: "late" as const, office: "B" },
+    ];
+    expect(sortCssRows(rows).map((r) => r.office)).toEqual(["B", "Z", "M", "A"]);
   });
 });

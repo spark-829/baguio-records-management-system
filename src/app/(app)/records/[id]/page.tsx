@@ -24,6 +24,11 @@ import { SummaryBox } from "./summary-box";
 import { isComplaint, replyClock, replyDueAt } from "@/lib/complaint";
 import { recordsBackHref } from "@/lib/back-link";
 import { fmtMinutes, slowSteps } from "@/lib/step-times";
+import { isOversight } from "@/lib/office-features";
+import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
+import { canMarkStep, charterSlowByRoute, parseSteps } from "@/lib/charter";
+import { CharterSteps } from "./charter-steps";
+import { OversightView } from "./oversight-view";
 
 type CopyRow = {
   source_tracking_no: string;
@@ -80,6 +85,12 @@ type Rec = {
   creator: { full_name: string } | null;
   box_id?: string | null;
   box?: { id: string; code: string; room: string; shelf: string | null } | null;
+  intake_window?: boolean | null;
+  reference_no?: string | null;
+  reference_label?: string | null;
+  service_id?: string | null;
+  service_steps?: unknown;
+  service?: { title: string; total_text: string | null } | null;
 };
 
 type Route = {
@@ -94,21 +105,27 @@ type Route = {
   actor: { full_name: string } | null;
 };
 
-export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string; back?: string; copy?: string; delivered?: string }> }) {
+export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string; back?: string; copy?: string; delivered?: string; scope?: string }> }) {
   const { t } = await getT();
   const { id } = await params;
-  const { new: isNew, scan, file, back, copy: copyFlag, delivered } = await searchParams;
+  const { new: isNew, scan, file, back, copy: copyFlag, delivered, scope } = await searchParams;
   const backHref = recordsBackHref(back);
   const [me, settings] = await Promise.all([getProfile(), getSettings()]);
+  const oversight = isOversight({ role: me.role, officeCode: me.office?.code, features: me.office?.features });
+  // City oversight (CMO and CAO heads): a read-only view that never opens the record itself.
+  if (oversight && scope === "city") return <OversightView id={id} meId={me.id} />;
   const supabase = await createClient();
   const { data } = await supabase
     .from("rms_records")
     .select(
-      "*, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name), origin_office:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), deleter:rms_profiles!rms_records_deleted_by_fkey(full_name), assignee:rms_profiles!rms_records_assigned_to_fkey(full_name), box:rms_boxes!rms_records_box_id_fkey(id, code, room, shelf)",
+      "*, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name), origin_office:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), deleter:rms_profiles!rms_records_deleted_by_fkey(full_name), assignee:rms_profiles!rms_records_assigned_to_fkey(full_name), box:rms_boxes!rms_records_box_id_fkey(id, code, room, shelf), service:rms_services!rms_records_service_id_fkey(title, total_text)",
     )
     .eq("id", id)
     .maybeSingle();
-  if (!data) notFound();
+  if (!data) {
+    if (oversight) return <OversightView id={id} meId={me.id} />;
+    notFound();
+  }
   const rec = data as unknown as Rec;
   const deleted = Boolean(rec.deleted_at);
 
@@ -119,7 +136,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     status: rec.status,
     deleted,
   });
-  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }, { data: parent }, { data: replyRows }, { data: staffRows }, { data: copyRow }, { data: boxRows }, { data: dispatchRow }] = await Promise.all([
+  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }, { data: parent }, { data: replyRows }, { data: staffRows }, { data: copyRow }, { data: boxRows }, { data: dispatchRow }, { data: sameRef }] = await Promise.all([
     // Access history: every opened record is logged with who, when and from which IP (in parallel with the reads below).
     supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: rec.id }),
     supabase
@@ -160,6 +177,10 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           .eq("record_id", id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    // Other records with the same reference number (never blocks anything).
+    rec.reference_no
+      ? supabase.from("rms_records").select("id, tracking_no").eq("reference_no", rec.reference_no).neq("id", id).is("deleted_at", null).limit(3)
+      : Promise.resolve({ data: [] as { id: string; tracking_no: string }[] }),
   ]);
   const dispatch = dispatchRow as unknown as Dispatch | null;
   const deliveryOpen = Boolean(dispatch && !dispatch.received_by && rec.status === "released");
@@ -227,10 +248,14 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const assignEvents = assignmentEvents(
     [...history].reverse().map((h) => ({ id: h.id, assigned_to: h.assigned_to ?? null, from_office_id: h.from_office?.id ?? null, to_office_id: h.to_office?.id ?? null })),
   );
-  const slow = slowSteps(
-    [...history].reverse().map((h) => ({ id: h.id, status: h.status, assigned_to: h.assigned_to ?? null, from_office_id: h.from_office?.id ?? null, to_office_id: h.to_office?.id ?? null, created_at: h.created_at })),
-    settings.stepMinutes,
-  );
+  const charterSteps = parseSteps(rec.service_steps);
+  const slow = {
+    ...slowSteps(
+      [...history].reverse().map((h) => ({ id: h.id, status: h.status, assigned_to: h.assigned_to ?? null, from_office_id: h.from_office?.id ?? null, to_office_id: h.to_office?.id ?? null, created_at: h.created_at })),
+      charterSteps ? {} : settings.stepMinutes,
+    ),
+    ...charterSlowByRoute(charterSteps),
+  };
   const fmtTook = (n: number) => { const f = fmtMinutes(n); return t(f.key, f.vars); };
   type FileRow = { id: string; file_name: string; version: number; uploaded_at: string; uploader: { full_name: string } | null };
   // Uploaded files appear in the history too, placed just above the step they came after (history is newest first).
@@ -266,6 +291,20 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const facts: [string, React.ReactNode][] = [
     [t("Received or sent out"), t(incoming ? "Received by the City" : "Sent out by the City")],
     [t("Document type"), rec.doc_type?.name],
+    ...(incoming
+      ? [[t("Received at"), rec.intake_window ? t("{office} window", { office: rec.origin_office?.name ?? "" }) : t("Records Section (City General Services Office)")] as [string, React.ReactNode]]
+      : []),
+    ...(rec.reference_no
+      ? [[t(rec.reference_label ?? DEFAULT_REF_LABEL), <span key="ref" className="font-mono">{rec.reference_no}</span>] as [string, React.ReactNode]]
+      : []),
+    ...((sameRef ?? []).length > 0
+      ? [[
+          t("Same reference number"),
+          <span key="same" className="flex flex-wrap gap-x-3">
+            {(sameRef ?? []).map((x) => <Link key={x.id} href={`/records/${x.id}`} className="font-mono">{x.tracking_no}</Link>)}
+          </span>,
+        ] as [string, React.ReactNode]]
+      : []),
     [t("Transaction type"), t(txLabel(rec.transaction_type))],
     [t(incoming ? "From" : "To"), [incoming ? rec.sender_name : rec.recipient_name, incoming ? rec.sender_org : rec.recipient_org].filter(Boolean).join(", ") || "—"],
     ...(rec.barangay !== undefined ? [[t("Barangay"), rec.barangay ?? "—"] as [string, React.ReactNode]] : []),
@@ -486,6 +525,31 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         </section>
 
         <div className="space-y-4 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+          {charterSteps && me.role !== "admin" && (
+            <CharterSteps
+              recordId={rec.id}
+              steps={charterSteps}
+              title={rec.service?.title ?? null}
+              totalText={rec.service?.total_text ?? null}
+              canMark={!deleted && canMarkStep({
+                role: me.role,
+                meId: me.id,
+                meOfficeId: me.office_id,
+                windowFlag: me.window_intake,
+                record: { status: rec.status, current_office_id: rec.current_office_id, assigned_to: rec.assigned_to ?? null, service_steps: charterSteps },
+              })}
+              canUndo={!deleted && canMarkStep({
+                ignoreDone: true,
+                role: me.role,
+                meId: me.id,
+                meOfficeId: me.office_id,
+                windowFlag: me.window_intake,
+                record: { status: rec.status, current_office_id: rec.current_office_id, assigned_to: rec.assigned_to ?? null, service_steps: charterSteps },
+              })}
+              meId={me.id}
+              nowIso={new Date().toISOString()}
+            />
+          )}
           <SummaryBox recordId={rec.id} initial={rec.ai_summary} aiBlocked={rec.confidentiality === "confidential" && settings.aiExcludeConfidential} />
 
           {isCopy && (

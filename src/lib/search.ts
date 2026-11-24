@@ -21,7 +21,7 @@ export function trackingGuesses(q: string | undefined, year = new Date().getFull
 }
 
 async function rpc(supabase: SupabaseClient, f: SearchFilters, limit: number, excludeConfidential: boolean) {
-  const { data, error } = await supabase.rpc("rms_search_records_v3", {
+  const { data, error } = await supabase.rpc("rms_search_records_v4", {
     p_q: f.q || null,
     p_person: f.person || null,
     p_direction: f.direction || null,
@@ -36,6 +36,7 @@ async function rpc(supabase: SupabaseClient, f: SearchFilters, limit: number, ex
     p_exclude_confidential: excludeConfidential,
     p_tx: f.tx || null,
     p_box_code: f.box || null,
+    p_intake: f.at || null,
   });
   if (error) throw new Error(error.message);
   return (data ?? []) as SearchRow[];
@@ -96,6 +97,7 @@ export function filtersFromParams(sp: Record<string, string | string[] | undefin
       const b = normalizeBoxCode(one("box"));
       return isBoxCode(b) ? b : undefined;
     })(),
+    at: (["window", "desk"].includes(one("at") ?? "") ? one("at") : undefined) as SearchFilters["at"],
     priority: (["low", "normal", "urgent"].includes(one("priority") ?? "") ? one("priority") : undefined) as SearchFilters["priority"],
   };
 }
@@ -116,5 +118,6 @@ export function filtersToParams(f: SearchFilters) {
   if (f.priority) p.set("priority", f.priority);
   if (f.tx) p.set("tx", f.tx);
   if (f.box) p.set("box", f.box);
+  if (f.at) p.set("at", f.at);
   return p;
 }

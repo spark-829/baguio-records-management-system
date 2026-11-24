@@ -45,7 +45,10 @@ export async function updateUser(form: FormData) {
   if (id === me.id && (!is_active || role !== "admin")) return; // never lock yourself out
   if (!["admin", "records_officer", "dept_head", "staff", "viewer"].includes(role)) return;
   const supabase = await createClient();
-  await supabase.from("rms_profiles").update({ role, office_id, is_active }).eq("id", id);
+  const patch: { role: string; office_id: string; is_active: boolean; window_intake?: boolean } = { role, office_id, is_active };
+  // The checkbox is only on the form when the office has the Office window feature on.
+  if (form.get("window_shown") === "1") patch.window_intake = form.get("window_intake") === "on";
+  await supabase.from("rms_profiles").update(patch).eq("id", id);
   revalidatePath("/admin/users");
 }
 

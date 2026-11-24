@@ -10,14 +10,17 @@ import { shrinkForAi } from "@/lib/shrink-image";
 import { useUploadPrep } from "@/components/use-upload-prep";
 import { ScanPreview } from "@/components/scan-preview";
 import { ARTA_CLASSES, ARTA_DAYS, ARTA_LABEL, artaDue, isArtaClass, manilaDay } from "@/lib/arta";
+import { feeShort, prefillFromService, type ServiceOpt } from "@/lib/charter";
+import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 import { TX_FORM_LABEL, TX_TYPES } from "@/lib/transaction-type";
 import { COPY_TYPE } from "@/lib/copy-request";
 import { MAX_EML_BYTES, emlToFields, looksLikeEml, parseEml, pickAttachments } from "@/lib/eml";
 import { compressForUpload } from "@/lib/compress-upload";
 import { registerRecord } from "./actions";
+import { ServicePicker } from "./service-picker";
 
 type Opt = { id: string; name: string };
-type OfficeOpt = Opt & { code: string };
+type OfficeOpt = Opt & { code: string; ref_label?: string | null };
 
 type Fields = {
   direction: "incoming" | "outgoing";
@@ -43,11 +46,26 @@ type Fields = {
   in_reply_to: string;
 };
 
-export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canIncoming: boolean; myOfficeId: string | null; barangays?: string[] | null; replyTo?: string | null }) {
+export function RegisterForm(props: {
+  types: Opt[];
+  offices: OfficeOpt[];
+  /** "central": the Records Section; "window": an office's window staff; null: outgoing only */
+  incomingMode: "central" | "window" | null;
+  myOfficeId: string | null;
+  myOfficeName: string;
+  /** Label of the reference number box; null hides the box */
+  refLabel: string | null;
+  services: ServiceOpt[];
+  otherServices: ServiceOpt[];
+  counts: Record<string, number>;
+  barangays?: string[] | null;
+  replyTo?: string | null;
+}) {
   const t = useT();
+  const canIncoming = !!props.incomingMode;
   const [state, action, pending] = useActionState(registerRecord, undefined);
   const [f, setF] = useState<Fields>({
-    direction: props.replyTo ? "outgoing" : props.canIncoming ? "incoming" : "outgoing",
+    direction: props.replyTo ? "outgoing" : canIncoming ? "incoming" : "outgoing",
     subject: "",
     description: "",
     document_type_id: "",
@@ -61,7 +79,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     recipient_name: "",
     recipient_org: "",
     // Offices other than the records desk mostly send memos to other City offices
-    mode: props.canIncoming ? "walk-in" : "internal",
+    mode: canIncoming ? "walk-in" : "internal",
     document_date: "",
     due_date: "",
     forward_to: "",
@@ -70,6 +88,10 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     arta_class: "",
     in_reply_to: props.replyTo ?? "",
   });
+  const [svc, setSvc] = useState<string>("");
+  const [svcError, setSvcError] = useState(false);
+  const [refNo, setRefNo] = useState("");
+  const pickerRef = useRef<HTMLFieldSetElement>(null);
   const [copyKind, setCopyKind] = useState<"owner" | "representative" | "">("");
   const [aiState, setAiState] = useState<"idle" | "reading" | "done" | "error">("idle");
   const [aiMsg, setAiMsg] = useState("");
@@ -164,7 +186,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
 
   function removeEml() {
     if (eml) {
-      const blank = Object.fromEntries(eml.filled.map((k) => [k, k === "mode" ? (props.canIncoming ? "walk-in" : "internal") : ""]));
+      const blank = Object.fromEntries(eml.filled.map((k) => [k, k === "mode" ? (canIncoming ? "walk-in" : "internal") : ""]));
       setF((p) => ({ ...p, ...blank }));
       setAiFilled(new Set());
     }
@@ -228,7 +250,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
       const type = props.types.find((t) => t.name === r.document_type);
       const office = props.offices.find((o) => o.code === r.suggested_office_code);
       const next: Partial<Fields> = {
-        direction: props.canIncoming ? r.direction : "outgoing",
+        direction: canIncoming ? r.direction : "outgoing",
         subject: r.subject ?? "",
         sender_name: r.sender_name ?? "",
         sender_org: r.sender_org ?? "",
@@ -259,11 +281,46 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     }
   }
 
+  const allServices = [...props.services, ...props.otherServices];
+  const showPicker = f.direction === "incoming" && allServices.length > 0;
+  const chosen = showPicker && svc && svc !== "other" ? allServices.find((x) => x.id === svc) ?? null : null;
+  const showKind = !showPicker || svc === "other";
+  const refOffice = props.incomingMode === "central" && f.forward_to ? props.offices.find((o) => o.id === f.forward_to) : null;
+  const refLabel = props.refLabel === null ? null : props.incomingMode === "central" ? (refOffice?.ref_label ?? DEFAULT_REF_LABEL) : props.refLabel;
+
+  // Picking a service fills in the kind of document, transaction type, ARTA class, due date and confidentiality.
+  function pickService(v: string) {
+    setSvc(v);
+    setSvcError(false);
+    const s = v === "other" ? null : allServices.find((x) => x.id === v);
+    if (!s) return;
+    const p = prefillFromService(s, props.types, manilaDay());
+    const next: Partial<Fields> = {
+      document_type_id: p.document_type_id,
+      transaction_type: p.transaction_type,
+      arta_class: p.arta_class === "none" ? "" : p.arta_class,
+      due_date: p.due_date,
+      ...(p.confidentiality ? { confidentiality: p.confidentiality } : {}),
+      ...(props.incomingMode === "central" && s.office_id !== props.myOfficeId ? { forward_to: s.office_id } : {}),
+    };
+    setF((prev) => ({ ...prev, ...next }));
+    setAiFilled(new Set((Object.keys(next) as (keyof Fields)[]).filter((k) => next[k])));
+  }
+
+  function checkService(e: React.FormEvent<HTMLFormElement>) {
+    if (showPicker && svc === "") {
+      e.preventDefault();
+      setSvcError(true);
+      pickerRef.current?.focus();
+      pickerRef.current?.scrollIntoView({ block: "center" });
+    }
+  }
+
   const hl = (k: keyof Fields) => (aiFilled.has(k) ? "bg-brand-50 border-brand-600" : "");
   const incoming = f.direction === "incoming";
 
   return (
-    <form action={action} onReset={clearScan} className="grid gap-4 lg:grid-cols-3">
+    <form action={action} onSubmit={checkService} onReset={() => { clearScan(); setSvc(""); setSvcError(false); setRefNo(""); }} className="grid gap-4 lg:grid-cols-3">
       <section className="card space-y-4 p-5 lg:col-span-1">
         <h2 className="text-lg font-bold">{t("1. Scanned copy (optional)")}</h2>
         <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-800">
@@ -344,21 +401,67 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
         <p className="text-sm text-slate-600 md:col-span-2">{t("Fill in every box unless it says (optional).")}</p>
         <div>
           <label className="label" htmlFor="f-direction">{t("Received or sent out?")}</label>
-          <select id="f-direction" name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => set("direction", e.target.value as Fields["direction"])}>
-            {props.canIncoming && <option value="incoming">{t("Incoming (received by the City)")}</option>}
+          <select id="f-direction" name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => { set("direction", e.target.value as Fields["direction"]); if (e.target.value === "outgoing") { setSvc(""); setSvcError(false); } }}>
+            {canIncoming && <option value="incoming">{t(props.incomingMode === "window" ? "Incoming (handed in at our window)" : "Incoming (received by the City)")}</option>}
             <option value="outgoing">{t("Outgoing (sent by the City or your office)")}</option>
           </select>
-          {!props.canIncoming && (
+          {!canIncoming && (
             <p className="mt-1 text-sm text-slate-600">{t("Letters that arrive from outside are logged by the Records Section. Memos to another City office are logged here as outgoing.")}</p>
           )}
+          {props.incomingMode === "window" && incoming && (
+            <>
+              <p className="mt-1 text-sm text-slate-600">{t("Received at: {office} window", { office: props.myOfficeName })}</p>
+              <p className="mt-1 text-sm text-slate-600">{t("Log only what clients hand in here. Letters addressed to the City or the Mayor go to the Records Section.")}</p>
+            </>
+          )}
         </div>
-        <div>
-          <label className="label" htmlFor="f-document_type_id">{t("Kind of document")}</label>
-          <select id="f-document_type_id" name="document_type_id" required className={`input ${hl("document_type_id")}`} value={f.document_type_id} onChange={(e) => set("document_type_id", e.target.value)}>
-            <option value="">{t("Choose…")}</option>
-            {props.types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
-        </div>
+        {showPicker && (
+          <>
+            <ServicePicker
+              ref={pickerRef}
+              value={svc}
+              onPick={pickService}
+              error={svcError}
+              services={props.services}
+              otherServices={props.otherServices}
+              counts={props.counts}
+              officeName={props.myOfficeName}
+              central={props.incomingMode === "central"}
+              offices={props.offices}
+            />
+            <p role="status" className="text-sm text-slate-700 md:col-span-2">
+              {chosen
+                ? t("Filled in from the Citizen's Charter: {class}, {tx}, due {date}. You can change these below.", {
+                    class: t(ARTA_LABEL[isArtaClass(chosen.classification) ? chosen.classification : "none"]),
+                    tx: chosen.tx_types[0] ?? "",
+                    date: f.due_date || t("not set"),
+                  })
+                : ""}
+            </p>
+          </>
+        )}
+        {refLabel !== null && (
+          <div className="md:col-span-2">
+            <label className="label" htmlFor="f-reference_no">{t("{label} (optional)", { label: t(refLabel) })}</label>
+            <input id="f-reference_no" name="reference_no" maxLength={40} autoComplete="off" spellCheck={false} className="input font-mono md:max-w-sm" aria-describedby="f-reference_no-hint" value={refNo} onChange={(e) => setRefNo(e.target.value)} />
+            <p id="f-reference_no-hint" className="mt-1 text-sm text-slate-600">{t("The number this document has in another system. Leave blank if none.")}</p>
+          </div>
+        )}
+        {chosen && (
+          <>
+            <input type="hidden" name="service_id" value={chosen.id} />
+            <input type="hidden" name="document_type_id" value={f.document_type_id} />
+          </>
+        )}
+        {showKind && (
+          <div>
+            <label className="label" htmlFor="f-document_type_id">{t("Kind of document")}</label>
+            <select id="f-document_type_id" name="document_type_id" required className={`input ${hl("document_type_id")}`} value={f.document_type_id} onChange={(e) => set("document_type_id", e.target.value)}>
+              <option value="">{t("Choose…")}</option>
+              {props.types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        )}
         <fieldset className="md:col-span-2" aria-describedby="f-tx-hint">
           <legend className="label">{t("Transaction type")}</legend>
           <p id="f-tx-hint" className="mb-2 text-sm text-slate-600">{t("Pick Government for letters from or to another government office.")}</p>
@@ -371,7 +474,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
             ))}
           </div>
         </fieldset>
-        {props.canIncoming && props.types.find((x) => x.id === f.document_type_id)?.name === COPY_TYPE && (
+        {props.incomingMode === "central" && props.types.find((x) => x.id === f.document_type_id)?.name === COPY_TYPE && (
           <fieldset className="md:col-span-2 grid gap-3 rounded-md border-2 border-slate-200 p-3 md:grid-cols-2">
             <legend className="label px-1">{t("About the copy")}</legend>
             <div className="md:col-span-2">
@@ -523,6 +626,11 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
             <p className="mt-1 text-sm text-slate-600">{t("Counted {n} working days from today, skipping weekends and holidays. You can change the date.", { n: ARTA_DAYS[f.arta_class as keyof typeof ARTA_DAYS] })}</p>
           )}
         </div>
+        {chosen && (
+          <p className="text-sm text-slate-700 md:col-span-2">
+            {feeShort(chosen) === "No fee" ? t("No fee") : t("Charter fee: {fee}", { fee: chosen.fee_text ?? t(feeShort(chosen)) })}
+          </p>
+        )}
 
         <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-lg border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
           {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{t(state.error)}</p>}

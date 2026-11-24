@@ -1,11 +1,13 @@
 import { apiContext } from "@/lib/api";
+import { isHrmoCss } from "@/lib/office-features";
 import { monthParam, parseSatisfactionReport, satisfactionCsv } from "@/lib/satisfaction";
 
 export async function GET(req: Request) {
   const ctx = await apiContext();
   if ("error" in ctx) return ctx.error;
   const { role } = ctx.me;
-  if (!(role === "admin" || role === "records_officer" || role === "dept_head")) {
+  const hrmo = isHrmoCss({ role, officeCode: ctx.me.office?.code, windowFlag: ctx.me.window_intake });
+  if (!(role === "admin" || role === "records_officer" || role === "dept_head" || hrmo)) {
     return new Response(JSON.stringify({ error: "Not allowed" }), { status: 403, headers: { "content-type": "application/json" } });
   }
   const month = monthParam(new URL(req.url).searchParams.get("month") ?? undefined);
