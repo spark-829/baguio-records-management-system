@@ -51,15 +51,16 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
       </div>
       <h1 className="hidden text-xl font-bold print:block">{t("Retention schedule, printed {date}", { date: fmtDate(new Date().toISOString()) })}</h1>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <section aria-label={t("Summary")} className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3">
         {(Object.keys(STATE) as RetentionState[]).map((k) => (
-          <Link prefetch={false} key={k} href={show === k ? "/reports/retention" : `/reports/retention?show=${k}`} className={`card block border-l-4 p-4 no-underline ${STATE[k].tone} ${show === k ? "ring-2 ring-brand-700" : ""}`}>
-            <div className="font-semibold">{t(STATE[k].label)}</div>
-            <div className="text-3xl font-bold tabular-nums">{counts[k]}</div>
-            <div className="text-sm underline">{t(show === k ? "Show all" : "Show only these")}</div>
+          <Link prefetch={false} key={k} href={show === k ? "/reports/retention" : `/reports/retention?show=${k}`} aria-current={show === k ? "true" : undefined}
+            className={`focus-inset block border-b-[3px] px-4 py-3 no-underline hover:bg-brand-50 sm:px-5 sm:py-4 ${show === k ? "border-brand-700 bg-brand-50" : "border-transparent bg-white"}`}>
+            <span className="text-sm font-semibold text-brand-700 underline underline-offset-4">{t(STATE[k].label)}</span>
+            <span className={`block text-2xl font-semibold tabular-nums ${k === "review_now" && counts[k] > 0 ? "text-red-700" : "text-brand-900"}`}>{counts[k]}</span>
+            <span className="mt-1 block text-sm text-slate-600">{t(show === k ? "Show all" : "Show only these")}</span>
           </Link>
         ))}
-      </div>
+      </section>
 
       {total > rows.length && (
         <p className="text-sm text-slate-600">{t("Showing the first {n} of {total}.", { n: rows.length, total })}</p>

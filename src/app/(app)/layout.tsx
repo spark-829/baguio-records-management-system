@@ -32,6 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ];
   const roleLabel = ROLE_LABEL[me.role];
   const showRole = !me.full_name.includes(roleLabel);
+  const line2 = [showRole ? t(roleLabel) : null, me.office?.name ?? null].filter(Boolean).join(" · ");
   return (
     <div className="flex min-h-screen flex-col">
       <a href="#main" className="sr-only z-50 rounded-lg bg-white px-4 py-3 font-semibold text-brand-800 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
@@ -42,12 +43,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link prefetch={false} href="/" className="flex min-h-11 items-center rounded-lg">
             <BrandLockup />
           </Link>
-          <div className="relative ml-auto flex flex-wrap items-center justify-end gap-2 text-sm sm:gap-3">
+          <div className="relative ml-auto flex min-w-0 flex-wrap items-center justify-end lg:flex-nowrap gap-2 text-sm sm:gap-3">
             <LangToggle dark />
             {me.office_id && <AlertBell officeCode={me.office?.code ?? null} />}
-            <div className="hidden leading-tight sm:block sm:text-right">
-              <div className="font-semibold">{me.full_name}</div>
-              <div className="text-xs text-brand-100">{[showRole ? t(roleLabel) : null, me.office?.name ?? null].filter(Boolean).join(" · ")}</div>
+            <div className="hidden min-w-0 max-w-[12rem] leading-tight sm:block sm:text-right xl:max-w-[18rem]" title={line2 ? `${me.full_name} · ${line2}` : me.full_name}>
+              <div className="truncate font-semibold">{me.full_name}</div>
+              <div className="truncate text-xs text-brand-100">{line2}</div>
             </div>
             <Link prefetch={false} href="/security" className="hidden min-h-11 items-center sm:inline-flex rounded-md border-2 border-white/60 px-3.5 font-semibold hover:bg-white/10">{t("My account")}</Link>
             <form action={signOut}>

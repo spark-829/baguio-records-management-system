@@ -1,7 +1,7 @@
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { PineMark, SiteFooter } from "@/components/brand";
+import { BrandLockup, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
 import { Rich } from "@/components/rich";
 import { fmtDate, fmtDateTime } from "@/lib/labels";
@@ -48,19 +48,14 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b-4 border-gold-500 bg-brand-800 text-white">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3 px-4 py-4">
-          <PineMark className="h-10 w-10 text-gold-100" />
-          <div>
-            <h1 className="text-lg font-bold text-white">{t("Track your document")}</h1>
-            <p className="text-sm text-brand-100">{t("Baguio RMS demo")}</p>
-          </div>
-          <div className="ml-auto">
-            <LangToggle dark />
-          </div>
+      <header className="on-dark border-b-4 border-gold-500 bg-brand-800 text-white">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
+          <BrandLockup />
+          <div className="ml-auto"><LangToggle dark /></div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-8">
+      <main id="main" className="mx-auto w-full max-w-3xl flex-1 space-y-5 px-4 py-6 sm:py-8">
+        <h1 className="text-2xl font-bold">{t("Track your document")}</h1>
         <p className="text-lg">
           <Rich text={t("Type the **tracking number** and the **tracking code** printed on the receipt you got when you filed your document.")} />
         </p>
@@ -77,7 +72,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
         </form>
 
         {result && "error" in result && (
-          <p role="alert" className="rounded-lg border-l-4 border-amber-600 bg-amber-50 p-4 text-amber-950">
+          <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-950">
             {t(result.error === "too_many"
               ? "Too many tries. Please wait 15 minutes, or ask at the Records Section in City Hall."
               : "We could not find a document with that number and code. Check both against your receipt and try again.")}
@@ -88,21 +83,21 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
           <section className="card space-y-4 p-5" aria-live="polite">
             <div>
               <p className="font-mono text-sm text-slate-600">{result.tracking_no}</p>
-              <h2 className="text-2xl font-bold">{result.doc_type}</h2>
+              <h2 className="text-xl font-bold">{result.doc_type}</h2>
               <p className="text-slate-700">{t("Received on {date}", { date: fmtDate(result.received) })}</p>
             </div>
             {result.status === "binned" ? (
               // A valid receipt for a record the office took off the list: send the citizen to a person, not back to retyping (QA-007).
-              <p className="rounded-lg border-l-4 border-amber-600 bg-amber-50 p-4 text-amber-950">
+              <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-950">
                 {t("We found your document, but it can no longer be followed online. Please visit the Records Section at City Hall and bring your receipt.")}
               </p>
             ) : result.status === "restricted" ? (
-              <p className="rounded-lg bg-slate-50 p-4">
+              <p className="rounded-lg border border-line bg-slate-50 px-4 py-3">
                 {t("This document is being processed. Its details are restricted. For questions, please visit the Records Section and bring your receipt.")}
               </p>
             ) : (
               <>
-                <div className="rounded-lg border-l-4 border-brand-700 bg-brand-50 p-4">
+                <div className="rounded-lg border border-brand-200 bg-brand-50 p-4">
                   <p className="text-sm text-slate-700">{t("Status now")}</p>
                   <p className="text-xl font-bold">{t(PLAIN[result.status])}</p>
                   {result.office && !["completed", "released", "archived"].includes(result.status) && (
@@ -118,19 +113,18 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
                     </p>
                   )}
                 </div>
-                <div>
-                  <h2 className="font-semibold">{t("Progress")}</h2>
-                  <ol className="mt-2 space-y-2">
-                    {collapseSteps(result.steps).map((s, i) => (
-                      <li key={i} className="flex flex-wrap gap-x-3 border-b border-slate-100 pb-2">
-                        <span className="w-48 shrink-0 text-slate-600">{fmtDateTime(s.at)}</span>
-                        <span>
-                          {t(PLAIN[s.status])}: {s.office}
-                        </span>
+                <section aria-labelledby="progress-h">
+                  <h2 id="progress-h" className="font-semibold">{t("Progress")}</h2>
+                  <ol className="relative ml-2 mt-3 border-l-2 border-line">
+                    {collapseSteps(result.steps).slice().reverse().map((s, i) => (
+                      <li key={i} className="mb-4 ml-4 last:mb-0" aria-current={i === 0 ? "step" : undefined}>
+                        <span aria-hidden="true" className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-brand-600" />
+                        <p className={i === 0 ? "font-bold text-ink" : "text-slate-800"}>{t(PLAIN[s.status])} · {s.office}</p>
+                        <p className="text-sm text-slate-600"><time dateTime={s.at}>{fmtDateTime(s.at)}</time></p>
                       </li>
                     ))}
                   </ol>
-                </div>
+                </section>
               </>
             )}
           </section>

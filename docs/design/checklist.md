@@ -36,7 +36,7 @@ time. Exit code 1 when anything is found.
 | D-STRUCT-1/2 | One `h1`; heading levels not skipped | Auto | §2, §4 |
 | D-ZOOM-1 | Zoom not blocked | Auto | §2 1.4.4 |
 | D-TITLE-1 | Page `<title>` set | Auto | §4 |
-| D-OBSCURE-1 | Sticky bars and the floating assistant never cover the focused field or the last content | Tab through; scroll to the bottom | §2 2.4.11 |
+| D-OBSCURE-1 | Sticky bars and the assistant panel never cover the focused field or the last content | Tab through; scroll to the bottom | §2 2.4.11 |
 | D-STATUS-1 | Every action shows feedback (pending label, success, error) | Do the action | §1.1 |
 | D-ERROR-1 | Errors in plain words, next to the field, focus moves to them | Submit empty / bad input | §1.9, §3 |
 | D-LANG-1 | Office words, sentence case, no jargon; Filipino fits without overflow | Read both languages | §1.2, §3, §7 |

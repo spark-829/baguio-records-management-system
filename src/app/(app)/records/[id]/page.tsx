@@ -14,6 +14,7 @@ import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/component
 import { ActionForm, AttachForm, DeleteForm } from "./forms";
 import { restoreRecord } from "./actions";
 import { SummaryBox } from "./summary-box";
+import { recordsBackHref } from "@/lib/back-link";
 
 type Rec = {
   id: string;
@@ -61,10 +62,11 @@ type Route = {
   actor: { full_name: string } | null;
 };
 
-export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string }> }) {
+export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string; back?: string }> }) {
   const { t } = await getT();
   const { id } = await params;
-  const { new: isNew, scan, file } = await searchParams;
+  const { new: isNew, scan, file, back } = await searchParams;
+  const backHref = recordsBackHref(back);
   const [me, settings] = await Promise.all([getProfile(), getSettings()]);
   const supabase = await createClient();
   const { data } = await supabase
@@ -192,9 +194,9 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/records" className="inline-flex min-h-11 items-center gap-1 font-semibold text-brand-700 underline underline-offset-4">
+          <Link prefetch={false} href={backHref} className="inline-flex min-h-11 items-center gap-1 font-semibold text-brand-700 underline underline-offset-4">
             <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3 5 8l5 5" /></svg>
-            {t("Back to records")}
+            {t(backHref !== "/records" ? "Back to search results" : "Back to records")}
           </Link>
           <p className="font-mono text-sm text-slate-500">{rec.tracking_no}</p>
           <h1 className="text-2xl font-bold">{rec.subject}</h1>

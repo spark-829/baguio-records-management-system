@@ -28,7 +28,7 @@ export default async function BinPage({ searchParams }: { searchParams: Promise<
           {t("Deleted records are hidden from everyone else but never erased. Restoring puts a record back exactly as it was. Both are logged.")}
         </p>
       </div>
-      {deleted && <p className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{deleted === "1" ? t("Record moved to the bin.") : t("{no} was moved to the bin. You can restore it below.", { no: deleted.slice(0, 20) })}</p>}
+      {deleted && <p role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-emerald-900">{deleted === "1" ? t("Record moved to the bin.") : t("{no} was moved to the bin. You can restore it below.", { no: deleted.slice(0, 20) })}</p>}
       <section className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">

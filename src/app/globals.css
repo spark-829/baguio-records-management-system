@@ -107,6 +107,10 @@ body {
 .on-dark :focus-visible {
   outline-color: var(--color-gold-300);
 }
+/* Tiles inside an overflow-hidden strip: draw the ring inside so it is not clipped */
+.focus-inset:focus-visible {
+  outline-offset: -5px;
+}
 .on-dark .card :focus-visible {
   outline-color: var(--color-brand-700);
 }
