@@ -11,7 +11,11 @@
  *   white on brand-800 #143d29  ............ 12.1:1
  *   brand-100 #dcebdf on brand-800 ......... 9.8:1
  *   brand-700 on white (links) ............. 9.2:1
- *   ink #1a1f1c on page #f5f4ee ............ 15.2:1
+ *   ink #1a1f1c on page #f3f5f2 ............ 15.2:1
+ *   brand-700 on page ...................... 8.4:1
+ *   gold-100 #f8edcf on brand-800 (logo) ... 10.4:1
+ *   gold-500 #c8962e on brand-800 (logo fold) ... 4.5:1
+ *   line #d3d9d4 on page ................... 1.4:1 (decorative only)
  *   slate-500 (remapped) on white/page ..... 7.6:1 / 6.9:1
  *   placeholder #5f6b7a on white ........... 5.4:1
  *   input border #8a948f on white .......... 3.1:1 (non-text, >= 3:1)
@@ -39,7 +43,8 @@
   --color-slate-500: #4a5565;
   --color-slate-600: #3c4655;
 
-  --color-page: #f5f4ee;
+  --color-page: #f3f5f2;
+  --color-line: #d3d9d4; /* card edges, dividers: decorative (1.4:1), never the only signal */
   --color-ink: #1a1f1c;
 
   --font-sans: "Segoe UI", "Noto Sans", Roboto, "Helvetica Neue", Arial, system-ui, sans-serif;
@@ -104,6 +109,11 @@ body {
 }
 .on-dark .card :focus-visible {
   outline-color: var(--color-brand-700);
+}
+
+::selection {
+  background: var(--color-gold-100);
+  color: var(--color-ink);
 }
 
 ::placeholder {
@@ -172,16 +182,17 @@ main table thead {
 }
 main table td {
   padding-block: 0.75rem;
+  font-variant-numeric: tabular-nums;
 }
 main table tbody tr:hover {
   background: #f7faf7;
 }
 
 @utility card {
-  @apply rounded-xl border border-slate-300 bg-white shadow-sm;
+  @apply rounded-lg border border-line bg-white;
 }
 @utility btn {
-  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2 text-base leading-tight font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 text-base leading-tight font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
 }
 @utility btn-primary {
   @apply btn border-2 border-brand-700 bg-brand-700 text-white shadow-sm hover:border-brand-800 hover:bg-brand-800;
@@ -190,7 +201,7 @@ main table tbody tr:hover {
   @apply btn border-2 border-brand-700 bg-white text-brand-800 hover:bg-brand-50;
 }
 @utility input {
-  @apply min-h-11 w-full rounded-lg border-2 border-[#8a948f] bg-white px-3 py-2 text-base text-ink outline-none focus:border-brand-700 focus:ring-4 focus:ring-brand-200;
+  @apply min-h-11 w-full rounded-md border-2 border-[#8a948f] bg-white px-3 py-2 text-base text-ink outline-none focus:border-brand-700 focus:ring-4 focus:ring-brand-200;
 }
 @utility label {
   @apply mb-1.5 block text-sm font-semibold text-slate-800;

@@ -44,7 +44,7 @@ export default function DeveloperPage() {
       <header className="border-b-4 border-gold-500 bg-brand-800 text-white">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-4">
           <Link href="/" className="flex items-center gap-3">
-            <PineMark className="h-10 w-10" />
+            <PineMark className="h-10 w-10 text-gold-100" />
             <span>
               <span className="block text-lg font-bold">Baguio RMS</span>
               <span className="block text-sm text-brand-100">About the developer</span>

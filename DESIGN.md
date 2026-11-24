@@ -17,7 +17,8 @@ colors:
   slate-500: "#4a5565"
   slate-600: "#3c4655"
   input-border: "#8a948f"
-  page: "#f5f4ee"
+  page: "#f3f5f2"
+  line: "#d3d9d4"
   ink: "#1a1f1c"
   surface: "#ffffff"
 typography:
@@ -42,8 +43,8 @@ typography:
   mono:
     fontFamily: "ui-monospace, Cascadia Mono, Segoe UI Mono, Menlo, Consolas, monospace"
 rounded:
-  md: "8px"
-  lg: "12px"
+  md: "6px"
+  lg: "8px"
   pill: "9999px"
 spacing:
   xs: "4px"
@@ -71,6 +72,7 @@ components:
     height: "44px"
   card:
     backgroundColor: "{colors.surface}"
+    borderColor: "{colors.line}"
     rounded: "{rounded.lg}"
   header:
     backgroundColor: "{colors.brand-800}"
@@ -86,7 +88,7 @@ rules and checks are in `docs/design/principles.md` and
 ## Overview
 An Operate-mode tool for City Hall staff, plus a Read-mode public tracking
 page. Calm, civic and plain: deep pine green header with a gold stripe,
-off-white page, white content cards, large type. Ambition shows as
+cool off-white page, white content cards, large type. Ambition shows as
 precision and restraint, not decoration.
 
 ## Colors
@@ -99,6 +101,7 @@ Gold: `gold-500` for the header stripe and highlights only, `gold-800` on
 ### Neutral
 `ink` on `page` for body (15.2:1). Secondary text `slate-500`/`slate-600`
 (remapped darker so they pass AA). No lighter greys for text.
+`line` (#d3d9d4) for card edges and dividers; decorative (1.4:1), never the only signal.
 ### Named Rules
 - Status colours are fixed: red = late or destructive, amber = due soon or
   warning, emerald = done or on track, blue/indigo = in progress. Always
@@ -113,15 +116,14 @@ tracking numbers. Senior-friendly scale: 15 / 17 / 18 (body) / 21 / 24 /
 ## Layout
 Max width 7xl, 16px side gutter on phones. Left-aligned text and forms.
 Header + horizontal nav on desktop, Menu button on phones. Tables scroll in
-their own box on phones. Fixed bottom-left assistant button; keep focus
-clear of it.
+their own box on phones. The assistant button sits at the right end of the nav bar (icon only below `lg`, beside the Menu button on phones). Its panel opens bottom-right on wider screens and full screen on phones; closing returns focus to the button. No floating buttons.
 
 ## Elevation & Depth
-Flat. Cards use a 1px slate-300 border and the smallest shadow. No stacked
+Flat. Cards use a 1px `line` border and no shadow. No stacked
 shadows, no glass.
 
 ## Shapes
-8px radius on controls, 12px on cards, pill only for status badges.
+6px radius on controls, 8px on cards, pill only for status badges.
 
 ## Components
 - Buttons: `btn-primary` (one per area), `btn-secondary`, red text for

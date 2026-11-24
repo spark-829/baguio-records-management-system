@@ -29,7 +29,7 @@ export function NavLinks({ links, phoneOnly = [] }: { links: NavLink[]; phoneOnl
         key={l.href}
         href={l.href}
         aria-current={active ? "page" : undefined}
-        className={`${l.phone ? "md:hidden" : "md:inline-flex"} flex min-h-12 items-center border-l-4 px-3 font-semibold md:border-b-4 md:border-l-0 ${active ? "border-brand-700 bg-brand-50 text-brand-900" : "border-transparent text-slate-700 hover:border-brand-200 hover:bg-brand-50 hover:text-brand-900"}`}
+        className={`${l.phone ? "md:hidden" : "md:inline-flex"} flex min-h-12 items-center border-l-4 px-3 md:border-b-[3px] md:border-l-0 ${active ? "border-brand-700 bg-brand-50 font-bold text-brand-900 md:bg-transparent" : "border-transparent font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-900 md:hover:border-slate-400 md:hover:bg-transparent"}`}
       >
         {l.label}
       </Link>

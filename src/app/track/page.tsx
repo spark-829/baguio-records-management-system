@@ -50,7 +50,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
     <div className="flex min-h-screen flex-col">
       <header className="border-b-4 border-gold-500 bg-brand-800 text-white">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-3 px-4 py-4">
-          <PineMark className="h-10 w-10" />
+          <PineMark className="h-10 w-10 text-gold-100" />
           <div>
             <h1 className="text-lg font-bold text-white">{t("Track your document")}</h1>
             <p className="text-sm text-brand-100">{t("Baguio RMS demo")}</p>

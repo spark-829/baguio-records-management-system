@@ -56,6 +56,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking),
 | `save-attachment.ts` | server: validate, hash, dedupe, upload, insert, clean up (used by register and attach) |
 | `arta.ts` | ARTA classes, PH working-day calendar, `addWorkingDays`, `artaProgress`; authoritative for due dates |
 | `reply-to.ts`, `alerts.ts` | `parseReplyTo`; bell payload `parseAlerts`, `badgeText` |
+| `needs-action.ts` | `sortNeedsAction` (dashboard "Waiting in my office" order: late, due soon, forwarded, urgent, newest) |
 | `due.ts`, `retention.ts`, `safe-next.ts` | due dates, retention rules, safe redirects |
 | `reports.ts`, `fetch-pages.ts` | report date bounds, bar merging, RPC result parsers, `onTimeSummary`; `fetchPages` (pages past the 1000-row PostgREST cap) |
 | `list-size.ts`, `map-tally.ts` | `listSize` (the `?n=` list size, steps of the default, capped); `tallyBarangays` (per-barangay counts for the map) |
