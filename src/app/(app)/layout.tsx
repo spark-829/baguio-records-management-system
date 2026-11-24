@@ -28,6 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         { href: "/", label: t("Dashboard") },
         { href: "/records", label: t("Records") },
         ...(me.role !== "viewer" ? [{ href: "/records/new", label: t("Register") }] : []),
+        ...(me.role === "records_officer" ? [{ href: "/boxes", label: t("Boxes") }] : []),
         { href: "/map", label: t("Map") },
         { href: "/assistant", label: t("Assistant") },
         { href: "/help", label: t("Help") },

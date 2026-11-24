@@ -12,6 +12,10 @@ import { newestFirst } from "@/lib/history";
 import { ARTA_LABEL, artaProgress, artaText, isArtaClass, manilaDay } from "@/lib/arta";
 import type { Direction, Status, Priority, Confidentiality } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
+import { BoxMoveForm } from "./paper-forms";
+import { SendingCard, type Dispatch } from "./sending-card";
+import { boxWhere } from "@/lib/boxes";
+import { canRecordDelivery } from "@/lib/dispatch";
 import { ActionForm, AssignForm, AttachForm, CopyDecisionForm, CopyReleaseForm, DeleteForm } from "./forms";
 import { COPY_TYPE, canDecide, canRelease, dpoTag, type DpoStatus, type DpoTone } from "@/lib/copy-request";
 import { assignableStaff, assignmentEvents, canAssign } from "@/lib/assign";
@@ -74,6 +78,8 @@ type Rec = {
   current_office: { code: string; name: string } | null;
   origin_office: { code: string; name: string } | null;
   creator: { full_name: string } | null;
+  box_id?: string | null;
+  box?: { id: string; code: string; room: string; shelf: string | null } | null;
 };
 
 type Route = {
@@ -88,17 +94,17 @@ type Route = {
   actor: { full_name: string } | null;
 };
 
-export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string; back?: string; copy?: string }> }) {
+export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string; back?: string; copy?: string; delivered?: string }> }) {
   const { t } = await getT();
   const { id } = await params;
-  const { new: isNew, scan, file, back, copy: copyFlag } = await searchParams;
+  const { new: isNew, scan, file, back, copy: copyFlag, delivered } = await searchParams;
   const backHref = recordsBackHref(back);
   const [me, settings] = await Promise.all([getProfile(), getSettings()]);
   const supabase = await createClient();
   const { data } = await supabase
     .from("rms_records")
     .select(
-      "*, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name), origin_office:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), deleter:rms_profiles!rms_records_deleted_by_fkey(full_name), assignee:rms_profiles!rms_records_assigned_to_fkey(full_name)",
+      "*, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name), origin_office:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), deleter:rms_profiles!rms_records_deleted_by_fkey(full_name), assignee:rms_profiles!rms_records_assigned_to_fkey(full_name), box:rms_boxes!rms_records_box_id_fkey(id, code, room, shelf)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -113,7 +119,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     status: rec.status,
     deleted,
   });
-  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }, { data: parent }, { data: replyRows }, { data: staffRows }, { data: copyRow }] = await Promise.all([
+  const [, { data: routes }, { data: files }, { data: offices }, { data: binRows }, { data: parent }, { data: replyRows }, { data: staffRows }, { data: copyRow }, { data: boxRows }, { data: dispatchRow }] = await Promise.all([
     // Access history: every opened record is logged with who, when and from which IP (in parallel with the reads below).
     supabase.rpc("rms_log_access", { p_event: "view_record", p_record_id: rec.id }),
     supabase
@@ -142,7 +148,32 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           .eq("record_id", id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    // Box codes for the box field's suggestions (records desk only).
+    me.role === "records_officer"
+      ? supabase.from("rms_boxes").select("code, room, shelf").order("code").limit(1000)
+      : Promise.resolve({ data: [] as { code: string; room: string; shelf: string | null }[] }),
+    // How an outgoing record was sent (admins cannot read it).
+    rec.direction === "outgoing" && me.role !== "admin"
+      ? supabase
+          .from("rms_dispatches")
+          .select("method, courier, tracking_no, sent_on, received_by, received_on, delivery_note, sender:rms_profiles!rms_dispatches_sent_by_fkey(full_name)")
+          .eq("record_id", id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
+  const dispatch = dispatchRow as unknown as Dispatch | null;
+  const deliveryOpen = Boolean(dispatch && !dispatch.received_by && rec.status === "released");
+  const canDeliver =
+    Boolean(dispatch) &&
+    canRecordDelivery({
+      role: me.role,
+      userOfficeId: me.office_id,
+      originOfficeId: rec.origin_office_id,
+      currentOfficeId: rec.current_office_id,
+      status: rec.status,
+      deleted,
+      received: Boolean(dispatch?.received_by),
+    });
   const copyReq = copyRow as unknown as CopyRow | null;
   const isCopy = rec.doc_type?.name === COPY_TYPE;
   const mayDecide = !deleted && !!copyReq && canDecide({
@@ -247,10 +278,28 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     [t("Started by office"), officeName(rec.origin_office)],
     [t("Logged in"), t("{date} by {name}", { date: fmtDateTime(rec.created_at), name: rec.creator?.full_name ?? "—" })],
     [t("Due date"), rec.due_date ? `${fmtDate(rec.due_date)}${due ? ` (${due})` : ""}` : "—"],
+    ...(me.role !== "admin"
+      ? [[
+          t("Paper copy"),
+          rec.box ? (
+            <>
+              {boxWhere(rec.box.room, rec.box.shelf)}, {t("Box")}{" "}
+              <Link href={`/boxes/${rec.box.id}`} className="whitespace-nowrap font-mono">{rec.box.code}</Link>
+            </>
+          ) : (
+            <span className="text-slate-600">{t("Not filed in a box yet")}</span>
+          ),
+        ] as [string, React.ReactNode]]
+      : []),
   ];
 
   return (
     <div className="space-y-4">
+      {me.role === "records_officer" && (
+        <datalist id="box-codes">
+          {(boxRows ?? []).map((b) => <option key={b.code} value={b.code}>{`${b.code} · ${boxWhere(b.room, b.shelf)}`}</option>)}
+        </datalist>
+      )}
       {deleted && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
           <span>
@@ -419,6 +468,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               actions={actions}
               offices={(offices ?? []).filter((o) => o.id !== rec.current_office_id)}
               returnTo={arrival?.from_office ?? null}
+              extras={{ today: manilaDay(), boxField: me.role === "records_officer", currentBox: rec.box?.code ?? null, deliveryOpen }}
             />
           ) : (
             <p className="text-sm text-slate-500">
@@ -506,7 +556,17 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                 <p className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-3 text-xs">{rec.content_text}</p>
               </details>
             )}
+            {me.role === "records_officer" && !deleted && (
+              <details className="mt-3 rounded border border-line p-2 text-sm">
+                <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-700">{t(rec.box ? "Move to another box" : "Put in a box")}</summary>
+                <BoxMoveForm recordId={rec.id} trackingNo={rec.tracking_no} currentBox={rec.box?.code ?? null} />
+              </details>
+            )}
           </section>
+
+          {dispatch && (
+            <SendingCard recordId={rec.id} trackingNo={rec.tracking_no} dispatch={dispatch} canDeliver={canDeliver} justDelivered={delivered === "1"} today={manilaDay()} />
+          )}
 
           <section className="card p-4">
             <h2 className="mb-3 font-semibold">{t("History, actions and remarks")}</h2>
@@ -573,7 +633,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           </section>
         </div>
 
-        <section className="card p-4 lg:col-start-3 lg:row-start-2">
+        <section id="attachments" className="card p-4 lg:col-start-3 lg:row-start-2">
           <h2 className="mb-2 font-semibold">{t("Attachments")}</h2>
           <ul className="mb-3 space-y-2 text-sm">
             {(files ?? []).map((f) => (

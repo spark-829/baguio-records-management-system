@@ -23,6 +23,8 @@ MFA-pending users. All queries use `createClient()` from
 | `/r/[tracking]` | QR scan landing, `receive-form.tsx` (receive by QR) |
 | `/assistant` | `assistant/chat.tsx` (records chat) |
 | `/reports`, `/reports/offices`, `/reports/retention`, `/reports/satisfaction`, `/reports/step-times` (records desk) | reports, CSV via `api/reports/csv` |
+| `/boxes`, `/boxes/new`, `/boxes/[id]`, `/boxes/[id]/edit`, `/boxes/[id]/label` (records desk; box page readable by staff) | storage boxes: `boxes/{page,box-form,actions}`, A6 label with QR; `records/[id]/paper-forms.tsx` (put in a box, record delivery), `sending-card.tsx` |
+| `/reports/released` | released documents logbook (records desk, office heads), CSV via `api/reports/csv?report=released` |
 | `/map` | barangay map (`components/barangay-map.tsx`, `lib/baguio-map.ts`) |
 | `/admin/users`, `access`, `audit`, `bin`, `settings` | admin screens; `actions.ts` beside each (`users?locked=1` filters locked accounts) |
 | `/admin/analytics` | admin flow analytics: `admin/analytics/page.tsx`, `charts.tsx` (server-only marks); one RPC `rms_admin_flow_analytics` |
@@ -46,7 +48,8 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `workflow.ts` | actions, `allowedActions`, `nextStatus`, `isOverdue`, `isAlreadyReceived`, `canAttach` (mirror of `rms_can_attach`; admins get no record actions) |
 | `security-hub.ts`, `flow-analytics.ts` | pure: admin Security overview parser, attention items, finding text; System analytics parser, ranking, quintiles, ticks, text helpers |
 | `history.ts`, `audit-text.ts` | `newestFirst`, `collapseSteps` (history order, citizen progress); `routeText` (audit routing rows) |
-| `search.ts` | record search filters → `rms_search_records_v2` |
+| `search.ts` | record search filters → `rms_search_records_v3` (adds the box code) |
+| `boxes.ts`, `dispatch.ts` | pure: box codes, box form checks, history text; send methods, release and delivery form checks, `canRecordDelivery` (mirror of `rms_record_delivery`), logbook parser and CSV rows |
 | `transaction-type.ts` | G2C/G2G/G2B codes, labels, `isTxType`, `txLabel` (test `tests/transaction-type.test.ts`) |
 | `ai-gate.ts` | `runAi` (reserve budget, cache, demo fallback) |
 | `ai.ts`, `deepseek.ts`, `ai-schemas.ts`, `ai-demo.ts` (430 lines), `ai-budget.ts` | AI prompts, client, zod schemas, demo output, cost math |
@@ -80,7 +83,7 @@ scan-qr-button, rich, due-calendar, barangay-map, use-upload-prep (compress + th
 
 Tables: rms_profiles, rms_offices, rms_document_types, rms_records,
 rms_routes, rms_attachments, rms_audit_log, rms_access_log, rms_settings,
-rms_satisfaction, rms_copy_requests, rms_counters, rms_barangays, rms_track_attempts, rms_ai_usage, rms_ai_cache,
+rms_satisfaction, rms_copy_requests, rms_boxes, rms_dispatches, rms_counters, rms_barangays, rms_track_attempts, rms_ai_usage, rms_ai_cache,
 rms_private_config, rms_audit_known_forks, rms_seed_records (seed tag,
 server-only).
 
@@ -101,14 +104,15 @@ Functions are redefined in later migrations. **Latest definition** lives in:
 | `20261123000400_rms_rls_speed` | `rms_my_routed_records`; latest `rms_records_select` and `rms_routes_select` policies (set-based, same visibility as `rms_can_view`) |
 | `20261123000500_rms_report_totals` | `rms_report_summary` (moved on to 20261124000400), `rms_report_offices`, `rms_report_retention`, `rms_dashboard_totals` (security invoker, totals only; used by Reports and the dashboard cards) |
 | `20261123000600_rms_attachment_compression` | attachment `sha256`, `original_sha256`, `original_size_bytes`, `thumb_path`; `rms_attachments_guard_insert` (moved on to 20261124000300), `rms_storage_is_orphan`, `rms_storage_delete_orphan` policy |
-| `20261124000100_rms_arta_replies_alerts` | `rms_records.arta_class`, `rms_records.in_reply_to`; `rms_records_guard_insert` (moved on to 20261124000300, then 20261124000500), `rms_records_guard_update` (moved on to 20261124000500); `rms_my_alerts` (bell); `rms_report_on_time` |
+| `20261124000100_rms_arta_replies_alerts` | `rms_records.arta_class`, `rms_records.in_reply_to`; `rms_records_guard_insert` (moved on to 20261124000300, then 20261124000500), `rms_records_guard_update` (moved on to 20261125000100); `rms_my_alerts` (bell); `rms_report_on_time` |
 | `20261124000200_rms_audit_check_fast` | `rms_audit_checkpoint` table, `rms_audit_row_ok`, `rms_verify_audit_chain` (latest; incremental checkpoint + rotating scrub), `rms_audit_check_info` |
 | `20261124000300_rms_admin_hub` | `rms_records_guard_insert` (moved on to 20261124000500), `rms_routes_guard_insert` (moved on to 20261124000500), `rms_attachments_guard_insert`, `rms_can_attach` (latest; admin cannot register, route or attach), `rms_after_hours`, `rms_admin_security_summary`, `rms_admin_flow_analytics` |
-| `20261124000400_rms_charter_offices` | `rms_search_records_v2` (latest; `rms_search_records` kept for the previous app version), `rms_report_summary` (latest, adds `by_tx`), `rms_records.transaction_type`, the 22 charter offices upserted by code, demo Records Officer moved to CGSO |
-| `20261124000500_rms_assignee` | `rms_records.assigned_to`/`assigned_at` (FK to profiles), `rms_routes.assigned_to` (no FK on purpose); latest `rms_records_guard_insert` (clears the assignee on insert), latest `rms_routes_guard_insert` (assign step: head of holding office or records desk only), `rms_routes_apply` (sets or clears the assignee), `rms_records_guard_update` |
+| `20261124000400_rms_charter_offices` | `rms_search_records_v2` (kept for the previous app; v3 in 20261125000100; `rms_search_records` kept too), `rms_report_summary` (latest, adds `by_tx`), `rms_records.transaction_type`, the 22 charter offices upserted by code, demo Records Officer moved to CGSO |
+| `20261124000500_rms_assignee` | `rms_records.assigned_to`/`assigned_at` (FK to profiles), `rms_routes.assigned_to` (no FK on purpose); latest `rms_records_guard_insert` (clears the assignee on insert), latest `rms_routes_guard_insert` (assign step: head of holding office or records desk only), `rms_routes_apply` (sets or clears the assignee), `rms_records_guard_update` (moved on to 20261125000100) |
 | `20261124000600_rms_satisfaction` | `rms_satisfaction` (no anon access), `rms_track_attempts.kind`, `rms_survey_check`, `rms_survey_submit` (anon RPCs, rate limited), `rms_report_satisfaction`, document type Complaint |
 | `20261124000700_rms_copy_requests` | `rms_copy_requests` (insert: records desk only; no update policy), `rms_copy_requests_guard_insert` (DPO need from the source record), `rms_copy_decide` (CLO head only), `rms_copy_release`, document type Request for copy |
-| `20261124000800_rms_step_times` | settings key `step_minutes`, `rms_set_step_minutes` (records officer only), `rms_settings_guard_step_minutes` (trigger: nobody else writes the key) |
+| `20261124000800_rms_step_times` | settings key `step_minutes`, `rms_set_step_minutes` (moved on to 20261125000100; records officer only), `rms_settings_guard_step_minutes` (trigger: nobody else writes the key) |
+| `20261125000100_rms_boxes_dispatch` | `rms_boxes` (records desk writes, staff read, admin none), `rms_boxes_guard`, `rms_records.box_id`, `rms_set_record_box` (any status, logged in history), `rms_box_list`, `rms_search_records_v3`, `rms_dispatches` (written only by RPCs), `rms_release_record`, `rms_record_delivery`, `rms_report_released`; latest `rms_records_guard_update` (box_id, QA-049 admin edits only confidentiality) and `rms_set_step_minutes` (QA-050) |
 
 Seeds: `seed.sql` (offices, types, demo users), `seed_more.sql`,
 `seed_batch3.sql` (generated by `tools/gen_*.py`; large, grep only).

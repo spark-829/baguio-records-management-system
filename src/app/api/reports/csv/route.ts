@@ -1,12 +1,27 @@
 import { csvDocument } from "@/lib/csv";
 import { apiContext } from "@/lib/api";
 import { filtersFromParams, searchRecords } from "@/lib/search";
+import { isDay, logbookCsvRows, parseLogbook } from "@/lib/dispatch";
+import { manilaDay } from "@/lib/arta";
 import { PRIORITY_LABEL, STATUS_LABEL, partyLabel } from "@/lib/labels";
 
 export async function GET(req: Request) {
   const ctx = await apiContext();
   if ("error" in ctx) return ctx.error;
   const sp = Object.fromEntries(new URL(req.url).searchParams);
+  if (sp.report === "released") {
+    const logDay = isDay(sp.day ?? "") ? sp.day : manilaDay();
+    const { data, error } = await ctx.supabase.rpc("rms_report_released", { p_day: logDay });
+    if (error) return new Response("Not allowed", { status: 403 });
+    const { header: logHeader, lines: logLines } = logbookCsvRows(parseLogbook(data));
+    await ctx.supabase.rpc("rms_log_event", { p_table: "export_csv", p_row_id: "released", p_data: { day: logDay, rows: logLines.length } });
+    return new Response(csvDocument(logHeader, logLines), {
+      headers: {
+        "content-type": "text/csv; charset=utf-8",
+        "content-disposition": `attachment; filename="rms-released-${logDay}.csv"`,
+      },
+    });
+  }
   const [rows, { data: offices }] = await Promise.all([
     searchRecords(ctx.supabase, filtersFromParams(sp), 200),
     ctx.supabase.from("rms_offices").select("code, name"),

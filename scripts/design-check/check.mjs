@@ -31,7 +31,7 @@ const OUT = arg("out");
 const ONLY = arg("only")?.split(",");
 
 const PUBLIC = ["/login", "/track", "/developer"];
-const SIGNED_IN = ["/", "/records", "/records/new", "/reports", "/map", "/assistant", "/help", "@record", "/admin/analytics"];
+const SIGNED_IN = ["/", "/records", "/records/new", "/reports", "/map", "/assistant", "/help", "@record", "/admin/analytics", "/boxes", "/reports/released"];
 const VIEWPORTS = [
   { name: "phone", width: 375, height: 812 },
   { name: "desktop", width: 1280, height: 800 },

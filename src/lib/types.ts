@@ -76,4 +76,6 @@ export interface SearchFilters {
   open?: boolean;
   priority?: Priority;
   tx?: TxType;
+  /** Box code (rms_boxes.code) */
+  box?: string;
 }

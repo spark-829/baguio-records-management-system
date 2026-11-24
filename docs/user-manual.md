@@ -52,6 +52,16 @@ Press **Add a note or send to another office** on the right. The list shows only
 
 Press **Save**. The system asks you to confirm before anything is saved. Every action appears in **History, actions and remarks** with your name and the time.
 
+## Storage boxes (records desk)
+- **Boxes** (top menu) lists every storage box with its room, shelf, years and number of records. **Add a box** suggests the next code, such as CGSO-2026-012. Write the same code on the box.
+- On a box page, **Print label** gives an A6 label with the code, where the box is, what is inside and a QR code that opens the box page (staff sign-in needed). **Change details** edits the box.
+- To file a paper copy, open the record and press **Put in a box** (or **Move to another box**) under Details, type the code on the label and confirm. Archived records can be moved too. Every move is saved in the record's history. **File away (archive)** has an optional box field too.
+- On **Records**, the **Box code** filter lists the records in one box. Do not type personal details in a box's contents or notes: every signed-in staff member can read them.
+
+## Sending out and delivery
+- For a record the City sends out, **Mark as sent out** asks how it was sent (registered mail, courier, hand delivery, email or other) and the date sent. Registered mail and courier also need the tracking number from the receipt. The record then shows a **Sending** card.
+- When the document arrives, the records desk or the sending office presses **Record delivery** on the **Sending** card and types who received it and the date. Then attach the signed receiving copy under **Attachments**. Delivery cannot be added after the record is filed away.
+
 ## Finding records
 - **Records** page: type a word or a tracking number and press **Search**. **More ways to narrow the list** opens the other filters (person, status, office, dates, late only). **Download list (Excel)** saves the results.
 - Under the search box, the buttons **All**, **Citizen (G2C)**, **Government (G2G)** and **Business (G2B)** show one transaction type at a time and keep the other filters.
@@ -63,6 +73,7 @@ Choose a date range to see counts by status, office, type, transaction type (old
 
 - **Office workload**: for each office, how many documents are not yet received, being worked on and late, the longest time one has stayed there, and the average time to finish in the last 90 days. Offices with late documents come first.
 - **Standard time per step** (records desk only): the minutes the Citizen's Charter allows for registering, sending, receiving, assigning and starting work. In a record's history, a step that took longer (counted in office hours only) shows an amber **Slow** badge. **Use the Citizen's Charter times** restores 9, 5, 5, 5 and 5 minutes.
+- **Released documents logbook** (records desk and office heads): the outgoing documents sent out on one day, with how they were sent, the courier tracking number and who received them. **Print logbook** adds a Signature column for the messenger; **Download CSV** opens in Excel. Office heads see their own office only.
 - **Retention schedule** (records desk and admin): every finished record with its keep-until date, based on its kind of document and counted from the day it was finished. Records within 90 days of that date, or past it, are flagged for review. Nothing is deleted from this page.
 
 ## Administration
