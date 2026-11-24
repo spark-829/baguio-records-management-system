@@ -23,7 +23,7 @@ function CloseIcon() {
   );
 }
 
-/** Assistant button at the right end of the nav bar (icon only below lg) with a chat panel: bottom-right on wider screens, full screen on phones. Hidden on the full assistant page and the register form. */
+/** Assistant button at the right end of the nav bar (icon only below 2xl) with a chat panel: bottom-right on wider screens, full screen on phones. Hidden on the full assistant page and the register form. */
 export function AssistantLauncher() {
   const t = useT();
   const pathname = usePathname();
@@ -66,15 +66,41 @@ export function AssistantLauncher() {
   useEffect(() => {
     if (!shown) return;
     const id = requestAnimationFrame(() => document.getElementById("ask-popup")?.focus());
+    // Full screen on phones = modal (focus stays inside, APG dialog pattern);
+    // on wider screens it is a side panel the page stays usable beside.
+    const mq = window.matchMedia("(max-width: 639px)");
+    function sync() {
+      if (mq.matches) panel.current?.setAttribute("aria-modal", "true");
+      else panel.current?.removeAttribute("aria-modal");
+    }
+    sync();
+    mq.addEventListener("change", sync);
     function onKey(e: KeyboardEvent) {
-      if (e.key !== "Escape" || e.defaultPrevented) return;
-      const active = document.activeElement;
-      if (panel.current?.contains(active) || active === launcher.current) closeAndReturnFocus();
+      if (e.defaultPrevented) return;
+      if (e.key === "Escape") {
+        // Phone: modal, so Esc always closes. Wider: only when focus is in the panel, on its button, or nowhere.
+        const a = document.activeElement;
+        if (mq.matches || !a || a === document.body || panel.current?.contains(a) || a === launcher.current) closeAndReturnFocus();
+        return;
+      }
+      if (e.key !== "Tab" || !mq.matches || !panel.current) return;
+      const items = [...panel.current.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex='-1'])")].filter((el) => el.offsetParent !== null);
+      if (!items.length) return;
+      const first = items[0], last = items[items.length - 1];
+      const inside = panel.current.contains(document.activeElement);
+      if (e.shiftKey && (document.activeElement === first || !inside)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (document.activeElement === last || !inside)) {
+        e.preventDefault();
+        first.focus();
+      }
     }
     document.addEventListener("keydown", onKey);
     return () => {
       cancelAnimationFrame(id);
       document.removeEventListener("keydown", onKey);
+      mq.removeEventListener("change", sync);
     };
   }, [shown]);
 
@@ -112,10 +138,10 @@ export function AssistantLauncher() {
           onClick={toggle}
           aria-expanded={open}
           aria-controls="assistant-panel"
-          className={`no-print my-1 min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border-2 border-brand-700 bg-white px-2.5 text-base font-semibold text-brand-800 hover:bg-brand-50 lg:px-3.5 ${open ? "hidden sm:inline-flex" : "inline-flex"}`}
+          className={`no-print my-1 min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border-2 border-brand-700 bg-white px-2.5 text-base font-semibold text-brand-800 hover:bg-brand-50 2xl:px-3.5 ${open ? "hidden sm:inline-flex" : "inline-flex"}`}
         >
           {open ? <CloseIcon /> : <ChatIcon />}
-          <span className="sr-only lg:not-sr-only">{open ? t("Close assistant") : t("Ask the assistant")}</span>
+          <span className="sr-only 2xl:not-sr-only">{open ? t("Close assistant") : t("Ask the assistant")}</span>
         </button>
       )}
     </>

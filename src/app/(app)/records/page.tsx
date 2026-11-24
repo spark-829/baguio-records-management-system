@@ -9,7 +9,7 @@ import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
 import { ScanQrButton } from "@/components/scan-qr-button";
-import { AiSearchBox } from "./ai-search-box";
+import { AiSearchButton } from "./ai-search-box";
 
 export default async function RecordsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getT();
@@ -29,6 +29,8 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   const exportHref = `/api/reports/csv?${filtersToParams(f).toString()}`;
   const aiNote = typeof sp.ai === "string" ? sp.ai : undefined;
   const officeNames = new Map((offices.data ?? []).map((o) => [o.code, o.name]));
+  const narrowed = Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here);
+  const active = Boolean(f.q || aiNote || narrowed);
 
   return (
     <div className="space-y-4">
@@ -47,32 +49,35 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </div>
         <div className="flex flex-wrap gap-2">
           <ScanQrButton />
-          <a href={exportHref} className="btn-secondary" title={t("Opens in Excel")}>{t("Download list (CSV, opens in Excel)")}</a>
+          <a href={exportHref} className="btn-secondary">{t("Download for Excel (CSV)")}</a>
           {me.role !== "viewer" && <Link prefetch={false} href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
         </div>
       </div>
 
       {typeof sp.deleted === "string" && (
-        <p role="status" className="rounded-lg border border-l-4 border-emerald-300 border-l-emerald-700 bg-emerald-50 px-4 py-3 text-emerald-900">
+        <p role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-emerald-900">
           {sp.deleted === "1"
             ? t("Record moved to the bin. An administrator can restore it.")
             : t("{no} was moved to the bin. An administrator can restore it.", { no: sp.deleted.slice(0, 20) })}
         </p>
       )}
 
-      <AiSearchBox />
-      {aiNote && <p className="rounded-lg border border-l-4 border-brand-200 border-l-brand-700 bg-brand-50 px-4 py-3 text-sm text-brand-900">{t("Assistant applied:")} {aiNote}</p>}
+      {aiNote && <p className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900">{t("Assistant applied:")} {aiNote}</p>}
 
-      <form className="card grid gap-4 p-5 md:grid-cols-4" method="get">
-        <div className="md:col-span-3">
-          <label className="label" htmlFor="q">{t("Search by word or tracking number")}</label>
-          <input className="input" id="q" name="q" defaultValue={f.q} placeholder={t("e.g. drainage, IN-2026-0001")} />
+      <form className="card space-y-4 p-5" method="get">
+        <div>
+          <label className="label" htmlFor="q">{t("Search records")}</label>
+          <p id="q-hint" className="mb-2 text-sm text-slate-600">{t("Words, a name or a tracking number. You can also type a sentence and press Ask the assistant to find it.")}</p>
+          <input className="input" id="q" name="q" defaultValue={f.q} aria-describedby="q-hint" />
         </div>
-        <div className="flex items-end gap-2">
-          <button className="btn-primary flex-1">{t("Search")}</button>
-          <Link prefetch={false} href="/records" className="btn-secondary">{t("Clear")}</Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <button className="btn-primary">{t("Search")}</button>
+          <AiSearchButton inputId="q" />
+          {active && (
+            <Link prefetch={false} href="/records" className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-4">{t("Clear search")}</Link>
+          )}
         </div>
-        <details className="md:col-span-4" open={Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here)}>
+        <details open={narrowed}>
           <summary className="cursor-pointer py-1 font-medium text-brand-700">{t("More ways to narrow the list")}</summary>
           <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div>
@@ -138,10 +143,6 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </details>
       </form>
 
-      <p className="text-sm text-slate-600">
-        {t("For privacy, people's names are shortened in this list (for example “J*** dela C***”). Open a record to see the full name.")}
-      </p>
-
       {/* Phones: one card per record, the whole card is a link */}
       <ul className="space-y-3 lg:hidden">
         {rows.map((r) => (
@@ -168,42 +169,43 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
             <tr>
-              <th className="px-4 py-2">{t("Tracking no.")}</th>
+              <th className="w-40 px-4 py-2">{t("Tracking no.")}</th>
               <th className="px-4 py-2">{t("Subject")}</th>
-              <th className="hidden px-4 py-2 lg:table-cell">{t("Type")}</th>
+              <th className="hidden px-4 py-2 xl:table-cell">{t("Type")}</th>
               <th className="px-4 py-2">{t("From / To")}</th>
-              <th className="px-4 py-2">{t("Status")}</th>
-              <th className="px-4 py-2">{t("Office")}</th>
+              <th className="px-4 py-2">{t("Status, now with")}</th>
               <th className="px-4 py-2">{t("Logged on")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rows.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
-                <td className="whitespace-nowrap px-4 py-2 font-mono text-sm">
+                <td className="w-40 whitespace-nowrap px-4 py-2 font-mono text-sm">
                   <Link prefetch={false} href={`/records/${r.id}`} className="inline-flex min-h-11 items-center text-brand-700 hover:underline">{r.tracking_no}</Link>
                 </td>
-                <td className="px-4 py-2">
-                  <Link prefetch={false} href={`/records/${r.id}`} className="font-medium hover:underline">{r.subject}</Link>
+                <td className="min-w-[18rem] px-4 py-2">
+                  <Link prefetch={false} href={`/records/${r.id}`} className="inline-block py-0.5 font-semibold text-ink hover:underline">{r.subject}</Link>
                   <div className="mt-1 flex flex-wrap gap-1">
                     <PriorityBadge priority={r.priority} />
                     <ConfBadge level={r.confidentiality} />
                     {isOverdue(r.due_date, r.status) && <OverdueBadge />}
                   </div>
                 </td>
-                <td className="hidden px-4 py-2 text-slate-600 lg:table-cell">{r.document_type}</td>
+                <td className="hidden px-4 py-2 text-slate-600 xl:table-cell">{r.document_type}</td>
                 <td className="px-4 py-2 text-slate-600">{r.direction === "incoming" ? partyLabel(r.sender_name, r.sender_org) : partyLabel(r.recipient_name, r.recipient_org)}</td>
-                <td className="px-4 py-2"><StatusBadge status={r.status} /></td>
-                <td className="px-4 py-2 text-slate-600">{officeNames.get(r.current_office) ?? r.current_office}</td>
+                <td className="px-4 py-2"><StatusBadge status={r.status} /><div className="mt-1 text-sm text-slate-600">{officeNames.get(r.current_office) ?? r.current_office}</div></td>
                 <td className="whitespace-nowrap px-4 py-2 text-slate-600">{fmtDate(r.created_at)}</td>
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-slate-500">{t("No records match. Try fewer filters.")}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">{t("No records match. Try fewer filters.")}</td></tr>
             )}
           </tbody>
         </table>
       </div>
+      <p className="text-sm text-slate-600">
+        {t("For privacy, people's names are shortened in this list (for example “J*** dela C***”). Open a record to see the full name.")}
+      </p>
       {page.more && n < 500 && (() => {
         const p = filtersToParams(f);
         p.set("n", String(n + 50));

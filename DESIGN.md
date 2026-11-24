@@ -116,7 +116,7 @@ tracking numbers. Senior-friendly scale: 15 / 17 / 18 (body) / 21 / 24 /
 ## Layout
 Max width 7xl, 16px side gutter on phones. Left-aligned text and forms.
 Header + horizontal nav on desktop, Menu button on phones. Tables scroll in
-their own box on phones. The assistant button sits at the right end of the nav bar (icon only below `lg`, beside the Menu button on phones). Its panel opens bottom-right on wider screens and full screen on phones; closing returns focus to the button. No floating buttons.
+their own box on phones. The assistant button sits at the right end of the nav bar (icon only below `2xl`, beside the Menu button on phones). Its panel opens bottom-right on wider screens and full screen on phones; closing returns focus to the button. No floating buttons.
 
 ## Elevation & Depth
 Flat. Cards use a 1px `line` border and no shadow. No stacked

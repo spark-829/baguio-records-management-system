@@ -47,7 +47,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               <dl className="mt-3 space-y-3">
                 {DEMO.map((d) => (
                   <div key={d.email}>
-                    <dt className="font-mono text-sm break-all text-ink">{d.email}</dt>
+                    <dt className="font-mono text-sm break-words text-ink">{d.email}</dt>
                     <dd className="text-sm text-slate-600">{t(d.role)}</dd>
                   </div>
                 ))}
