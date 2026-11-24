@@ -20,6 +20,7 @@ wakes a day to 6.
 | Date | Observation | Recommendation | Done? |
 |---|---|---|---|
 | 2026-11-24 | QA tasks woke ~24x/day; old threads very long | Cut QA wakes, start fresh threads, one big thread at a time | QA cut done; fresh threads pending |
+| 2026-11-24 | Admin hub thread (PR #67): designer, planner, implementer (2 rounds), reviewer (2 rounds) used ~660k subagent tokens; the planner alone was ~160k | For features with a written design spec, have the planner return a shorter plan (no full SQL bodies) and let the implementer write the SQL | Open |
 
 ## Weekly check (ask Claude: "check my usage")
 
