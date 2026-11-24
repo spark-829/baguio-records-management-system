@@ -6,6 +6,7 @@ import { filtersFromParams, filtersToParams, searchRecordsPage } from "@/lib/sea
 import { STATUS_LABEL, fmtDate, partyLabel } from "@/lib/labels";
 import { foundText, listSize } from "@/lib/list-size";
 import { listQuery } from "@/lib/back-link";
+import { TX_CHIP_LABEL, TX_TYPES, type TxType } from "@/lib/transaction-type";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -32,7 +33,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   const recordHref = (id: string) => `/records/${id}${listQs ? `?back=${encodeURIComponent(listQs)}` : ""}`;
   const aiNote = typeof sp.ai === "string" ? sp.ai : undefined;
   const officeNames = new Map((offices.data ?? []).map((o) => [o.code, o.name]));
-  const narrowed = Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here);
+  const narrowed = Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here || f.tx);
   const active = Boolean(f.q || aiNote || narrowed);
 
   return (
@@ -68,6 +69,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       {aiNote && <p className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900">{t("Assistant applied:")} {aiNote}</p>}
 
       <form className="card space-y-4 p-5" method="get">
+        {f.tx && <input type="hidden" name="tx" value={f.tx} />}
         <div>
           <label className="label" htmlFor="q">{t("Search records")}</label>
           <p id="q-hint" className="mb-2 text-sm text-slate-600">{t("Words, a name or a tracking number. You can also type a sentence and press Ask the assistant to find it.")}</p>
@@ -145,6 +147,27 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           </div>
         </details>
       </form>
+
+      <nav aria-label={t("Filter by transaction type")} className="flex flex-wrap gap-2">
+        {([undefined, ...TX_TYPES] as (TxType | undefined)[]).map((tx) => {
+          const on = f.tx === tx;
+          const qs = filtersToParams({ ...f, tx }).toString();
+          return (
+            <Link
+              key={tx ?? "all"}
+              prefetch={false}
+              href={`/records?${qs}`}
+              aria-current={on ? "true" : undefined}
+              className={`inline-flex min-h-11 items-center gap-1 rounded-full border px-4 no-underline ${on ? "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white text-ink hover:border-brand-600"}`}
+            >
+              {on && (
+                <svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 10l4 4 8-8" /></svg>
+              )}
+              {tx ? t(TX_CHIP_LABEL[tx]) : t("All")}
+            </Link>
+          );
+        })}
+      </nav>
 
       {/* Phones: one card per record, the whole card is a link */}
       <ul className="space-y-3 lg:hidden">

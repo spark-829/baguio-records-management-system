@@ -16,7 +16,7 @@ Shows open and overdue records, what is waiting in your office (with how many da
 ## Registering a document (records desk)
 1. Click **Register**.
 2. No scan? Skip to step 3. To scan, click **Scan document** and point the camera at the page, or upload a PDF, JPG or PNG from the office scanner. Then click **Read scan with AI**. Boxes filled by the assistant are highlighted. Scans go straight to the record and are not kept on the device; use **Retake** to scan again. For a PDF, the AI reads the first page.
-3. Fill in or check every box unless it says (optional). The assistant can make mistakes; you are responsible for what is saved.
+3. Fill in or check every box unless it says (optional). Choose the **Transaction type**: citizen or client (G2C), government office (G2G) or business (G2B). Pick Government for letters from or to another government office. The assistant can make mistakes; you are responsible for what is saved.
 4. Choose an office in **Send to office** if it should go somewhere right away, and set **Must be acted on by** if there is a deadline.
 5. Click **Save and get tracking number**, or **Cancel** to leave without saving. Print the routing slip with **Print routing slip** and attach it to the paper copy. Its QR code opens the record.
 
@@ -42,11 +42,12 @@ Press **Save**. The system asks you to confirm before anything is saved. Every a
 
 ## Finding records
 - **Records** page: type a word or a tracking number and press **Search**. **More ways to narrow the list** opens the other filters (person, status, office, dates, late only). **Download list (Excel)** saves the results.
+- Under the search box, the buttons **All**, **Citizen (G2C)**, **Government (G2G)** and **Business (G2B)** show one transaction type at a time and keep the other filters.
 - **Ask the assistant to find it**: type a sentence in the search box and press this button; what it looked for appears on screen.
 - **Assistant**: ask questions in English or Taglish, such as "What documents came from Juan dela Cruz?" or "Nasaan na po yung voucher para sa drainage?" The assistant searches only records you are allowed to see and links each one.
 
 ## Reports (department heads, records desk, admin)
-Choose a date range to see counts by status, office, type and month, and the overdue list. Use **Download list (Excel)** or **Print report**.
+Choose a date range to see counts by status, office, type, transaction type (older records show as Not set) and month, and the overdue list. Use **Download list (Excel)** or **Print report**.
 
 - **Office workload**: for each office, how many documents are not yet received, being worked on and late, the longest time one has stayed there, and the average time to finish in the last 90 days. Offices with late documents come first.
 - **Retention schedule** (records desk and admin): every finished record with its keep-until date, based on its kind of document and counted from the day it was finished. Records within 90 days of that date, or past it, are flagged for review. Nothing is deleted from this page.

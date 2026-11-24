@@ -10,6 +10,7 @@ import { shrinkForAi } from "@/lib/shrink-image";
 import { useUploadPrep } from "@/components/use-upload-prep";
 import { ScanPreview } from "@/components/scan-preview";
 import { ARTA_CLASSES, ARTA_DAYS, ARTA_LABEL, artaDue, isArtaClass, manilaDay } from "@/lib/arta";
+import { TX_FORM_LABEL, TX_TYPES } from "@/lib/transaction-type";
 import { registerRecord } from "./actions";
 
 type Opt = { id: string; name: string };
@@ -20,6 +21,7 @@ type Fields = {
   subject: string;
   description: string;
   document_type_id: string;
+  transaction_type: string;
   category: string;
   keywords: string;
   priority: "low" | "normal" | "urgent";
@@ -46,6 +48,7 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
     subject: "",
     description: "",
     document_type_id: "",
+    transaction_type: "",
     category: "",
     keywords: "",
     priority: "normal",
@@ -258,6 +261,18 @@ export function RegisterForm(props: { types: Opt[]; offices: OfficeOpt[]; canInc
             {props.types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
+        <fieldset className="md:col-span-2" aria-describedby="f-tx-hint">
+          <legend className="label">{t("Transaction type")}</legend>
+          <p id="f-tx-hint" className="mb-2 text-sm text-slate-600">{t("Pick Government for letters from or to another government office.")}</p>
+          <div className="grid gap-1">
+            {TX_TYPES.map((k) => (
+              <label key={k} className="flex min-h-11 items-center gap-3">
+                <input type="radio" name="transaction_type" value={k} required checked={f.transaction_type === k} onChange={() => set("transaction_type", k)} />
+                <span>{t(TX_FORM_LABEL[k])}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <div className="md:col-span-2">
           <label className="label" htmlFor="f-subject">{t("Subject (what it is about)")}</label>
           <input id="f-subject" name="subject" required className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />

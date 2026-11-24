@@ -1,3 +1,4 @@
+import { txLabel } from "@/lib/transaction-type";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -89,6 +90,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <Bars title={t("By status")} data={toBars(s.by_status, (k) => t(STATUS_LABEL[k as Status] ?? k))} />
         <Bars title={t("By current office")} data={toBars(s.by_office, (k) => k)} />
         <Bars title={t("By document type")} data={toBars(s.by_type, (k) => k)} />
+        <Bars title={t("By transaction type")} data={toBars(s.by_tx, (k) => t(txLabel(k)))} />
         <Bars title={t("Registered per month")} data={months} />
       </div>
 

@@ -25,13 +25,14 @@ export async function GET(req: Request) {
     const t = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Manila", hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
     return `${day(iso)} ${t}`;
   };
-  const header = ["Tracking no.", "Direction", "Subject", "Type", "Status", "Priority", "Current office", "Origin office", "From", "To", "Registered by", "Registered (Manila time)", "Due date"];
+  const header = ["Tracking no.", "Direction", "Subject", "Type", "Transaction type", "Status", "Priority", "Current office", "Origin office", "From", "To", "Registered by", "Registered (Manila time)", "Due date"];
   const lines = rows.map((r) =>
     [
       r.tracking_no,
       r.direction === "incoming" ? "Received" : "Sent out",
       r.subject,
       r.document_type,
+      r.transaction_type ?? "",
       STATUS_LABEL[r.status] ?? r.status,
       PRIORITY_LABEL[r.priority] ?? r.priority,
       officeNames.get(r.current_office) ?? r.current_office,

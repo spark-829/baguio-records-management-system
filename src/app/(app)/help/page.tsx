@@ -43,6 +43,7 @@ export default async function HelpPage() {
           {S("Click [[Register]] at the top of the screen.")}
           {S("No scan? Skip part 1. Go straight to the form.")}
           {S("Fill in every box unless it says (optional).")}
+          {S("Choose the _Transaction type_: citizen, government office or business.")}
           {S("Choose the _ARTA processing time_. The due date fills in by itself, counting only working days. You can still change it.")}
           {S("To send it to an office right away, choose the office under _Send to office_.")}
           {S("Press [[Save and get tracking number]].")}
@@ -66,6 +67,7 @@ export default async function HelpPage() {
         {S("Click [[Records]] at the top.")}
         {S("Type a word from the subject (for example _drainage_) or the tracking number (for example _IN-2026-0001_).")}
         {S("Press [[Search]]. Click the subject to open it.")}
+        {S("To see only citizen, government or business documents, press one of the buttons under the search box.")}
         {S("You can also type a whole sentence in the search box and press [[Ask the assistant to find it]], such as “road repair letters from last week”.")}
       </Topic>
 
@@ -105,6 +107,7 @@ export default async function HelpPage() {
       {me.role !== "staff" && (
         <Topic id="reports" title={t("Reports and totals")}>
           {S("Click [[Reports]] at the top.")}
+          {S("The _By transaction type_ chart counts citizen, government and business documents. Older records show as _Not set_.")}
           {S("To see one period only, choose the _From_ and _To_ dates, then press [[Apply]].")}
           {S("Press [[Print report]] for a paper copy, or [[Download list (CSV, opens in Excel)]] to open it in Excel.")}
           {me.role !== "viewer" && S("_Office workload_ shows which offices have the most waiting and late documents.")}

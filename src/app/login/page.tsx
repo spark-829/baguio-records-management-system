@@ -5,7 +5,7 @@ import { BrandLockup, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
 
 const DEMO = [
-  { email: "records@rms-demo.test", role: "Records Officer (City Mayor's Office)" },
+  { email: "records@rms-demo.test", role: "Records Officer (City General Services Office)" },
   { email: "admin@rms-demo.test", role: "Administrator" },
   { email: "engineering.head@rms-demo.test", role: "Department Head, Engineering" },
   { email: "engineering.staff@rms-demo.test", role: "Staff, Engineering" },

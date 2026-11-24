@@ -1,3 +1,4 @@
+import { txLabel } from "@/lib/transaction-type";
 import { getT } from "@/lib/i18n/server";
 import { actionText } from "@/lib/i18n/core";
 import { Fragment } from "react";
@@ -46,6 +47,7 @@ type Rec = {
   delete_reason: string | null;
   deleter: { full_name: string } | null;
   doc_type: { name: string } | null;
+  transaction_type?: string | null;
   current_office: { code: string; name: string } | null;
   origin_office: { code: string; name: string } | null;
   creator: { full_name: string } | null;
@@ -152,6 +154,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const facts: [string, React.ReactNode][] = [
     [t("Received or sent out"), t(incoming ? "Received by the City" : "Sent out by the City")],
     [t("Document type"), rec.doc_type?.name],
+    [t("Transaction type"), t(txLabel(rec.transaction_type))],
     [t(incoming ? "From" : "To"), [incoming ? rec.sender_name : rec.recipient_name, incoming ? rec.sender_org : rec.recipient_org].filter(Boolean).join(", ") || "—"],
     ...(rec.barangay !== undefined ? [[t("Barangay"), rec.barangay ?? "—"] as [string, React.ReactNode]] : []),
     [t("Date on document"), fmtDate(rec.document_date)],

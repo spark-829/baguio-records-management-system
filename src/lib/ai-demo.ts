@@ -54,7 +54,7 @@ const SAMPLES: Sample[] = [
     sender_name: "Ramon Aquino",
     sender_org: "City Administrator's Office",
     recipient_name: null,
-    recipient_org: "City Planning and Development Office",
+    recipient_org: "City Planning, Development and Sustainability Office",
     document_type: "Memorandum",
     category: "Events",
     keywords: ["baguio day", "coordination", "meeting", "invitation"],
