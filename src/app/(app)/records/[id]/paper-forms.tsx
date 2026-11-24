@@ -150,7 +150,6 @@ export function DeliveryForm({ recordId, trackingNo, sentOn, today }: { recordId
           name="received_on"
           type="date"
           className="input"
-          min={sentOn}
           max={today}
           value={on}
           aria-invalid={errs.receivedOn ? true : undefined}

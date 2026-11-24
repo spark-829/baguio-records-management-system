@@ -203,7 +203,6 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
                 name="tracking_no"
                 className="input font-mono"
                 autoComplete="off"
-                required
                 value={tracking}
                 aria-invalid={errs.tracking ? true : undefined}
                 aria-describedby={errs.tracking ? "act-tracking-hint act-tracking-err" : "act-tracking-hint"}

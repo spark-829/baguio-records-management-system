@@ -62,7 +62,7 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
         </div>
       ) : (
         <>
-          <p className="text-sm text-slate-600">{t("{n} boxes", { n: total })}</p>
+          <p className="text-sm text-slate-600">{t(total === 1 ? "{n} box" : "{n} boxes", { n: total })}</p>
           <ul className="divide-y divide-slate-200 card lg:hidden">
             {rows.map((r) => (
               <li key={r.id} className="min-h-11 px-4 py-2">
