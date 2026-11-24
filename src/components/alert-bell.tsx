@@ -72,7 +72,7 @@ export function AlertBell({ officeCode }: { officeCode: string | null }) {
         </svg>
         <span className="hidden sm:inline">{t("Alerts")}</span>
         {badge && (
-          <span className="absolute -right-2 -top-2 min-w-6 rounded-full bg-red-600 px-1.5 text-center text-xs font-bold leading-6 text-white">{badge}</span>
+          <span aria-hidden="true" className="absolute -right-2 -top-2 min-w-6 rounded-full bg-red-600 px-1.5 text-center text-xs font-bold leading-6 text-white">{badge}</span>
         )}
       </button>
       {open && (

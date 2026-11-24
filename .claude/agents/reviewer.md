@@ -18,9 +18,12 @@ Rules:
   2. Security: role and RLS checks, input validation, injection, secrets,
      data exposure, file handling.
   3. Missed plan steps and missing tests.
-  4. Run `npx tsc --noEmit && npm run lint && npm test 2>&1 | tail -n 40`
+  4. If the diff touches `.tsx` or CSS: the checks in
+     `docs/design/checklist.md` that apply to it (contrast tokens, target
+     size, `t()` strings, one `h1`, no heavy additions).
+  5. Run `npx tsc --noEmit && npm run lint && npm test 2>&1 | tail -n 40`
      once.
-  5. Clear simplifications. Skip style nitpicks.
+  6. Clear simplifications. Skip style nitpicks.
 - Report only problems you verified, each with file:line and a concrete
   failure scenario. Keep it short.
 

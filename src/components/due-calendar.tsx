@@ -17,7 +17,8 @@ const TONE: Record<Tone, { dot: string; text: string; label: string }> = {
 };
 
 const ORDER: Record<Tone, number> = { late: 0, soon: 1, ok: 2 };
-const MAX_DOTS = 4;
+// 3 dots fit a 44px phone cell (4 + "+" overflowed into the next day)
+const MAX_DOTS = 3;
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const formats = (locale: string) => ({
   month: new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }),
@@ -64,9 +65,9 @@ export function DueCalendar({ items, today }: { items: DueItem[]; today: string 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="cal-title" className="text-lg font-bold">{t("Due dates calendar")}</h2>
         <div className="flex items-center gap-1">
-          <button type="button" className="btn-secondary min-h-11 px-3" onClick={() => shift(-1)} aria-label={t("Previous month")}>‹</button>
+          <button type="button" className="btn-secondary min-h-11 min-w-11 px-3" onClick={() => shift(-1)} aria-label={t("Previous month")}>‹</button>
           <span className="min-w-40 text-center text-lg font-semibold" aria-live="polite">{fmt.month.format(first)}</span>
-          <button type="button" className="btn-secondary min-h-11 px-3" onClick={() => shift(1)} aria-label={t("Next month")}>›</button>
+          <button type="button" className="btn-secondary min-h-11 min-w-11 px-3" onClick={() => shift(1)} aria-label={t("Next month")}>›</button>
           {month !== today.slice(0, 7) && (
             <button type="button" className="btn-secondary min-h-11 px-3" onClick={() => { setMonth(today.slice(0, 7)); setPicked(today); }}>
               {t("Today")}
@@ -92,7 +93,7 @@ export function DueCalendar({ items, today }: { items: DueItem[]; today: string 
               <div key={w} className="text-center text-sm font-semibold text-slate-600">{t(w)}</div>
             ))}
           </div>
-          <div className="mt-1 grid grid-cols-7">
+          <div className="mt-1 grid grid-cols-7" data-dense-grid>
             {days.slice(0, weeks * 7).map((d) => {
                   const due = byDay.get(d) ?? [];
                   const inMonth = d.startsWith(month);
@@ -110,7 +111,7 @@ export function DueCalendar({ items, today }: { items: DueItem[]; today: string 
                           picked === d ? "bg-brand-700 text-white" : d === today ? "bg-gold-100 ring-2 ring-gold-500" : "hover:bg-brand-50"
                         } ${inMonth ? "" : "opacity-40"}`}
                       >
-                        {/* One dot per record, above the date, most urgent first; a busy day shows 4 and a "+" */}
+                        {/* One dot per record, above the date, most urgent first; a busy day shows 3 and a "+" */}
                         <span className="flex h-3 items-center gap-0.5" aria-hidden>
                           {[...tones].sort((x, y) => ORDER[x] - ORDER[y]).slice(0, MAX_DOTS).map((tone, i) => (
                             <span key={i} className={`h-2 w-2 rounded-full ring-1 ring-white sm:h-2.5 sm:w-2.5 ${TONE[tone].dot}`} />

@@ -73,7 +73,7 @@ export function BarangayMap({ tally, picked, pickedList, onlyOpen }: { tally: Ba
                 type="button"
                 aria-pressed={view === v}
                 onClick={() => setView(v)}
-                className={`min-h-10 rounded-md px-3 text-sm font-semibold ${view === v ? "bg-brand-700 text-white" : "text-brand-800 hover:bg-brand-50"}`}
+                className={`min-h-11 rounded-md px-3 text-sm font-semibold ${view === v ? "bg-brand-700 text-white" : "text-brand-800 hover:bg-brand-50"}`}
               >
                 {t(v === "city" ? "Whole city" : "City center")}
               </button>

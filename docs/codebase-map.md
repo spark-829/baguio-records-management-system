@@ -112,6 +112,9 @@ One Vitest file per lib module (`workflow`, `qr`, `deepseek`, `ai-budget`,
 | `.github/workflows/` | `backup`, `restore-drill`, `audit-check`, `uptime`, `ci`, `codeql`; `.github/dependabot.yml` |
 | `docs/` | `backups.md`, `restore-drill.md`, `recovery-runbook.md`, `paper-fallback.md` |
 
+Design: `docs/design/` (principles, checklist), `scripts/design-check/check.mjs`
+(`npm run design-check`, axe-core + house checks), `.claude/agents/designer.md`.
+
 Secret-dependent jobs skip (exit 0) when their GitHub secrets are missing.
 
 ## Docs: `docs/`

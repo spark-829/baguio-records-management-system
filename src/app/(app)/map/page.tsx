@@ -74,7 +74,7 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
                 key={k}
                 href={k === "open" ? "/map?show=open" : "/map"}
                 aria-current={on ? "page" : undefined}
-                className={`inline-flex min-h-10 items-center rounded-md px-3 text-sm font-semibold no-underline ${on ? "bg-brand-700 text-white" : "text-brand-800 hover:bg-brand-50"}`}
+                className={`inline-flex min-h-11 items-center rounded-md px-3 text-sm font-semibold no-underline ${on ? "bg-brand-700 text-white" : "text-brand-800 hover:bg-brand-50"}`}
               >
                 {t(label)}
               </a>

@@ -40,12 +40,16 @@ do not need to explore the tree.
 - AI calls go through `runAi()` in `src/lib/ai-gate.ts` (budget, cache,
   demo fallback). Never call DeepSeek directly from a route.
 - Pure logic goes in `src/lib/` with a test in `tests/`.
+- Design: follow `docs/design/principles.md`; UI diffs must pass
+  `docs/design/checklist.md` (`npm run design-check` for the automated half).
 
 ## Model pipeline: plan -> implement -> review
 
 For code changes (features, bug fixes, refactors) use the subagents in
 `.claude/agents/`:
 
+0. **designer** (Opus 5.5), only for screens, layout, copy or styling:
+   returns a design spec grounded in `docs/design/`. Pass it to the planner.
 1. **planner** (Opus 5.5): task + user context. Returns Goal, Files, Steps,
    Tests, Risks.
 2. **implementer** (Sonnet 5.5): the full plan, word for word. Edits code,
