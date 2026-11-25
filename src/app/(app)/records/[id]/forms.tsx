@@ -2,9 +2,10 @@
 
 import { useT } from "@/lib/i18n/client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState } from "react";
 import { useUploadPrep } from "@/components/use-upload-prep";
-import { ACTIONS, type ActionKind } from "@/lib/workflow";
+import { ACTIONS, BUTTON_LABEL, actionButtons, type ActionKind, type ButtonKind } from "@/lib/workflow";
+import { formatBytes } from "@/lib/upload-policy";
 import { normalizeBoxCode } from "@/lib/boxes";
 import { COURIERS, METHOD_LABEL, SEND_METHODS, historyHow, needsTracking, parseReleaseForm, type ReleaseErrors } from "@/lib/dispatch";
 import { addAttachment, assignRecord, decideCopy, deleteRecord, recordAction, releaseCopy } from "./actions";
@@ -17,7 +18,7 @@ type Office = { id: string; code: string; name: string };
  */
 export type ActionExtras = { today: string; boxField: boolean; currentBox: string | null; deliveryOpen: boolean };
 
-export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, extras }: { recordId: string; trackingNo: string; actions: ActionKind[]; offices: Office[]; returnTo?: Office | null; extras?: ActionExtras }) {
+export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, extras, named, primary }: { recordId: string; trackingNo: string; actions: ActionKind[]; offices: Office[]; returnTo?: Office | null; extras?: ActionExtras; named?: boolean; primary?: ActionKind | null }) {
   const t = useT();
   const [method, setMethod] = useState("");
   const [courier, setCourier] = useState("");
@@ -34,18 +35,24 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
     ...(canReturn ? [{ value: "return", label: t("Send back to {office}", { office: returnTo!.name }) }] : []),
     ...ordered.slice(1).map((a) => ({ value: a, label: t(ACTIONS[a].label) })),
   ];
+  // Records desk: one button per action (A2). The panel opens with the action already chosen.
+  const btns = actionButtons(actions, primary ?? null, canReturn);
+  const namedChoices: string[] = [...(btns.primary ? [btns.primary] : []), ...btns.secondary, ...btns.more];
+  const labelOf = (c: string) => (c === "return" ? t("Send back to {office}", { office: returnTo!.name }) : t(BUTTON_LABEL[c as ButtonKind] ?? c));
   const [open, setOpen] = useState(false);
-  const [choice, setChoice] = useState(choices[0].value);
+  const [choice, setChoice] = useState(named ? (namedChoices[0] ?? "") : choices[0].value);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const heading = useRef<HTMLHeadingElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
   const firstField = useRef<HTMLSelectElement>(null);
   const confirmBox = useRef<HTMLDivElement>(null);
   const wasOpen = useRef(false);
   // Keyboard users: focus moves into the panel when it opens, to the question when confirming, and back when it closes.
   useEffect(() => {
-    if (open) firstField.current?.focus();
+    if (open) (named ? heading.current : firstField.current)?.focus();
     else if (wasOpen.current) opener.current?.focus();
     wasOpen.current = open;
-  }, [open]);
+  }, [open, named]);
   const [office, setOffice] = useState("");
   const [confirming, setConfirming] = useState(false);
   useEffect(() => {
@@ -100,15 +107,47 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
           ? t("File away {no} in box {code}?", { no: trackingNo, code: normalizeBoxCode(boxCode) })
           : `${t(ACTIONS[kind].label).replace(/\s*\(.*\)$/, "")}: ${trackingNo}?`;
 
+  const focusTarget = namedChoices.includes(choice) ? choice : namedChoices[0];
+  const choiceButton = (c: string, cls: string) => (
+    <button
+      key={c}
+      ref={c === focusTarget ? opener : undefined}
+      type="button"
+      className={`${cls} w-full`}
+      onClick={() => {
+        setChoice(c);
+        setConfirming(false);
+        setMoreOpen(btns.more.includes(c as never));
+        setOpen(true);
+      }}
+    >
+      {labelOf(c)}
+    </button>
+  );
   if (!open)
     return (
       <div className="space-y-2">
         {pending && <p className="text-sm text-slate-700" role="status">{t("Saving…")}</p>}
         {!pending && state?.ok && <p className="text-sm text-emerald-700" role="status">{t(state.ok)}</p>}
         {!pending && state?.error && <p className="text-sm text-red-700" role="alert">{t("Not saved:")} {t(state.error)}</p>}
-        <button ref={opener} type="button" className="btn-primary w-full" onClick={() => setOpen(true)}>
-          {t("Add a note or send to another office")}
-        </button>
+        {!named ? (
+          <button ref={opener} type="button" className="btn-primary w-full" onClick={() => setOpen(true)}>
+            {t("Add a note or send to another office")}
+          </button>
+        ) : (
+          <>
+            <div className="space-y-2">
+              {btns.primary && choiceButton(btns.primary, "btn-primary")}
+              {btns.secondary.map((c) => choiceButton(c, "btn-secondary"))}
+            </div>
+            {btns.more.length > 0 && (
+              <details open={moreOpen} onToggle={(e) => setMoreOpen(e.currentTarget.open)} className="rounded border border-line p-2">
+                <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-700">{t("More actions")}</summary>
+                <div className="mt-2 space-y-2">{btns.more.map((c) => choiceButton(c, "btn-secondary"))}</div>
+              </details>
+            )}
+          </>
+        )}
       </div>
     );
 
@@ -154,12 +193,16 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
       <input type="hidden" name="record_id" value={recordId} />
       <input type="hidden" name="kind" value={kind} />
       {kind === "forward" && <input type="hidden" name="to_office_id" value={toOffice} />}
-      <div>
-        <label className="label" htmlFor="act-kind">{t("What do you want to do?")}</label>
-        <select ref={firstField} id="act-kind" className="input" value={choice} onChange={(e) => { setChoice(e.target.value); setConfirming(false); }}>
-          {choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
-        </select>
-      </div>
+      {named ? (
+        <h3 ref={heading} tabIndex={-1} className="font-semibold">{labelOf(choice)}</h3>
+      ) : (
+        <div>
+          <label className="label" htmlFor="act-kind">{t("What do you want to do?")}</label>
+          <select ref={firstField} id="act-kind" className="input" value={choice} onChange={(e) => { setChoice(e.target.value); setConfirming(false); }}>
+            {choices.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+      )}
       {choice === "forward" && (
         <div>
           <label className="label" htmlFor="act-office">{t("Send to which office?")}</label>
@@ -270,15 +313,78 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
   );
 }
 
-export function AttachForm({ recordId }: { recordId: string }) {
+/** A note changes only the history; the server re-checks that the person may add it. */
+export function NoteForm({ recordId }: { recordId: string }) {
+  const t = useT();
+  const [state, action, pending] = useActionState(recordAction, undefined);
+  const [text, setText] = useState("");
+  useEffect(() => {
+    if (state?.ok) setText("");
+  }, [state]);
+  return (
+    <form
+      className="mt-4 space-y-2 border-t border-line pt-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (pending || !text.trim()) return;
+        const fd = new FormData(e.currentTarget);
+        startTransition(() => action(fd));
+      }}
+    >
+      <input type="hidden" name="record_id" value={recordId} />
+      <input type="hidden" name="kind" value="remark" />
+      <label className="label" htmlFor="note-text">{t("Add a note")}</label>
+      <textarea id="note-text" name="remarks" rows={3} maxLength={2000} className="input" value={text} readOnly={pending} onChange={(e) => setText(e.target.value)} />
+      {pending && <p className="text-sm text-slate-700" role="status">{t("Saving…")}</p>}
+      {!pending && state?.ok && <p className="text-sm text-emerald-700" role="status">{t("Note added")}</p>}
+      {!pending && state?.error && <p className="text-sm text-red-700" role="alert">{t("Not saved:")} {t(state.error)}</p>}
+      <button type="submit" className="btn-secondary" disabled={pending || !text.trim()}>{t(pending ? "Saving…" : "Add note")}</button>
+    </form>
+  );
+}
+
+export function AttachForm({ recordId, desk }: { recordId: string; desk?: boolean }) {
   const t = useT();
   const [state, action, pending] = useActionState(addAttachment, undefined);
   const fileRef = useRef<HTMLInputElement>(null);
   const prep = useUploadPrep(fileRef);
+  const [chosen, setChosen] = useState<{ name: string; size: number } | null>(null);
   useEffect(() => {
-    if (state) prep.reset();
+    if (state) {
+      prep.reset();
+      setChosen(null);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
+  if (desk)
+    return (
+      <form action={action} className="space-y-2">
+        <input type="hidden" name="record_id" value={recordId} />
+        <input
+          id="attach-file"
+          ref={fileRef}
+          name="file"
+          type="file"
+          accept="application/pdf,image/png,image/jpeg,image/webp"
+          className="peer sr-only"
+          aria-describedby="attach-chosen attach-hint"
+          required
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            setChosen(f ? { name: f.name, size: f.size } : null);
+            void prep.prepare(f);
+          }}
+        />
+        <label htmlFor="attach-file" className="btn-secondary w-full cursor-pointer peer-focus-visible:outline-3 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-700">{t("Choose a file")}</label>
+        <p id="attach-chosen" className="break-all text-sm text-slate-700">{chosen ? `${chosen.name} (${formatBytes(chosen.size)})` : t("No file chosen yet")}</p>
+        <p id="attach-hint" className="text-sm text-slate-600">{t("PDF, JPG or PNG, up to 10 MB.")}</p>
+        {prep.controls}
+        {prep.fields}
+        {state?.error && <p className="text-sm text-red-700" role="alert">{t(state.error, state.vars)}</p>}
+        {state?.ok && <p className="text-sm text-emerald-700" role="status">{t(state.ok)}</p>}
+        <button className="btn-secondary w-full" disabled={!chosen || pending || prep.busy || prep.tooBig}>{t(pending ? "Uploading…" : "Attach file")}</button>
+      </form>
+    );
   return (
     <form action={action} className="space-y-2">
       <input type="hidden" name="record_id" value={recordId} />

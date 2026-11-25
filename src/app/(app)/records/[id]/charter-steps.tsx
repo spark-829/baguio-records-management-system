@@ -14,6 +14,7 @@ export async function CharterSteps({
   meId,
   nowIso,
   readOnly,
+  desk,
 }: {
   recordId: string;
   steps: ServiceStep[];
@@ -25,6 +26,8 @@ export async function CharterSteps({
   meId: string;
   nowIso: string;
   readOnly?: boolean;
+  /** Records desk layout: the buttons are in the Actions sidebar */
+  desk?: boolean;
 }) {
   const { t } = await getT();
   const v = stepsView(steps, nowIso);
@@ -61,7 +64,7 @@ export async function CharterSteps({
     <section className="card p-4" aria-labelledby="charter-h">
       <h2 id="charter-h" className="font-semibold">{t("Charter steps")}</h2>
       {title && (
-        <p className="text-sm text-slate-600">
+        <p className="break-words text-sm text-slate-600">
           {title}{totalText ? ` · ${t("standard total {total}", { total: durationText(totalText, t) })}` : ""}
         </p>
       )}
@@ -76,7 +79,7 @@ export async function CharterSteps({
         {t("Total so far: {a} of {b} standard.", { a: mins(v.spent), b: mins(v.standard) })}{" "}
         {v.standard > 0 && (v.over ? <span className="font-semibold text-amber-800">{t("Over the charter time.")}</span> : t("Within the charter time."))}
       </p>
-      {v.allDone && <p className="mt-1 text-sm font-semibold text-emerald-800">{t("All charter steps are done. Use Take action to mark it as done or release it.")}</p>}
+      {v.allDone && <p className="mt-1 text-sm font-semibold text-emerald-800">{t(desk ? "All charter steps are done. Use Actions to mark it as done or send it out." : "All charter steps are done. Use Take action to mark it as done or release it.")}</p>}
     </section>
   );
 }

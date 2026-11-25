@@ -8,8 +8,8 @@ import { getProfile, getSettings, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { seriesLabel } from "@/lib/doc-types";
 import { CONF_HELP, CONF_LABEL, PRIORITY_LABEL, daysFromToday, dueText, fmtDate, fmtDateTime, officeName } from "@/lib/labels";
-import { allowedActions, canAttach, isOverdue } from "@/lib/workflow";
-import { newestFirst } from "@/lib/history";
+import { allowedActions, canAttach, isOverdue, primaryAction } from "@/lib/workflow";
+import { foldMiddle, newestFirst } from "@/lib/history";
 import { ARTA_LABEL, artaProgress, artaText, isArtaClass, manilaDay } from "@/lib/arta";
 import type { Direction, Status, Priority, Confidentiality } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -17,7 +17,7 @@ import { BoxMoveForm } from "./paper-forms";
 import { SendingCard, type Dispatch } from "./sending-card";
 import { boxWhere } from "@/lib/boxes";
 import { canRecordDelivery } from "@/lib/dispatch";
-import { ActionForm, AssignForm, AttachForm, CopyDecisionForm, CopyReleaseForm, DeleteForm } from "./forms";
+import { ActionForm, AssignForm, AttachForm, CopyDecisionForm, CopyReleaseForm, DeleteForm, NoteForm } from "./forms";
 import { COPY_TYPE, canDecide, canRelease, dpoTag, type DpoStatus, type DpoTone } from "@/lib/copy-request";
 import { assignableStaff, assignmentEvents, canAssign } from "@/lib/assign";
 import { restoreRecord } from "./actions";
@@ -25,7 +25,8 @@ import { SummaryBox } from "./summary-box";
 import { isComplaint, replyClock, replyDueAt } from "@/lib/complaint";
 import { recordsBackHref } from "@/lib/back-link";
 import { fmtMinutes, slowSteps } from "@/lib/step-times";
-import { isOversight } from "@/lib/office-features";
+import { isOversight, isRecordsDesk } from "@/lib/office-features";
+import { formatBytes } from "@/lib/upload-policy";
 import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 import { canMarkStep, charterSlowByRoute, parseSteps } from "@/lib/charter";
 import { CharterSteps } from "./charter-steps";
@@ -237,6 +238,9 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     userOfficeId: me.office_id,
     currentOfficeId: rec.current_office_id,
   });
+  const desk = isRecordsDesk(me);
+  const primary = desk ? primaryAction(rec.status, rec.direction, actions) : null;
+  const deskButtons = actions.filter((a) => a !== "remark");
   const incoming = rec.direction === "incoming";
   const history = (routes ?? []) as unknown as Route[];
   const staff = assignableStaff((staffRows ?? []) as { id: string; full_name: string; role: string }[], rec.confidentiality);
@@ -290,6 +294,14 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
       ? artaText(artaProgress({ registered: manilaDay(rec.created_at), due: rec.due_date.slice(0, 10), asOf: open ? manilaDay() : manilaDay(finStep?.created_at ?? new Date()), finished: !open }), t)
       : "";
 
+  const paperCopy = rec.box ? (
+    <>
+      {boxWhere(rec.box.room, rec.box.shelf)}, {t("Box")}{" "}
+      <Link href={`/boxes/${rec.box.id}`} className="whitespace-nowrap font-mono">{rec.box.code}</Link>
+    </>
+  ) : (
+    <span className="text-slate-600">{t("Not filed in a box yet")}</span>
+  );
   const facts: [string, React.ReactNode][] = [
     [t("Received or sent out"), t(incoming ? "Received by the City" : "Sent out by the City")],
     [t("Document type"), rec.doc_type && seriesLabel(rec.doc_type) ? <>{rec.doc_type.name}<span className="block text-sm text-slate-600">{t("File plan: {series}", { series: seriesLabel(rec.doc_type) })}</span></> : rec.doc_type?.name],
@@ -322,17 +334,106 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     ...(me.role !== "admin"
       ? [[
           t("Paper copy"),
-          rec.box ? (
-            <>
-              {boxWhere(rec.box.room, rec.box.shelf)}, {t("Box")}{" "}
-              <Link href={`/boxes/${rec.box.id}`} className="whitespace-nowrap font-mono">{rec.box.code}</Link>
-            </>
-          ) : (
-            <span className="text-slate-600">{t("Not filed in a box yet")}</span>
-          ),
+          paperCopy,
         ] as [string, React.ReactNode]]
       : []),
   ];
+
+  const shownKeys = new Set(["Received or sent out", incoming ? "From" : "To", "Document type", "Transaction type", "Priority", "Who may see it", "Started by office", "Logged in"].map((k) => t(k)));
+  const deskShown = facts.filter(([k]) => shownKeys.has(k)).map(([k, v]) => [k === t("Logged in") ? t("Logged") : k, v] as [string, React.ReactNode]);
+  const deskMore = facts.filter(([k]) => !shownKeys.has(k) && k !== t("Paper copy"));
+  const notGiven = <span className="text-slate-600">{t("Not given")}</span>;
+  const factRow = ([k, v]: [string, React.ReactNode]) => (
+    <div key={k} className="min-w-0">
+      <dt className="text-[15px] text-slate-600">{k}</dt>
+      <dd className="break-words text-[17px] text-ink">{v === "—" || v === "" || v == null ? notGiven : v}</dd>
+    </div>
+  );
+  const fileThumb = (f: { id: string; mime_type: string; thumb_path: string | null }) =>
+    f.thumb_path ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={`/api/attachments/${f.id}?thumb=1`} alt="" loading="lazy" width={40} height={40} className="h-10 w-10 shrink-0 rounded border border-slate-200 object-cover" />
+    ) : (
+      <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
+        {f.mime_type === "application/pdf" ? "PDF" : "IMG"}
+      </span>
+    );
+  const assignBlock = (
+    <>
+      <p className="mb-2 text-sm font-medium">{rec.assignee ? t("Assigned to: {name}", { name: rec.assignee.full_name }) : t("Assigned to: no one yet")}</p>
+      {mayAssign && (
+        <details className="mb-3 rounded border border-line p-2 text-sm">
+          <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-700">{t(rec.assigned_to ? "Change person" : "Assign a person")}</summary>
+          {staff.length ? (
+            <AssignForm recordId={rec.id} people={staff} currentId={rec.assigned_to ?? null} />
+          ) : (
+            <p className="mt-2 text-slate-600">{t("No active staff in this office.")}</p>
+          )}
+        </details>
+      )}
+    </>
+  );
+  // History is newest first; the records desk reads it oldest first.
+  const timelineItems = history.flatMap((r, i, all) => [
+    ...fileEvents.filter((f) => f.before === r.id).map((f) => (
+      <li key={`f${f.id}`} className="mb-4 ml-4">
+        <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-gold-500" />
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="badge bg-amber-50 text-amber-900 ring-1 ring-amber-200">{t("File")}</span>
+          <span className="font-medium">{t("Attached {file}", { file: f.file_name })}{f.version > 1 ? ` (${t("version {n}", { n: f.version })})` : ""}</span>
+        </div>
+        <p className="mt-0.5 text-sm text-slate-600">
+          {fmtDateTime(f.uploaded_at)} · {f.uploader?.full_name ?? "—"}
+        </p>
+      </li>
+    )),
+    ...binEvents.filter((e) => e.before === r.id).map((e) => (
+      <li key={e.key} className="mb-4 ml-4">
+        <span className={`absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white ${e.event === "deleted" ? "bg-red-600" : "bg-emerald-600"}`} />
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className={`badge ring-1 ${e.event === "deleted" ? "bg-red-50 text-red-900 ring-red-200" : "bg-emerald-50 text-emerald-900 ring-emerald-200"}`}>
+            {t(e.event === "deleted" ? "Moved to bin" : "Restored")}
+          </span>
+          <span className="font-medium">{t(e.event === "deleted" ? "Moved to the deleted-records bin" : "Restored from the bin")}</span>
+        </div>
+        {e.reason && <p className="mt-1 text-sm text-slate-700">“{e.reason}”</p>}
+        <p className="mt-0.5 text-sm text-slate-600">
+          {fmtDateTime(e.at)} · {e.actor ?? "—"}
+        </p>
+      </li>
+    )),
+    <li key={r.id} className="mb-4 ml-4">
+      <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-brand-600" />
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        {r.assigned_to ? (
+          <span className="badge bg-white text-slate-600 ring-1 ring-slate-200">{t("Assigned")}</span>
+        ) : all[i + 1]?.status !== r.status || (r.status === "forwarded" && r.to_office?.code !== all[i + 1]?.to_office?.code) ? (
+          <StatusBadge status={r.status} />
+        ) : (
+          <span className="badge bg-white text-slate-600 ring-1 ring-slate-200">{t("Note")}</span>
+        )}
+        {slow[r.id] && <span className="badge bg-amber-50 text-amber-900 ring-1 ring-amber-200">{t("Slow")}</span>}
+        <span className="font-medium">
+          {r.assigned_to
+            ? t("{head} assigned this to {name}", { head: r.actor?.full_name ?? "—", name: nameById.get(r.assigned_to) ?? "—" })
+            : actionText(r.action_taken, t)}
+        </span>
+        {r.status === "forwarded" && r.from_office && r.to_office && r.from_office.code !== r.to_office.code && (
+          <span className="text-slate-700">{t("from {a} to {b}", { a: r.from_office.name, b: r.to_office.name })}</span>
+        )}
+      </div>
+      {r.remarks && <p className="mt-1 text-sm text-slate-700">“{r.remarks}”</p>}
+      {slow[r.id] && <p className="mt-1 text-sm text-slate-700">{t("Took {took}, standard {std}", { took: fmtTook(slow[r.id].took), std: fmtTook(slow[r.id].standard) })}</p>}
+      {assignEvents[r.id]?.kind === "cleared" && <p className="mt-1 text-sm text-slate-600">{t("Assignment cleared.")}</p>}
+      <p className="mt-0.5 text-sm text-slate-600">
+        {fmtDateTime(r.created_at)} · {r.actor?.full_name ?? "—"}
+      </p>
+    </li>,
+  ]);
+  const fold = foldMiddle([...timelineItems].reverse());
+  type AttachRow = { id: string; file_name: string; mime_type: string; size_bytes: number; version: number; thumb_path: string | null; uploaded_at: string; uploader: { full_name: string } | null };
+  const attachRows = (files ?? []) as unknown as AttachRow[];
+  const KIND: Record<string, string> = { "application/pdf": "PDF", "image/jpeg": "JPG", "image/png": "PNG", "image/webp": "WEBP" };
 
   return (
     <div className="space-y-4">
@@ -374,13 +475,13 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">{t("Copy details were not recorded for this request.")}</div>
       )}
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <Link prefetch={false} href={backHref} className="inline-flex min-h-11 items-center gap-1 font-semibold text-brand-700 underline underline-offset-4">
             <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 3 5 8l5 5" /></svg>
             {t(backHref !== "/records" ? "Back to search results" : "Back to records")}
           </Link>
           <p className="font-mono text-sm text-slate-500">{rec.tracking_no}</p>
-          <h1 className="text-2xl font-bold">{rec.subject}</h1>
+          <h1 className="break-words text-2xl font-bold">{rec.subject}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <StatusBadge status={rec.status} />
             <PriorityBadge priority={rec.priority} />
@@ -473,21 +574,11 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         </section>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3 lg:grid-rows-[auto_1fr] lg:items-start">
-        {/* DOM order = phone order: Take action first, then the record, then files. On wide screens Take action and Attachments sit on the right. */}
-        <section className="card p-4 lg:col-start-3 lg:row-start-1">
-          <h2 className="mb-2 font-semibold">{t("Take action")}</h2>
-          <p className="mb-2 text-sm font-medium">{rec.assignee ? t("Assigned to: {name}", { name: rec.assignee.full_name }) : t("Assigned to: no one yet")}</p>
-          {mayAssign && (
-            <details className="mb-3 rounded border border-line p-2 text-sm">
-              <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-700">{t(rec.assigned_to ? "Change person" : "Assign a person")}</summary>
-              {staff.length ? (
-                <AssignForm recordId={rec.id} people={staff} currentId={rec.assigned_to ?? null} />
-              ) : (
-                <p className="mt-2 text-slate-600">{t("No active staff in this office.")}</p>
-              )}
-            </details>
-          )}
+      <div className={desk ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-[auto_auto_1fr] lg:items-start" : "grid gap-4 lg:grid-cols-3 lg:grid-rows-[auto_1fr] lg:items-start"}>
+        {/* DOM order = phone order: actions first, then the record, then files. On wide screens the actions and files sit on the right (records desk: Actions, Details, Attachments). */}
+        <section className={`card p-4 ${desk ? "lg:col-start-2" : "lg:col-start-3"} lg:row-start-1`}>
+          <h2 className="mb-2 font-semibold">{t(desk ? "Actions" : "Take action")}</h2>
+          {!desk && assignBlock}
           {mayDecide && copyReq && (
             <div className="mb-3 rounded border border-line p-2">
               <CopyDecisionForm recordId={rec.id} />
@@ -501,16 +592,20 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           {copyReq?.dpo_status === "pending" && !mayDecide && !deleted && (
             <p className="mb-3 text-sm text-slate-700">{t("You can release the copy after the Data Privacy Officer approves.")}</p>
           )}
-          {actions.length > 0 && <p className="mb-2 text-sm text-slate-600">{t("Nothing is saved until you press Save and then confirm.")}</p>}
+          {(desk ? deskButtons.length > 0 : actions.length > 0) && <p className="mb-2 text-sm text-slate-600">{t("Nothing is saved until you press Save and then confirm.")}</p>}
           {actions.length ? (
-            <ActionForm
-              recordId={rec.id}
-              trackingNo={rec.tracking_no}
-              actions={actions}
-              offices={(offices ?? []).filter((o) => o.id !== rec.current_office_id)}
-              returnTo={arrival?.from_office ?? null}
-              extras={{ today: manilaDay(), boxField: me.role === "records_officer", currentBox: rec.box?.code ?? null, deliveryOpen }}
-            />
+            desk && !deskButtons.length ? null : (
+              <ActionForm
+                recordId={rec.id}
+                trackingNo={rec.tracking_no}
+                actions={actions}
+                offices={(offices ?? []).filter((o) => o.id !== rec.current_office_id)}
+                returnTo={arrival?.from_office ?? null}
+                extras={{ today: manilaDay(), boxField: me.role === "records_officer", currentBox: rec.box?.code ?? null, deliveryOpen }}
+                named={desk}
+                primary={primary}
+              />
+            )
           ) : (
             <p className="text-sm text-slate-500">
               {deleted
@@ -524,9 +619,22 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                     : t("Only the office holding this record, or the records desk, can act on it.")}
             </p>
           )}
+          {desk && <div className="mt-4 border-t border-line pt-3">{assignBlock}</div>}
         </section>
 
-        <div className="min-w-0 space-y-4 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+        <div className={desk ? "min-w-0 space-y-4 lg:col-start-1 lg:row-span-3 lg:row-start-1" : "min-w-0 space-y-4 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-1"}>
+          {desk && (rec.description || rec.content_text) && (
+            <section className="card p-4" aria-labelledby="desc-h">
+              <h2 id="desc-h" className="mb-2 font-semibold">{t("Description")}</h2>
+              {rec.description && <p className="break-words text-slate-700">{rec.description}</p>}
+              {rec.content_text && (
+                <details className="mt-3 text-sm">
+                  <summary className="cursor-pointer text-slate-600">{t("Document text (read by the assistant)")}</summary>
+                  <p className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-3 text-xs">{rec.content_text}</p>
+                </details>
+              )}
+            </section>
+          )}
           {charterSteps && me.role !== "admin" && (
             <CharterSteps
               recordId={rec.id}
@@ -550,6 +658,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               })}
               meId={me.id}
               nowIso={new Date().toISOString()}
+              desk={desk}
             />
           )}
           {rec.category === "CSS summary" && rec.content_text && (() => {
@@ -625,125 +734,117 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
             </section>
           )}
 
-          <section className="card p-4">
-            <h2 className="mb-3 font-semibold">{t("Details")}</h2>
-            {rec.description && <p className="mb-3 text-sm text-slate-700">{rec.description}</p>}
-            <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-              {facts.map(([k, v]) => (
-                <div key={k} className="min-w-0 border-b border-slate-100 pb-2">
-                  <dt className="text-slate-600">{k}</dt>
-                  <dd className="font-medium break-words">{v}</dd>
-                </div>
-              ))}
-            </dl>
-            {rec.content_text && (
-              <details className="mt-3 text-sm">
-                <summary className="cursor-pointer text-slate-600">{t("Document text (read by the assistant)")}</summary>
-                <p className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-3 text-xs">{rec.content_text}</p>
-              </details>
-            )}
-            {me.role === "records_officer" && !deleted && (
-              <details className="mt-3 rounded border border-line p-2 text-sm">
-                <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-700">{t(rec.box ? "Move to another box" : "Put in a box")}</summary>
-                <BoxMoveForm recordId={rec.id} trackingNo={rec.tracking_no} currentBox={rec.box?.code ?? null} />
-              </details>
-            )}
-          </section>
+          {!desk && (
+            <section className="card p-4">
+              <h2 className="mb-3 font-semibold">{t("Details")}</h2>
+              {rec.description && <p className="mb-3 text-sm text-slate-700">{rec.description}</p>}
+              <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+                {facts.map(([k, v]) => (
+                  <div key={k} className="min-w-0 border-b border-slate-100 pb-2">
+                    <dt className="text-slate-600">{k}</dt>
+                    <dd className="font-medium break-words">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+              {rec.content_text && (
+                <details className="mt-3 text-sm">
+                  <summary className="cursor-pointer text-slate-600">{t("Document text (read by the assistant)")}</summary>
+                  <p className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-3 text-xs">{rec.content_text}</p>
+                </details>
+              )}
+              {me.role === "records_officer" && !deleted && (
+                <details className="mt-3 rounded border border-line p-2 text-sm">
+                  <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-700">{t(rec.box ? "Move to another box" : "Put in a box")}</summary>
+                  <BoxMoveForm recordId={rec.id} trackingNo={rec.tracking_no} currentBox={rec.box?.code ?? null} />
+                </details>
+              )}
+            </section>
+          )}
 
           {dispatch && (
             <SendingCard recordId={rec.id} trackingNo={rec.tracking_no} dispatch={dispatch} canDeliver={canDeliver} justDelivered={delivered === "1"} today={manilaDay()} />
           )}
 
           <section className="card p-4">
-            <h2 className="mb-3 font-semibold">{t("History, actions and remarks")}</h2>
-            <ol className="relative ml-2 border-l-2 border-slate-200">
-              {history.map((r, i, all) => (
-                <Fragment key={r.id}>
-                {fileEvents.filter((f) => f.before === r.id).map((f) => (
-                  <li key={`f${f.id}`} className="mb-4 ml-4">
-                    <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-gold-500" />
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="badge bg-amber-50 text-amber-900 ring-1 ring-amber-200">{t("File")}</span>
-                      <span className="font-medium">{t("Attached {file}", { file: f.file_name })}{f.version > 1 ? ` (${t("version {n}", { n: f.version })})` : ""}</span>
-                    </div>
-                    <p className="mt-0.5 text-sm text-slate-600">
-                      {fmtDateTime(f.uploaded_at)} · {f.uploader?.full_name ?? "—"}
-                    </p>
+            <h2 className="mb-3 font-semibold">{t(desk ? "History and notes" : "History, actions and remarks")}</h2>
+            {desk ? (
+              <ol className="relative ml-2 border-l-2 border-slate-200">
+                {fold.head}
+                {fold.hidden.length > 0 && (
+                  <li className="mb-4 ml-4">
+                    <details>
+                      <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-brand-700">{t("Show {n} earlier steps", { n: fold.hidden.length })}</summary>
+                      <ol className="-ml-4 mt-2">{fold.hidden}</ol>
+                    </details>
                   </li>
-                ))}
-                {binEvents.filter((e) => e.before === r.id).map((e) => (
-                  <li key={e.key} className="mb-4 ml-4">
-                    <span className={`absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white ${e.event === "deleted" ? "bg-red-600" : "bg-emerald-600"}`} />
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className={`badge ring-1 ${e.event === "deleted" ? "bg-red-50 text-red-900 ring-red-200" : "bg-emerald-50 text-emerald-900 ring-emerald-200"}`}>
-                        {t(e.event === "deleted" ? "Moved to bin" : "Restored")}
-                      </span>
-                      <span className="font-medium">{t(e.event === "deleted" ? "Moved to the deleted-records bin" : "Restored from the bin")}</span>
-                    </div>
-                    {e.reason && <p className="mt-1 text-sm text-slate-700">“{e.reason}”</p>}
-                    <p className="mt-0.5 text-sm text-slate-600">
-                      {fmtDateTime(e.at)} · {e.actor ?? "—"}
-                    </p>
-                  </li>
-                ))}
-                <li className="mb-4 ml-4">
-                  <span className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-brand-600" />
-                  <div className="flex flex-wrap items-center gap-2 text-sm">
-                    {r.assigned_to ? (
-                      <span className="badge bg-white text-slate-600 ring-1 ring-slate-200">{t("Assigned")}</span>
-                    ) : all[i + 1]?.status !== r.status || (r.status === "forwarded" && r.to_office?.code !== all[i + 1]?.to_office?.code) ? (
-                      <StatusBadge status={r.status} />
-                    ) : (
-                      <span className="badge bg-white text-slate-600 ring-1 ring-slate-200">{t("Note")}</span>
-                    )}
-                    {slow[r.id] && <span className="badge bg-amber-50 text-amber-900 ring-1 ring-amber-200">{t("Slow")}</span>}
-                    <span className="font-medium">
-                      {r.assigned_to
-                        ? t("{head} assigned this to {name}", { head: r.actor?.full_name ?? "—", name: nameById.get(r.assigned_to) ?? "—" })
-                        : actionText(r.action_taken, t)}
-                    </span>
-                    {r.status === "forwarded" && r.from_office && r.to_office && r.from_office.code !== r.to_office.code && (
-                      <span className="text-slate-700">{t("from {a} to {b}", { a: r.from_office.name, b: r.to_office.name })}</span>
-                    )}
-                  </div>
-                  {r.remarks && <p className="mt-1 text-sm text-slate-700">“{r.remarks}”</p>}
-                  {slow[r.id] && <p className="mt-1 text-sm text-slate-700">{t("Took {took}, standard {std}", { took: fmtTook(slow[r.id].took), std: fmtTook(slow[r.id].standard) })}</p>}
-                  {assignEvents[r.id]?.kind === "cleared" && <p className="mt-1 text-sm text-slate-600">{t("Assignment cleared.")}</p>}
-                  <p className="mt-0.5 text-sm text-slate-600">
-                    {fmtDateTime(r.created_at)} · {r.actor?.full_name ?? "—"}
-                  </p>
-                </li>
-                </Fragment>
-              ))}
-            </ol>
+                )}
+                {fold.tail}
+              </ol>
+            ) : (
+              <ol className="relative ml-2 border-l-2 border-slate-200">{timelineItems}</ol>
+            )}
+            {desk && actions.includes("remark") && <NoteForm recordId={rec.id} />}
           </section>
         </div>
 
-        <section id="attachments" className="card p-4 lg:col-start-3 lg:row-start-2">
+        {desk && (
+          <section className="card p-4 lg:col-start-2 lg:row-start-2" aria-labelledby="details-h">
+            <h2 id="details-h" className="mb-3 font-semibold">{t("Details")}</h2>
+            <dl className="space-y-3">{deskShown.map(factRow)}</dl>
+            {deskMore.length > 0 && (
+              <details className="mt-3">
+                <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-700">{t("More details")}</summary>
+                <dl className="mt-2 space-y-3">{deskMore.map(factRow)}</dl>
+              </details>
+            )}
+            <div className="mt-4 border-t border-line pt-3">
+              <h3 className="text-[15px] text-slate-600">{t("Paper copy")}</h3>
+              <p className="break-words text-[17px] text-ink">{paperCopy}</p>
+              {me.role === "records_officer" && !deleted && (
+                <details className="mt-3 rounded border border-line p-2 text-sm">
+                  <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-700">{t(rec.box ? "Move to another box" : "Put in a box")}</summary>
+                  <BoxMoveForm recordId={rec.id} trackingNo={rec.tracking_no} currentBox={rec.box?.code ?? null} />
+                </details>
+              )}
+            </div>
+          </section>
+        )}
+
+        <section id="attachments" className={`card p-4 ${desk ? "lg:col-start-2 lg:row-start-3" : "lg:col-start-3 lg:row-start-2"}`}>
           <h2 className="mb-2 font-semibold">{t("Attachments")}</h2>
-          <ul className="mb-3 space-y-2 text-sm">
-            {(files ?? []).map((f) => (
-              <li key={f.id} className="flex items-center justify-between gap-2">
-                <a href={`/api/attachments/${f.id}`} target="_blank" className="flex min-w-0 items-center gap-2 text-brand-700 hover:underline">
-                  {f.thumb_path ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`/api/attachments/${f.id}?thumb=1`} alt="" loading="lazy" width={40} height={40} className="h-10 w-10 shrink-0 rounded border border-slate-200 object-cover" />
-                  ) : (
-                    <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-500">
-                      {f.mime_type === "application/pdf" ? "PDF" : "IMG"}
-                    </span>
-                  )}
-                  <span className="truncate">{f.file_name}</span>
-                </a>
-                <span className="shrink-0 text-xs text-slate-500">
-                  v{f.version} · {Math.max(1, Math.round(f.size_bytes / 1024))} KB
-                </span>
-              </li>
-            ))}
-            {(files ?? []).length === 0 && <li className="text-slate-500">{t("No files attached.")}</li>}
-          </ul>
+          {desk ? (
+            <ul className="mb-3 space-y-3 text-sm">
+              {attachRows.map((f) => (
+                <li key={f.id} className="min-w-0">
+                  <a href={`/api/attachments/${f.id}`} target="_blank" className="flex min-w-0 items-start gap-2 text-brand-700 hover:underline">
+                    {fileThumb(f)}
+                    <span className="min-w-0 break-all font-medium">{f.file_name}</span>
+                  </a>
+                  <p className="mt-1 pl-12 text-slate-600">
+                    {[KIND[f.mime_type] ?? t("File"), formatBytes(f.size_bytes), fmtDate(f.uploaded_at), f.uploader?.full_name ?? "—", ...(f.version > 1 ? [t("version {n}", { n: f.version })] : [])].join(" · ")}
+                  </p>
+                </li>
+              ))}
+              {attachRows.length === 0 && <li className="text-slate-600">{t("No files yet.")}</li>}
+            </ul>
+          ) : (
+            <ul className="mb-3 space-y-2 text-sm">
+              {attachRows.map((f) => (
+                <li key={f.id} className="flex items-center justify-between gap-2">
+                  <a href={`/api/attachments/${f.id}`} target="_blank" className="flex min-w-0 items-center gap-2 text-brand-700 hover:underline">
+                    {fileThumb(f)}
+                    <span className="truncate">{f.file_name}</span>
+                  </a>
+                  <span className="shrink-0 text-xs text-slate-500">
+                    v{f.version} · {Math.max(1, Math.round(f.size_bytes / 1024))} KB
+                  </span>
+                </li>
+              ))}
+              {attachRows.length === 0 && <li className="text-slate-500">{t("No files attached.")}</li>}
+            </ul>
+          )}
           {mayAttach ? (
-            <AttachForm recordId={rec.id} />
+            <AttachForm recordId={rec.id} desk={desk} />
           ) : (
             !deleted && rec.status !== "archived" && <p className="text-sm text-slate-500">{me.role === "admin" ? t("Administrators do not add files to records.") : t("Only the office holding this record, the office that sent it, or the records desk can add files.")}</p>
           )}

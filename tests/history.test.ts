@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collapseSteps, newestFirst } from "../src/lib/history";
+import { collapseSteps, foldMiddle, newestFirst } from "../src/lib/history";
 
 describe("newestFirst", () => {
   it("sorts newest first without changing the input", () => {
@@ -38,5 +38,23 @@ describe("collapseSteps", () => {
       { status: "received", office: "CEO" },
     ];
     expect(collapseSteps(steps)).toHaveLength(3);
+  });
+});
+
+describe("foldMiddle", () => {
+  const n = (k: number) => Array.from({ length: k }, (_, i) => i);
+  it("hides nothing up to 8 items", () => {
+    expect(foldMiddle(n(8))).toEqual({ head: n(8), hidden: [], tail: [] });
+  });
+  it("hides the middle of 9 items", () => {
+    const r = foldMiddle(n(9));
+    expect(r.head).toHaveLength(2);
+    expect(r.hidden).toHaveLength(3);
+    expect(r.tail).toHaveLength(4);
+  });
+  it("keeps order for 12 items", () => {
+    const r = foldMiddle(n(12));
+    expect(r.hidden).toHaveLength(6);
+    expect([...r.head, ...r.hidden, ...r.tail]).toEqual(n(12));
   });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allowedActions, canAttach, isAlreadyReceived, isOverdue, nextStatus } from "../src/lib/workflow";
+import { actionButtons, allowedActions, canAttach, isAlreadyReceived, isOverdue, nextStatus, primaryAction } from "../src/lib/workflow";
 
 const base = { direction: "incoming" as const, userOfficeId: "ceo", currentOfficeId: "ceo" };
 
@@ -128,5 +128,45 @@ describe("canAttach", () => {
 describe("isAlreadyReceived for admin", () => {
   it("is false for admin", () => {
     expect(isAlreadyReceived({ status: "received", role: "admin", userOfficeId: "ceo", currentOfficeId: "ceo" })).toBe(false);
+  });
+});
+
+describe("primaryAction", () => {
+  const all = ["forward", "receive", "act", "remark", "complete", "release", "archive"] as const;
+  const a = [...all];
+  it("picks the usual next step", () => {
+    expect(primaryAction("forwarded", "incoming", a)).toBe("receive");
+    expect(primaryAction("registered", "incoming", a)).toBe("forward");
+    expect(primaryAction("registered", "outgoing", a)).toBe("release");
+    expect(primaryAction("received", "incoming", a)).toBe("act");
+    expect(primaryAction("under_action", "incoming", a)).toBe("complete");
+    expect(primaryAction("completed", "outgoing", a)).toBe("release");
+    expect(primaryAction("completed", "incoming", a)).toBe("archive");
+    expect(primaryAction("released", "outgoing", a)).toBe("archive");
+  });
+  it("falls back to the first allowed non-note action", () => {
+    expect(primaryAction("completed", "incoming", ["forward", "remark"])).toBe("forward");
+    expect(primaryAction("completed", "incoming", [])).toBeNull();
+    expect(primaryAction("completed", "incoming", ["remark"])).toBeNull();
+  });
+});
+
+describe("actionButtons", () => {
+  it("splits primary, secondary and more", () => {
+    expect(actionButtons(["act", "forward", "remark", "complete"], "act", true)).toEqual({ primary: "act", secondary: ["forward", "return"], more: ["complete"] });
+    const r = actionButtons(["forward", "act", "remark", "complete", "archive"], "forward", true);
+    expect(r.secondary).toEqual(["return", "act"]);
+    expect(r.more).toEqual(["complete", "archive"]);
+  });
+  it("never lists notes", () => {
+    const r = actionButtons(["remark", "act", "forward"], "act", false);
+    expect([r.primary, ...r.secondary, ...r.more]).not.toContain("remark");
+  });
+  it("handles no primary", () => {
+    const r = actionButtons(["act", "forward", "complete"], null, false);
+    expect(r).toEqual({ primary: null, secondary: ["act", "forward"], more: ["complete"] });
+  });
+  it("ignores a primary that is not allowed", () => {
+    expect(actionButtons(["act"], "archive", false)).toEqual({ primary: null, secondary: ["act"], more: [] });
   });
 });
