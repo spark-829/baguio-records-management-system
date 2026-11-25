@@ -314,13 +314,16 @@ export function RegisterForm(props: {
   function fieldLabel(el: HTMLElement): string {
     const byFor = el.id ? el.ownerDocument.querySelector(`label[for="${CSS.escape(el.id)}"]`) : null;
     const legend = el.closest("fieldset")?.querySelector("legend");
-    const text = (byFor?.textContent || legend?.textContent || el.closest("label")?.textContent || el.getAttribute("name") || "").trim();
-    return text.replace(/\s*\*\s*$/, "").replace(/\s+/g, " ").slice(0, 60);
+    const isRadio = (el as HTMLInputElement).type === "radio";
+    const text = (isRadio
+      ? legend?.textContent || el.getAttribute("name")
+      : byFor?.textContent || el.closest("label")?.textContent || legend?.textContent || el.getAttribute("name")) ?? "";
+    return text.trim().replace(/\s*\*\s*$/, "").replace(/\s+/g, " ").slice(0, 60);
   }
   function onInvalid(e: React.FormEvent<HTMLFormElement>) {
     const el = e.target as HTMLInputElement;
     el.setAttribute("aria-invalid", "true");
-    const target = el.id || el.closest("fieldset")?.querySelector("input,select,textarea")?.id || "";
+    const target = el.type === "radio" ? el.closest("fieldset")?.querySelector("input")?.id || "" : el.id || "";
     if (!pendingMissing.current) {
       pendingMissing.current = [];
       setTimeout(() => { setMissing(pendingMissing.current ?? []); pendingMissing.current = null; }, 0);
@@ -331,13 +334,15 @@ export function RegisterForm(props: {
   function onFieldChange(e: React.FormEvent<HTMLFormElement>) {
     const el = e.target as HTMLInputElement;
     if (el.getAttribute?.("aria-invalid") === "true" && el.checkValidity?.()) {
-      el.removeAttribute("aria-invalid");
+      const group = el.type === "radio" && el.form ? [...el.form.querySelectorAll(`input[name="${CSS.escape(el.name)}"]`)] : [el];
+      group.forEach((x) => x.removeAttribute("aria-invalid"));
       const label = fieldLabel(el);
       setMissing((m) => m.filter((x) => x.label !== label));
     }
   }
 
   function checkService(e: React.FormEvent<HTMLFormElement>) {
+    setMissing([]); // submit only fires once the browser's own check passed
     if (showPicker && svc === "") {
       e.preventDefault();
       setSvcError(true);
@@ -351,7 +356,7 @@ export function RegisterForm(props: {
 
   return (
     <form action={action} onSubmit={checkService} onInvalidCapture={onInvalid} onChangeCapture={onFieldChange} onReset={() => { clearScan(); setSvc(""); setSvcError(false); setRefNo(""); setMissing([]); }} className="grid gap-4 lg:grid-cols-3">
-      <section className="card space-y-4 p-5 lg:col-span-1">
+      <section className="card space-y-4 p-5 lg:col-span-1 lg:self-start">
         <h2 className="text-lg font-bold">{t("1. Scanned copy (optional)")}</h2>
         <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-800">
           <strong>{t("No scan?")}</strong> {t("That is fine. Just fill in the form and press Save.")}
