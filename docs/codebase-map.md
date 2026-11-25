@@ -15,8 +15,8 @@ MFA-pending users. All queries use `createClient()` from
 
 | Route | Files |
 | --- | --- |
-| `/` dashboard | `page.tsx` (+ `components/due-calendar.tsx`); admins get the Security overview, `security-hub.tsx` |
-| `/records` list, search | `records/page.tsx`, `records/ai-search-box.tsx` |
+| `/` dashboard | `page.tsx` (+ `components/due-calendar.tsx`); admins get the Security overview, `security-hub.tsx`; CGSO records desk (`isRecordsDesk`) gets the Records Section start screen (`?cal=month` shows the calendar) |
+| `/records` list, search | `records/page.tsx`, `records/ai-search-box.tsx`; saved-view tabs for the records desk |
 | `/records/new` register | `records/new/{page,register-form,actions}.tsx` (scan to prefill; `?reply_to=IN-...` starts a reply) |
 | `/records/[id]` detail | `records/[id]/page.tsx`, `forms.tsx` (take action, attach), `actions.ts`, `summary-box.tsx` |
 | `/records/[id]/slip`, `/receipt` | routing slip with QR, QR receipt |
@@ -79,7 +79,8 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `reports.ts`, `fetch-pages.ts` | report date bounds, bar merging, RPC result parsers, `onTimeSummary`; `fetchPages` (pages past the 1000-row PostgREST cap) |
 | `list-size.ts`, `map-tally.ts` | `listSize` (the `?n=` list size, steps of the default, capped); `tallyBarangays` (per-barangay counts for the map) |
 | `back-link.ts` | `listQuery`, `recordsBackHref` (record page "Back to search results" keeps the list filters; always a /records path) |
-| `office-features.ts` | pure: feature keys, labels, RECOMMENDED per office (mirror of migration 0200), `hasFeature`, `canWindowIntake`, `isOversight`, `isHrmoCss`, `parseFeatureForm` |
+| `office-features.ts` | pure: feature keys, labels, RECOMMENDED per office (mirror of migration 0200), `hasFeature`, `canWindowIntake`, `isOversight`, `isRecordsDesk`, `isHrmoCss`, `parseFeatureForm` |
+| `records-desk.ts` | pure: desk start screen buckets (late by office, due today/this week, ready to send out, not in a box), `countText`, saved views and tab matching |
 | `charter.ts`, `reference-no.ts` | pure: Charter service helpers (`splitCatalog`, `prefillFromService`, `stepsView`, `canMarkStep`, `canUndoStep`); `cleanRefNo` |
 | `oversight.ts` | pure: parsers for the city-view RPCs, `maskedSubject` |
 | `settings-diff.ts` | `changedSettings` (which admin settings actually changed) |

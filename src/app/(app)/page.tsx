@@ -10,7 +10,9 @@ import { sortNeedsAction } from "@/lib/needs-action";
 import { DueCalendar } from "@/components/due-calendar";
 import { SecurityHub } from "./security-hub";
 import { CityOverview, ScopeLinks } from "./city-overview";
-import { isOversight } from "@/lib/office-features";
+import { isOversight, isRecordsDesk } from "@/lib/office-features";
+import { ScanQrButton } from "@/components/scan-qr-button";
+import { countText, dueAgenda, lateByOffice, loggedOn, nextStepHint, notInBox, oldestGroup, readyToSend } from "@/lib/records-desk";
 import { StatStrip } from "@/components/stat-strip";
 
 type Row = {
@@ -24,6 +26,7 @@ type Row = {
   created_at: string;
   current_office_id: string;
   assigned_to?: string | null;
+  box_id?: string | null;
   current_office: { code: string; name: string } | null;
 };
 
@@ -32,12 +35,13 @@ export async function generateMetadata() {
   return { title: me.role === "admin" ? "Security overview" : "Dashboard" };
 }
 
-export default async function Dashboard({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ scope?: string; cal?: string }> }) {
   const { t } = await getT();
   const me = await getProfile();
+  const sp = await searchParams;
   if (me.role === "admin") return <SecurityHub me={me} />;
   const oversight = isOversight({ role: me.role, officeCode: me.office?.code, features: me.office?.features });
-  if (oversight && (await searchParams).scope === "city") {
+  if (oversight && sp.scope === "city") {
     // City view: one aggregated call; the own-office queries below are skipped.
     return (
       <div className="space-y-6">
@@ -51,7 +55,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const [{ data }, { data: totalsData, error: totalsError }, { data: mineData }] = await Promise.all([
     supabase
     .from("rms_records")
-    .select("id, tracking_no, subject, status, priority, direction, due_date, created_at, current_office_id, assigned_to, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
+    .select("id, tracking_no, subject, status, priority, direction, due_date, created_at, current_office_id, assigned_to, box_id, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(500),
@@ -93,12 +97,16 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     { label: t("Logged this month"), value: Number(totals.this_month) || 0, href: `/records?from=${monthFrom}`, alert: false },
   ];
 
+  const calItems = open
+    .filter((r) => r.due_date)
+    .map((r) => ({ id: r.id, tracking_no: r.tracking_no, subject: r.subject, due_date: r.due_date!.slice(0, 10), office: r.current_office?.name ?? null }));
+
   const RecordRow = ({ r, hint }: { r: Row; hint: string | null }) => {
     const late = isOverdue(r.due_date, r.status);
     return (
       <li>
         <Link prefetch={false} href={`/records/${r.id}`} className="grid gap-x-4 gap-y-1 px-4 py-3 hover:bg-brand-50 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5">
-          <span className="font-semibold text-ink">{r.subject}</span>
+          <span className="min-w-0 break-words font-semibold text-ink">{r.subject}</span>
           <span className="flex flex-wrap items-start gap-2 self-start sm:justify-end">
             {late && <OverdueBadge />}
             <PriorityBadge priority={r.priority} />
@@ -117,6 +125,158 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       </li>
     );
   };
+
+  if (isRecordsDesk(me)) {
+    const capped = rows.length >= 500;
+    const lateGroups = lateByOffice(rows, today);
+    const oldest = oldestGroup(lateGroups);
+    const sampleLate = lateGroups.reduce((n, g) => n + g.count, 0);
+    const lateNum = totalsError ? sampleLate : overdueTotal;
+    const lateText = totalsError ? countText(sampleLate, capped) : String(overdueTotal);
+    const { today: dueToday, week: dueWeek } = dueAgenda(rows, today);
+    const ready = readyToSend(rows);
+    const unboxed = notInBox(rows);
+    const logged = loggedOn(rows, today);
+    const waiting = sortNeedsAction(inbox, today).slice(0, 5);
+    const waitingNum = totalsError ? inbox.length : officeTotal;
+    const waitingText = totalsError ? countText(inbox.length, capped) : String(officeTotal);
+    const showCal = sp.cal === "month";
+    const name = greetingName(me.full_name);
+    const readyHref = "/records?direction=outgoing&status=completed";
+    let fact: string;
+    if (lateNum === 0) fact = `${t("Good day, {name}.", { name })} ${t("No records are late.")}`;
+    else if (!oldest) fact = lateNum === 1 ? t("Good day, {name}. 1 record is late.", { name }) : t("Good day, {name}. {n} records are late.", { name, n: lateText });
+    else if (lateNum === 1) fact = t("Good day, {name}. 1 record is late; it is with {office}, late since {date}.", { name, office: oldest.name, date: fmtDate(oldest.since) });
+    else if (lateGroups.length === 1 && !capped) fact = t("Good day, {name}. {n} records are late, all with {office}; the oldest is late since {date}.", { name, n: lateText, office: oldest.name, date: fmtDate(oldest.since) });
+    else fact = t("Good day, {name}. {n} records are late in {offices} offices; the oldest is with {office}, late since {date}.", { name, n: lateText, offices: countText(lateGroups.length, capped), office: oldest.name, date: fmtDate(oldest.since) });
+
+    const deskStats = [
+      { label: t("Late, all offices"), value: totalsError ? "—" : overdueTotal, href: "/records?overdue=1&open=1", alert: !totalsError && overdueTotal > 0 },
+      { label: t("Waiting here"), value: totalsError ? "—" : officeTotal, href: officeHref ?? undefined, alert: false },
+      { label: t("Ready to send out"), value: countText(ready.length, capped), href: readyHref, alert: false },
+      { label: t("Logged today"), value: countText(logged, capped && logged === rows.length), href: `/records?from=${today}`, alert: false },
+    ];
+
+    const DeskList = ({ id, title, count, list, empty, hint, more, className }: {
+      id: string; title: string; count?: string; list: Row[]; empty: string; hint?: (r: Row) => string | null;
+      more?: { href: string; n: string } | null; className: string;
+    }) => (
+      <section className={`card min-w-0 lg:self-start ${className}`} aria-labelledby={id}>
+        <h2 id={id} className="border-b border-line px-4 py-3 text-lg font-bold sm:px-5">
+          {title}
+          {count !== undefined && <> <span className="font-normal text-slate-600">({count})</span></>}
+        </h2>
+        {list.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-slate-600 sm:px-5">{empty}</p>
+        ) : (
+          <ul className="divide-y divide-line">
+            {list.map((r) => <RecordRow key={r.id} r={r} hint={hint?.(r) ?? null} />)}
+          </ul>
+        )}
+        {more && (
+          <p className="border-t border-line px-4 py-3 sm:px-5">
+            <Link prefetch={false} href={more.href} className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">{t("See all {n}", { n: more.n })}</Link>
+          </p>
+        )}
+      </section>
+    );
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold">{t("Records Section")}</h1>
+            <p className="mt-1 max-w-3xl break-words text-slate-700">{fact}</p>
+          </div>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Link prefetch={false} href="/records/new" className="btn-primary flex-1 sm:flex-none">{t("Register a record")}</Link>
+            <div className="sm:order-first"><ScanQrButton /></div>
+          </div>
+        </div>
+
+        <StatStrip label={t("Summary")} items={deskStats} />
+        {totalsError && <p role="status" className="text-sm text-slate-700">{t("Totals did not load. The lists below are current.")}</p>}
+
+        {mine.length > 0 && (
+          <DeskList id="desk-mine" title={t("Assigned to me")} list={mine} empty="" className="" />
+        )}
+
+        <div className="grid gap-6 lg:grid-cols-3 lg:grid-rows-[auto_auto_1fr_auto]">
+          <DeskList
+            id="desk-waiting"
+            title={t("Waiting at the records desk")}
+            list={waiting}
+            hint={(r) => { const h = nextStepHint(r.status); return h ? t(h) : null; }}
+            empty={t("Nothing waiting at the records desk.")}
+            more={officeHref && waitingNum > 5 ? { href: officeHref, n: waitingText } : null}
+            className={`lg:col-start-3 lg:row-start-1${waiting.length ? "" : " hidden lg:block"}`}
+          />
+          <section className="card min-w-0 lg:col-span-2 lg:col-start-1 lg:row-span-3 lg:row-start-1 lg:self-start" aria-labelledby="due-title">
+            <h2 id="due-title" className="border-b border-line px-4 py-3 text-lg font-bold sm:px-5">{t("Due dates")}</h2>
+            <h3 className="px-4 pt-4 pb-2 font-bold sm:px-5">{t("Late")} ({lateText})</h3>
+            {lateNum === 0 ? (
+              <p className="px-4 pb-4 text-sm text-slate-600 sm:px-5">{t("No records are late.")}</p>
+            ) : lateGroups.length === 0 ? null : (
+              <ul className="divide-y divide-line">
+                {lateGroups.slice(0, 6).map((g) => (
+                  <li key={g.code}>
+                    <Link prefetch={false} href={`/records?office=${encodeURIComponent(g.code)}&here=1&overdue=1`} className="grid gap-1 px-4 py-3 hover:bg-brand-50 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5">
+                      <span className="min-w-0 break-words font-semibold text-ink">{g.name}</span>
+                      <span className="font-semibold text-red-700">{t("{n} late · since {date}", { n: g.count, date: fmtDate(g.since) })}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {lateNum > 0 && (
+              <p className="px-4 py-3 sm:px-5">
+                <Link prefetch={false} href="/records?overdue=1&open=1" className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">{t("See all {n}", { n: lateText })}</Link>
+              </p>
+            )}
+            {dueToday.length > 0 && (
+              <>
+                <h3 className="border-t border-line px-4 pt-4 pb-2 font-bold sm:px-5">{t("Due today")} ({countText(dueToday.length, capped)})</h3>
+                <ul className="divide-y divide-line">
+                  {dueToday.slice(0, 6).map((r) => <RecordRow key={r.id} r={r} hint={null} />)}
+                </ul>
+              </>
+            )}
+            <h3 className="border-t border-line px-4 pt-4 pb-2 font-bold sm:px-5">{t("Due this week")} ({countText(dueWeek.length, capped)})</h3>
+            {dueWeek.length === 0 ? (
+              <p className="px-4 pb-4 text-sm text-slate-600 sm:px-5">{t("Nothing is due this week.")}</p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {dueWeek.slice(0, 6).map((r) => <RecordRow key={r.id} r={r} hint={null} />)}
+              </ul>
+            )}
+          </section>
+          <DeskList
+            id="desk-ready"
+            title={t("Ready to send out")}
+            count={countText(ready.length, capped)}
+            list={ready.slice(0, 5)}
+            empty={t("Nothing is ready to send out.")}
+            more={ready.length > 5 ? { href: readyHref, n: countText(ready.length, capped) } : null}
+            className="lg:col-start-3 lg:row-start-2"
+          />
+          <DeskList
+            id="desk-unboxed"
+            title={t("Not in a box yet")}
+            count={countText(unboxed.length, capped)}
+            list={unboxed.slice(0, 5)}
+            empty={t("Every finished record is in a box.")}
+            className="lg:col-start-3 lg:row-start-3"
+          />
+          <div className="min-w-0 space-y-4 lg:col-span-2 lg:col-start-1 lg:row-start-4">
+            <Link prefetch={false} href={showCal ? "/" : "/?cal=month"} className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-4">
+              {t(showCal ? "Hide month calendar" : "Show month calendar")}
+            </Link>
+            {showCal && <DueCalendar today={today} lateTotal={overdueTotal} items={calItems} />}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -193,9 +353,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       <DueCalendar
         today={today}
         lateTotal={overdueTotal}
-        items={open
-          .filter((r) => r.due_date)
-          .map((r) => ({ id: r.id, tracking_no: r.tracking_no, subject: r.subject, due_date: r.due_date!.slice(0, 10), office: r.current_office?.name ?? null }))}
+        items={calItems}
       />
     </div>
   );

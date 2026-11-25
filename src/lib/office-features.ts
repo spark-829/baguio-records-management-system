@@ -100,6 +100,11 @@ export function isHrmoCss(p: { role: Role; officeCode?: string | null; windowFla
   return p.officeCode === "HRMO" && (p.role === "dept_head" || (p.role === "staff" && !!p.windowFlag));
 }
 
+/** CGSO records desk: records officer whose office is CGSO. Gates the desk start screen and saved views. */
+export function isRecordsDesk(me: { role: Role; office?: { code?: string | null } | null }): boolean {
+  return me.role === "records_officer" && me.office?.code === "CGSO";
+}
+
 /** Features ticked in the admin form, limited to the ones that office may have. */
 export function parseFeatureForm(code: string, entries: Iterable<FormDataEntryValue>): FeatureKey[] {
   const allowed = optionalFeaturesFor(code);

@@ -14,7 +14,8 @@ interface DetectorCtor {
 }
 
 /** "Scan QR" button: opens the phone camera, reads a routing-slip QR and goes to its /r/ page. No library needed. */
-export function ScanQrButton({ label }: { label?: string } = {}) {
+/** align: which edge of the button the popup lines up with from 640px up. Phones get a bottom sheet. */
+export function ScanQrButton({ label, align = "right" }: { label?: string; align?: "left" | "right" } = {}) {
   const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -102,7 +103,7 @@ export function ScanQrButton({ label }: { label?: string } = {}) {
     <div className="relative">
       <button type="button" className="btn-secondary" onClick={toggle} aria-expanded={open}>{t(label ?? "Scan QR")}</button>
       {open && (
-        <div className="card absolute right-0 z-20 mt-2 w-80 max-w-[90vw] space-y-3 p-3">
+        <div className={`card fixed inset-x-4 bottom-4 z-50 max-h-[calc(100dvh-2rem)] space-y-3 overflow-y-auto p-3 sm:absolute sm:max-h-none sm:overflow-visible sm:inset-x-auto sm:bottom-auto sm:z-20 sm:mt-2 sm:w-80 ${align === "left" ? "sm:left-0" : "sm:right-0"}`}>
           <video ref={videoRef} playsInline muted autoPlay className="aspect-square w-full rounded-lg bg-slate-900 object-cover" />
           {msg && <p role="status" className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">{t(msg)}</p>}
           <form onSubmit={go} className="space-y-1">
