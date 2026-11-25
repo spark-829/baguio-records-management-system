@@ -49,8 +49,8 @@ The legal and ethical floor. The ones this app most often trips on:
   grows.
 - **2.4.3 / 2.4.7 Focus order and visible focus.** Tab order follows the
   reading order; the 3px focus ring stays.
-- **2.4.11 Focus not obscured (new in 2.2).** Sticky bars and the floating
-  assistant button must never cover the focused field or the last content
+- **2.4.11 Focus not obscured (new in 2.2).** Sticky bars and the assistant
+  button must never cover the focused field or the last content
   (hence `scroll-padding-bottom` and the footer's bottom padding).
 - **2.5.3 Label in name.** An `aria-label` starts with the visible text.
 - **2.5.8 Target size (new in 2.2).** At least 24×24px, or spaced so a 24px
@@ -160,7 +160,7 @@ content.
   line; Filipino runs about 30% longer, so leave room.
 - **Proven patterns** (Vic's rule): name the app or design system a
   pattern comes from when proposing it.
-- **App shell**: GOV.UK header over a white service-nav bar; the assistant button sits at the right end of the nav bar (icon only below `2xl`, label from `2xl`), never floating; its panel is a non-modal side panel on desktop (APG: Esc closes only from inside) and a modal on phones.
+- **App shell**: GOV.UK header over a white service-nav bar. The assistant has one entry point on every page and for every role: a labelled "Ask the assistant" button fixed bottom-right (never icon-only), hidden while its panel is open. The panel is full height on the right: docked and pushing the page (non-modal; Esc closes it only from inside) from 1280px; a modal sheet from 640 to 1279px; full screen on phones. The page keeps bottom padding so the button never covers the last content or a sticky action bar.
 
 ## Sources
 

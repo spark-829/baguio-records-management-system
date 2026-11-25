@@ -21,7 +21,7 @@ MFA-pending users. All queries use `createClient()` from
 | `/records/[id]` detail | `records/[id]/page.tsx`, `forms.tsx` (take action, attach), `actions.ts`, `summary-box.tsx` |
 | `/records/[id]/slip`, `/receipt` | routing slip with QR, QR receipt |
 | `/r/[tracking]` | QR scan landing, `receive-form.tsx` (receive by QR) |
-| `/assistant` | `assistant/chat.tsx` (records chat) |
+| `/assistant` | `assistant/chat.tsx` (records chat, also used in the right-hand panel of `components/assistant-launcher.tsx`) |
 | `/reports`, `/reports/offices`, `/reports/retention`, `/reports/satisfaction`, `/reports/step-times` (records desk) | reports, CSV via `api/reports/csv` |
 | `/boxes`, `/boxes/new`, `/boxes/[id]`, `/boxes/[id]/edit`, `/boxes/[id]/label` (records desk; box page readable by staff) | storage boxes: `boxes/{page,box-form,actions}`, A6 label with QR; `records/[id]/paper-forms.tsx` (put in a box, record delivery), `sending-card.tsx` |
 | `/reports/released` | released documents logbook (records desk, office heads), CSV via `api/reports/csv?report=released` |
@@ -58,6 +58,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `ai.ts`, `deepseek.ts`, `ai-schemas.ts`, `ai-demo.ts` (430 lines), `ai-budget.ts` | AI prompts, client, zod schemas, demo output, cost math |
 | `assistant.ts` | records assistant chat (search + answer) |
 | `chat-memory.ts` | pure chat history caps, older-turn summary, request trimming |
+| `chat-prompts.ts` | assistant greeting, scope line and role-based starter questions |
 | `chat-store.ts` | assistant chat kept in sessionStorage per user, wiped at /login |
 | `api.ts` | `apiContext`, `aiError` for routes |
 | `i18n/` | `core.ts` (`makeT`), `server.ts` (`getT`), `client.tsx` (`useT`), `fil.ts` (dictionary, grep only) |

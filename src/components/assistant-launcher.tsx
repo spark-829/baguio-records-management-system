@@ -1,12 +1,14 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Chat } from "@/app/(app)/assistant/chat";
 import { readChat } from "@/lib/chat-store";
 import { useT } from "@/lib/i18n/client";
+
+// Below 1280px the panel is a modal; from 1280px it docks beside the page.
+const MODAL_QUERY = "(max-width: 79.99rem)";
 
 function ChatIcon() {
   return (
@@ -24,8 +26,10 @@ function CloseIcon() {
   );
 }
 
-/** Assistant button at the right end of the nav bar (icon only below 2xl) with a chat panel: bottom-right on wider screens, full screen on phones. Hidden on the full assistant page and the register form. */
-export function AssistantLauncher({ userId }: { userId: string }) {
+type LauncherProps = { userId: string; greeting: string; scope: string; office: string; prompts: string[]; demo: boolean };
+
+/** One labelled "Ask the assistant" button, fixed bottom-right, with a full-height panel on the right: docked and pushing the page from 1280px, a modal sheet below that, full screen on phones. Hidden on the full assistant page; hidden below sm on the register form. */
+export function AssistantLauncher({ userId, greeting, scope, office, prompts, demo }: LauncherProps) {
   const t = useT();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -34,8 +38,9 @@ export function AssistantLauncher({ userId }: { userId: string }) {
   const panel = useRef<HTMLDivElement>(null);
   const returnFocus = useRef(false);
 
-  // The full assistant page has its own chat; the register form keeps the screen for its phone action bar.
-  const hideHere = pathname === "/assistant" || pathname.startsWith("/assistant/") || pathname === "/records/new" || pathname.startsWith("/records/new/");
+  // The full assistant page has its own chat; the register form keeps the phone screen for its action bar.
+  const hideHere = pathname === "/assistant" || pathname.startsWith("/assistant/");
+  const onRegister = pathname === "/records/new" || pathname.startsWith("/records/new/");
   const shown = open && !hideHere;
 
   function toggle() {
@@ -49,7 +54,7 @@ export function AssistantLauncher({ userId }: { userId: string }) {
   }
 
   function closeOnPhone() {
-    if (window.matchMedia("(max-width: 639px)").matches) setOpen(false);
+    if (window.matchMedia(MODAL_QUERY).matches) setOpen(false);
   }
 
   useEffect(() => {
@@ -72,9 +77,10 @@ export function AssistantLauncher({ userId }: { userId: string }) {
   useEffect(() => {
     if (!shown) return;
     const id = requestAnimationFrame(() => document.getElementById("ask-popup")?.focus());
-    // Full screen on phones = modal (focus stays inside, APG dialog pattern);
-    // on wider screens it is a side panel the page stays usable beside.
-    const mq = window.matchMedia("(max-width: 639px)");
+    // Below 1280px = modal (focus stays inside, APG dialog pattern);
+    // from 1280px it is a side panel the page stays usable beside.
+    const mq = window.matchMedia(MODAL_QUERY);
+    document.documentElement.dataset.assistant = "open";
     function sync() {
       if (mq.matches) panel.current?.setAttribute("aria-modal", "true");
       else panel.current?.removeAttribute("aria-modal");
@@ -106,6 +112,7 @@ export function AssistantLauncher({ userId }: { userId: string }) {
     return () => {
       cancelAnimationFrame(id);
       document.removeEventListener("keydown", onKey);
+      delete document.documentElement.dataset.assistant;
       mq.removeEventListener("change", sync);
     };
   }, [shown]);
@@ -113,41 +120,38 @@ export function AssistantLauncher({ userId }: { userId: string }) {
   return (
     <>
       {everOpened && (
-        <div
-          id="assistant-panel"
-          ref={panel}
-          role="dialog"
-          aria-labelledby="assistant-panel-title"
-          className={`no-print fixed inset-0 z-40 flex-col overflow-hidden bg-white sm:inset-auto sm:right-4 sm:bottom-4 sm:h-[min(640px,calc(100vh-2rem))] sm:w-[420px] sm:rounded-2xl sm:border sm:border-slate-200 sm:shadow-2xl ${shown ? "flex" : "hidden"}`}
-        >
-          <div className="on-dark flex items-center gap-2 bg-brand-800 px-4 py-3 text-white">
-            <div className="min-w-0 flex-1 leading-tight">
-              <h2 id="assistant-panel-title" className="text-lg font-bold text-white">{t("Records assistant")}</h2>
-              <p className="hidden text-sm text-brand-100 sm:block">{t("Searches only the records you may see")}</p>
+        <>
+          {shown && <div aria-hidden="true" onClick={closeAndReturnFocus} className="no-print fixed inset-0 z-30 bg-slate-900/40 max-sm:hidden xl:hidden" />}
+          <div
+            id="assistant-panel"
+            ref={panel}
+            role="dialog"
+            aria-labelledby="assistant-panel-title"
+            className={`no-print fixed top-0 right-0 bottom-0 z-40 h-dvh w-full flex-col overflow-hidden border-l border-slate-300 bg-white shadow-xl sm:w-[26rem] ${shown ? "flex" : "hidden"}`}
+          >
+            <div className="on-dark flex items-center gap-2 bg-brand-800 px-4 py-2 text-white">
+              <h2 id="assistant-panel-title" className="min-w-0 flex-1 text-lg font-bold text-white">{t("Records assistant")}</h2>
+              <button type="button" onClick={closeAndReturnFocus} aria-label={t("Close assistant")} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-white/10">
+                <CloseIcon />
+              </button>
             </div>
-            <Link prefetch={false} href="/assistant" onClick={() => setOpen(false)} className="inline-flex min-h-11 items-center rounded-lg px-2 text-base font-semibold underline underline-offset-4 hover:bg-white/10">
-              {t("Open full page")}
-            </Link>
-            <button type="button" onClick={closeAndReturnFocus} aria-label={t("Close assistant")} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-white/10">
-              <CloseIcon />
-            </button>
+            <div className="min-h-0 flex-1">
+              <Chat userId={userId} compact fullPageLink inputId="ask-popup" onNavigate={closeOnPhone} greeting={greeting} scope={scope} office={office} prompts={prompts} demo={demo} />
+            </div>
           </div>
-          <div className="min-h-0 flex-1">
-            <Chat userId={userId} compact inputId="ask-popup" onNavigate={closeOnPhone} />
-          </div>
-        </div>
+        </>
       )}
-      {!hideHere && (
+      {!hideHere && !open && (
         <button
           ref={launcher}
           type="button"
           onClick={toggle}
           aria-expanded={open}
           aria-controls="assistant-panel"
-          className={`no-print my-1 min-h-11 min-w-11 shrink-0 items-center justify-center gap-2 rounded-md border-2 border-brand-700 bg-white px-2.5 text-base font-semibold text-brand-800 hover:bg-brand-50 2xl:px-3.5 ${open ? "hidden sm:inline-flex" : "inline-flex"}`}
+          className={`no-print fixed right-4 bottom-4 z-30 min-h-12 items-center gap-2 rounded-full bg-brand-700 px-5 text-base font-semibold text-white shadow-lg ring-2 ring-white hover:bg-brand-800 focus-visible:outline sm:right-6 sm:bottom-6 ${onRegister ? "hidden sm:inline-flex" : "inline-flex"}`}
         >
-          {open ? <CloseIcon /> : <ChatIcon />}
-          <span className="sr-only 2xl:not-sr-only">{open ? t("Close assistant") : t("Ask the assistant")}</span>
+          <ChatIcon />
+          <span>{t("Ask the assistant")}</span>
         </button>
       )}
     </>
