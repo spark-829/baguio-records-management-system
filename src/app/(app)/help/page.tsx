@@ -143,6 +143,8 @@ export default async function HelpPage() {
         {S("Click [[Assistant]].")}
         {S("Type your question in English or Taglish, for example “Nasaan na po yung voucher para sa drainage?”, then press [[Send]].")}
         {S("It only looks at documents you are allowed to see. Click a tracking number in the answer to open that document.")}
+        {S("For this demo, the assistant and [[Read scan with AI]] use DeepSeek, an AI service outside the Philippines. Confidential records are kept out of it. For a sensitive scan, tick [[Sensitive document: do not send it to the AI]].")}
+        {S("For real use in the City, this would switch to Claude or to an open-weight model run on the City's own servers.")}
       </Topic>
 
       <Topic id="language" title={t("Change the language")}>
