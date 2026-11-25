@@ -103,7 +103,8 @@ including older and low-literacy users. Borrow freely.
 - Errors inline next to fields; on submit focus the first error.
 - `autocomplete`, correct `type` and `inputmode` on every field; never
   block paste.
-- The URL reflects state: filters, tabs and pages are deep-linkable.
+- The URL reflects state: filters, tabs and pages are deep-linkable. Search and filter forms use `next/form` (`<Form action="/path" prefetch={false}>`), never a plain `<form method="get">`, so a search keeps the page on screen instead of a full white reload.
+- Page changes keep the current page visible and show the thin gold bar at the top (`NavProgress`) until the next page is ready; no full-page skeletons that blank the screen.
 - Links are `<a>`/`<Link>`; never a `div` with `onClick` for navigation.
 - Confirm destructive actions or give an Undo window.
 - Honour `prefers-reduced-motion`; animate only `transform` and `opacity`;

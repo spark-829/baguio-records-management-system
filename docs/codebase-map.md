@@ -60,6 +60,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `chat-memory.ts` | pure chat history caps, older-turn summary, request trimming |
 | `chat-prompts.ts` | assistant greeting, scope line and role-based starter questions |
 | `chat-store.ts` | assistant chat kept in sessionStorage per user, wiped at /login |
+| `nav-progress.ts` | which link clicks and GET form submits start a page change (top progress bar in `components/nav-progress.tsx`, mounted in the root layout) |
 | `api.ts` | `apiContext`, `aiError` for routes |
 | `i18n/` | `core.ts` (`makeT`), `server.ts` (`getT`), `client.tsx` (`useT`), `fil.ts` (dictionary, grep only) |
 | `qr.ts`, `watermark.ts`, `shrink-image.ts`, `image-size.ts` | QR, PDF stamp, image helpers |

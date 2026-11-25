@@ -1,3 +1,4 @@
+import Form from "next/form";
 import { getT } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -64,12 +65,12 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">{t("Client satisfaction")}</h1>
         <p className="text-slate-700">{t("Send to the City Human Resource Management Office by {date}.", { date: fmtDate(hrmoDeadline(month)) })}</p>
-        <form className="no-print flex flex-wrap items-end gap-2" method="get">
+        <Form action="/reports/satisfaction" prefetch={false} className="no-print flex flex-wrap items-end gap-2">
           <div><label className="label" htmlFor="sat-month">{t("Month")}</label><input id="sat-month" type="month" name="month" defaultValue={month} className="input" /></div>
           <button className="btn-secondary">{t("Apply")}</button>
           <a className="btn-secondary" href={`/api/reports/satisfaction?month=${month}`}>{t("Download list (CSV, opens in Excel)")}</a>
           <PrintButton label="Print report" />
-        </form>
+        </Form>
       </div>
 
       {sent && <p role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-emerald-900">{t("Sent to HRMO as {tracking}.", { tracking: sent.slice(0, 20) })}</p>}

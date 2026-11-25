@@ -1,3 +1,4 @@
+import Form from "next/form";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getT } from "@/lib/i18n/server";
@@ -36,7 +37,7 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
         <h1 className="text-2xl font-bold">{t("Storage boxes")}</h1>
         <Link href="/boxes/new" className="btn-primary">{t("Add a box")}</Link>
       </div>
-      <form method="get" className="card p-4">
+      <Form action="/boxes" prefetch={false} className="card p-4">
         <label className="label" htmlFor="q">{t("Find a box")}</label>
         <div className="flex flex-wrap gap-2">
           <input id="q" name="q" className="input min-w-0 flex-1 basis-60" defaultValue={q} autoComplete="off" aria-describedby="q-hint" />
@@ -44,7 +45,7 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
           {q && <Link href="/boxes" className="btn-secondary">{t("Clear search")}</Link>}
         </div>
         <p id="q-hint" className="mt-1 text-sm text-slate-600">{t("Box code, office, room or what is inside")}</p>
-      </form>
+      </Form>
       {error && <p role="alert" className="text-sm text-red-700">{t("Something went wrong. Please try again.")}</p>}
       {rows.length === 0 && !error ? (
         <div className="card space-y-3 p-5">

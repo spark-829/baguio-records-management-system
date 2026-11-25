@@ -1,3 +1,4 @@
+import Form from "next/form";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getT } from "@/lib/i18n/server";
@@ -34,13 +35,13 @@ export default async function ReleasedLogbookPage({ searchParams }: { searchPara
         <p className="print-only text-sm">{isCentral(me) ? t("All offices") : me.office?.name}</p>
       </div>
       <div className="no-print flex flex-wrap items-end justify-between gap-2">
-        <form method="get" className="flex flex-wrap items-end gap-2">
+        <Form action="/reports/released" prefetch={false} className="flex flex-wrap items-end gap-2">
           <div>
             <label className="label" htmlFor="log-day">{t("Date")}</label>
             <input id="log-day" type="date" name="day" defaultValue={day} className="input min-h-12" />
           </div>
           <button className="btn-secondary min-h-12">{t("Show")}</button>
-        </form>
+        </Form>
         <div className="flex flex-wrap gap-2">
           <a className="btn-secondary" href={`/api/reports/csv?report=released&day=${day}`}>{t("Download CSV")}</a>
           <PrintButton label="Print logbook" />
