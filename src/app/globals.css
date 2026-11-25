@@ -185,6 +185,15 @@ main table thead {
   background: var(--color-brand-50);
   border-bottom: 2px solid var(--color-brand-200);
 }
+/* Links inside tables, and plain links with no styling of their own, look like links */
+main a:not([class]),
+main table td a:not([class*="btn"]) {
+  color: var(--color-brand-700);
+  text-decoration-line: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  font-weight: 600;
+}
 main table td {
   padding-block: 0.75rem;
   font-variant-numeric: tabular-nums;

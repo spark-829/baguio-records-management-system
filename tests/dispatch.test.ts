@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  canRecordDelivery, deliveryErrorText, dayMonth, firstError, logbookCsvRows, manilaTime, parseDeliveryForm, parseLogbook,
+  canRecordDelivery, deliveryErrorText, dayMonth, firstError, logbookCsvRows, manilaClock, manilaTime, parseDeliveryForm, parseLogbook,
   parseReleaseForm, receivedText, releaseErrorText, sentOutText,
 } from "../src/lib/dispatch";
 
@@ -96,13 +96,16 @@ describe("logbook", () => {
     expect(parseLogbook([row])[0]).toEqual(row);
   });
   it("formats days and times", () => {
-    expect(dayMonth("2026-11-26")).toBe("26 Nov");
-    expect(dayMonth("2026-01-05")).toBe("5 Jan");
+    expect(dayMonth("2026-11-26")).toBe("Nov 26");
+    expect(dayMonth("2026-01-05")).toBe("Jan 5");
+    expect(manilaClock("2026-11-26T01:30:00Z")).toBe("9:30 AM");
+    expect(manilaClock("2026-11-26T04:05:00Z")).toBe("12:05 PM");
+    expect(manilaClock("2026-11-26T16:05:00Z")).toBe("12:05 AM");
     expect(manilaTime("2026-11-26T01:30:00Z")).toBe("09:30");
     expect(manilaTime("2026-11-26T17:05:00Z")).toBe("01:05");
   });
   it("receivedText", () => {
-    expect(receivedText(row)).toBe("Maria Santos, 26 Nov");
+    expect(receivedText(row)).toBe("Maria Santos, Nov 26");
     expect(receivedText({ received_by: null, received_on: null })).toBe("—");
   });
   it("csv rows", () => {

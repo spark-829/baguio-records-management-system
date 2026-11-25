@@ -477,7 +477,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         {/* DOM order = phone order: Take action first, then the record, then files. On wide screens Take action and Attachments sit on the right. */}
         <section className="card p-4 lg:col-start-3 lg:row-start-1">
           <h2 className="mb-2 font-semibold">{t("Take action")}</h2>
-          <p className="mb-2 text-sm font-medium">{rec.assignee ? t("Assigned to: {name}", { name: rec.assignee.full_name }) : t("No one yet")}</p>
+          <p className="mb-2 text-sm font-medium">{rec.assignee ? t("Assigned to: {name}", { name: rec.assignee.full_name }) : t("Assigned to: no one yet")}</p>
           {mayAssign && (
             <details className="mb-3 rounded border border-line p-2 text-sm">
               <summary className="min-h-11 cursor-pointer py-2 font-medium text-brand-700">{t(rec.assigned_to ? "Change person" : "Assign a person")}</summary>
@@ -628,11 +628,11 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           <section className="card p-4">
             <h2 className="mb-3 font-semibold">{t("Details")}</h2>
             {rec.description && <p className="mb-3 text-sm text-slate-700">{rec.description}</p>}
-            <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+            <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
               {facts.map(([k, v]) => (
-                <div key={k} className="flex gap-2 border-b border-slate-100 py-1">
-                  <dt className="w-40 shrink-0 text-slate-500">{k}</dt>
-                  <dd className="font-medium">{v}</dd>
+                <div key={k} className="min-w-0 border-b border-slate-100 pb-2">
+                  <dt className="text-slate-600">{k}</dt>
+                  <dd className="font-medium break-words">{v}</dd>
                 </div>
               ))}
             </dl>

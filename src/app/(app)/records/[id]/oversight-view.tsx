@@ -48,11 +48,11 @@ export async function OversightView({ id, meId }: { id: string; meId: string }) 
           )}
           <section className="card p-4" aria-labelledby="ov-details">
             <h2 id="ov-details" className="mb-3 font-semibold">{t("Details")}</h2>
-            <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+            <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
               {facts.map(([k, v]) => (
-                <div key={k} className="flex gap-2 border-b border-slate-100 py-1">
-                  <dt className="w-40 shrink-0 text-slate-500">{k}</dt>
-                  <dd className="min-w-0 break-words font-medium">{v}</dd>
+                <div key={k} className="min-w-0 border-b border-slate-100 pb-2">
+                  <dt className="text-slate-600">{k}</dt>
+                  <dd className="break-words font-medium">{v}</dd>
                 </div>
               ))}
             </dl>
