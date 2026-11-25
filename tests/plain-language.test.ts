@@ -7,7 +7,7 @@ const OFFICES = [
   { code: "CEO", name: "City Engineering Office" },
   { code: "CTO", name: "City Treasurer's Office" },
 ];
-const TYPES = ["Letter", "Memorandum", "Disbursement Voucher", "Request / Complaint"];
+const TYPES = ["Letter", "Memorandum", "Disbursement Voucher", "Request"];
 
 describe("questions in Taglish and everyday words", () => {
   it("understands a Taglish question about the drainage voucher", () => {

@@ -13,10 +13,16 @@ insert into public.rms_offices (code, name) values
   ('CGSO', 'City General Services Office')
 on conflict (code) do nothing;
 
-insert into public.rms_document_types (name, retention_years) values
-  ('Letter', 5), ('Memorandum', 5), ('Executive Order', 10), ('Ordinance', 50),
-  ('Resolution', 50), ('Disbursement Voucher', 10), ('Purchase Request', 10),
-  ('Endorsement', 5), ('Request / Complaint', 5)
+insert into public.rms_document_types (name, retention_years, series_code, series_title) values
+  ('Letter', 5, 'ADM-COR', 'Correspondence (letters received and sent)'),
+  ('Memorandum', 5, 'ADM-MEM', 'Office memoranda and circulars'),
+  ('Executive Order', 10, 'EXE-EO', 'Executive orders of the City Mayor'),
+  ('Ordinance', 50, 'LEG-ORD', 'City ordinances'),
+  ('Resolution', 50, 'LEG-RES', 'Resolutions'),
+  ('Disbursement Voucher', 10, 'FIN-DV', 'Disbursement vouchers and supporting papers'),
+  ('Purchase Request', 10, 'PRO-PR', 'Purchase requests'),
+  ('Endorsement', 5, 'ADM-END', 'Endorsements and transmittals'),
+  ('Request', 5, 'CS-REQ', 'Requests for city services')
 on conflict (name) do nothing;
 
 -- Demo users ------------------------------------------------------------
@@ -68,7 +74,7 @@ declare
   cto uuid := (select id from public.rms_offices where code = 'CTO');
   clo uuid := (select id from public.rms_offices where code = 'CLO');
   t_letter uuid := (select id from public.rms_document_types where name = 'Letter');
-  t_req uuid := (select id from public.rms_document_types where name = 'Request / Complaint');
+  t_req uuid := (select id from public.rms_document_types where name = 'Request');
   t_dv uuid := (select id from public.rms_document_types where name = 'Disbursement Voucher');
   t_memo uuid := (select id from public.rms_document_types where name = 'Memorandum');
   t_pr uuid := (select id from public.rms_document_types where name = 'Purchase Request');

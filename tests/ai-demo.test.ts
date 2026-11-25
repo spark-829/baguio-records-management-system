@@ -7,7 +7,7 @@ const OFFICES = [
   { code: "CTO", name: "City Treasurer's Office" },
   { code: "CPDO", name: "City Planning and Development Office" },
 ];
-const TYPES = ["Letter", "Memorandum", "Disbursement Voucher", "Purchase Request", "Request / Complaint"];
+const TYPES = ["Letter", "Memorandum", "Disbursement Voucher", "Purchase Request", "Request", "Complaint"];
 
 describe("demo mode switch", () => {
   it("is on without a key and off with one", () => {
@@ -73,6 +73,6 @@ describe("demo search does not over-match", () => {
     expect(f.q).toContain("road");
   });
   it("maps 'complaint' to the complaint type", () => {
-    expect(demoFilters("show the administrative complaint", OFFICES, TYPES).docType).toBe("Request / Complaint");
+    expect(demoFilters("show the administrative complaint", OFFICES, TYPES).docType).toBe("Complaint");
   });
 });

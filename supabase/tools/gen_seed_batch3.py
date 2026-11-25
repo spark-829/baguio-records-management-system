@@ -36,7 +36,7 @@ rec("incoming", "Disbursement voucher for meals of the Christmas lighting volunt
     [(0, "fwd", "CBO", "ro", "Forwarded for budget certification", None)])
 rec("incoming", "Request for repair of the Burnham Park lake fountain before Christmas",
     "Park management reports the fountain pump failed and asks for repair before the holiday crowds.",
-    "Request / Complaint", "Infrastructure", ["burnham park", "fountain", "repair", "christmas"], "urgent", "public",
+    "Request", "Infrastructure", ["burnham park", "fountain", "repair", "christmas"], "urgent", "public",
     "Park Superintendent", "Burnham Park Management", "walk-in", 5, 8, "CMO", 14,
     [(0, "fwd", "CEO", "ro", "Forwarded for inspection", "Mayor wants it working by December 15."),
      (1, "rcv", None, "es", "Received by Engineering", None),
@@ -56,7 +56,7 @@ rec("incoming", "Invitation to the City Christmas lighting ceremony at Session R
      (1, "done", None, "ca", "Attendance confirmed for all department heads", None)])
 rec("incoming", "Request for road clearing after landslide on Kennon Road access, Barangay Camp 7",
     "Barangay reports soil and rocks blocking one lane after heavy rain.",
-    "Request / Complaint", "Disaster response", ["landslide", "camp 7", "road clearing", "kennon road"], "urgent", "public",
+    "Request", "Disaster response", ["landslide", "camp 7", "road clearing", "kennon road"], "urgent", "public",
     "Hon. Rogelio Bautista", "Barangay Camp 7", "walk-in", 9, 8, "CMO", 2,
     [(0, "fwd", "CEO", "ro", "Forwarded for immediate action", "Coordinate with CDRRMO."),
      (0, "rcv", None, "es", "Received by Engineering", None),
@@ -84,14 +84,14 @@ rec("incoming", "Notice of hearing in a civil case involving a city lot in Baran
      (1, "act", None, "lo", "Preparing pre-trial brief", None)])
 rec("incoming", "Request for business permit inspection schedule, Upper Session Road establishments",
     "Business owners ask for the inspection schedule needed to renew their permits in January.",
-    "Request / Complaint", "Business permits", ["business permit", "inspection", "session road", "renewal"], "normal", "public",
+    "Request", "Business permits", ["business permit", "inspection", "session road", "renewal"], "normal", "public",
     "Ms. Carmela Yu", "Upper Session Road Business Association", "walk-in", 8, 15, "CMO", 20,
     [(0, "fwd", "CAO", "ro", "Forwarded for scheduling", None),
      (1, "rcv", None, "ca", "Received", None),
      (3, "act", None, "ca", "Joint inspection team being formed", "Engineering, fire and health to join.")])
 rec("incoming", "Request for financial assistance for typhoon-damaged homes, Barangay Pinsao Proper",
     "Barangay requests assistance for 14 families whose roofs were damaged.",
-    "Request / Complaint", "Social welfare", ["typhoon", "financial assistance", "pinsao", "families"], "urgent", "internal",
+    "Request", "Social welfare", ["typhoon", "financial assistance", "pinsao", "families"], "urgent", "internal",
     "Hon. Mercy Dulay", "Barangay Pinsao Proper", "walk-in", 12, 9, "CMO", 5,
     [(0, "fwd", "CAO", "ro", "Forwarded for validation", "List of families attached."),
      (1, "rcv", None, "ca", "Received", None),
@@ -106,7 +106,7 @@ rec("incoming", "Submission of the proposed 2027 annual budget of the City Treas
      (6, "done", None, "bo", "Included in the consolidated budget", None)])
 rec("incoming", "Request for tax clearance of a market stall lease applicant",
     "Applicant for a public market stall asks for a tax clearance certificate.",
-    "Request / Complaint", "Revenue", ["tax clearance", "market", "stall", "lease"], "low", "internal",
+    "Request", "Revenue", ["tax clearance", "market", "stall", "lease"], "low", "internal",
     "Mr. Arnel Pascua", None, "walk-in", 2, 11, "CMO", 5,
     [(0, "fwd", "CTO", "ro", "Forwarded for issuance", None),
      (0, "rcv", None, "ts", "Received by Treasury", None),

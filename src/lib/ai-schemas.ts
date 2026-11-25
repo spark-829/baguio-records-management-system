@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { matchDocType } from "./doc-types";
 
 export const EXTRACT_MAX_CHARS = 600;
 
@@ -44,7 +45,7 @@ export function intakeModelSchema(docTypes: string[], officeCodes: string[]) {
       extracted_text: z.string().catch(""),
     })
     .transform((v): IntakeResult => {
-      const type = docTypes.find((t) => t.toLowerCase() === v.document_type.trim().toLowerCase());
+      const type = matchDocType(v.document_type, docTypes);
       const office = officeCodes.find((c) => c.toLowerCase() === v.suggested_office_code.trim().toLowerCase());
       const keywords = [...new Set(v.keywords.map((k) => k.trim().toLowerCase()).filter(Boolean))].slice(0, 8);
       return {

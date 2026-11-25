@@ -7,6 +7,10 @@ const schema = intakeModelSchema(TYPES, CODES);
 const good = { direction: "incoming", subject: "Road repair", document_type: "letter", suggested_office_code: "ceo", priority: "urgent", confidentiality: "public", document_date: "2026-11-01", keywords: ["Road", "road", "Repair"], extracted_text: "x".repeat(900) };
 
 describe("intake model schema", () => {
+  it("maps the old type name Request / Complaint to Request", () => {
+    const s = intakeModelSchema(["Letter", "Request", "Complaint"], CODES);
+    expect(s.parse({ ...good, document_type: "Request / Complaint" }).document_type).toBe("Request");
+  });
   it("matches types and offices ignoring case and trims long text", () => {
     const r = schema.parse(good);
     expect(r.document_type).toBe("Letter");
