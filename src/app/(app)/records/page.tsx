@@ -85,7 +85,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         {f.tx && <input type="hidden" name="tx" value={f.tx} />}
         <div>
           <label className="label" htmlFor="q">{t("Search records")}</label>
-          <p id="q-hint" className="mb-2 text-sm text-slate-600">{t("Words, a name or a tracking number. You can also type a sentence and press Ask the assistant to find it.")} {t("…or a permit, voucher or tax declaration number")}</p>
+          <p id="q-hint" className="mb-2 text-sm text-slate-600">{t("Type words, a name, or a tracking, permit, voucher or tax declaration number. To search with a sentence, press Ask the assistant to find it.")}</p>
           <input className="input" id="q" name="q" defaultValue={f.q} aria-describedby="q-hint" />
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -234,7 +234,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             {rows.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
                 <td className="w-40 whitespace-nowrap px-4 py-2 font-mono text-sm">
-                  <Link prefetch={false} href={recordHref(r.id)} className="inline-flex min-h-11 items-center text-brand-700 hover:underline">{r.tracking_no}</Link>
+                  {r.tracking_no}
                 </td>
                 <td className="min-w-[18rem] px-4 py-2">
                   <Link prefetch={false} href={recordHref(r.id)} className="inline-block py-0.5 font-semibold text-ink hover:underline">{r.subject}</Link>

@@ -136,7 +136,7 @@ export default async function HelpPage() {
         {S("To log a complaint, press [[Register]] and choose the _Document type_ Complaint. The reply is due in 72 hours, and the _Due_ box counts the hours.")}
         {S("The receipt has a second code, _Rate our service_. The citizen scans it to answer a short survey without giving a name.")}
         {me.role !== "staff" && me.role !== "viewer" && S("Open [[Reports]], then [[Client satisfaction]], to see the answers by month and print them for the City Human Resource Management Office.")}
-        <ComplaintChannels />
+        <li className="list-none"><ComplaintChannels /></li>
       </Topic>
 
       <Topic id="ask" title={t("Ask the assistant")}>

@@ -95,6 +95,9 @@ precision and restraint, not decoration.
 ### Primary
 Pine green (`brand-700` buttons and links, `brand-800` header, `brand-900`
 headings). White on brand-700 is 9.2:1.
+### City theme
+Offices listed in `src/lib/theme.ts` (only General Services, `CGSO`, for now) get the baguio.gov.ph palette: teal brand (`#1f7360` buttons and links, `#1c373e` header, `#0f342c` headings), a mint stripe in place of gold (`#addfd3`), city navy for secondary text (`#4f6a86`, `#355c87`, `#2a4a6c`), page `#ebeff3`, ink `#404040`. It overrides the tokens in `globals.css` through `data-theme="city"` on the app shell; contrast pairs are listed at the top of that file.
+
 ### Secondary
 Gold: `gold-500` for the header stripe and highlights only, `gold-800` on
 `gold-100` for text. Never gold text on white.
@@ -116,7 +119,7 @@ tracking numbers. Senior-friendly scale: 15 / 17 / 18 (body) / 21 / 24 /
 ## Layout
 Max width 7xl, 16px side gutter on phones. Left-aligned text and forms.
 Header + horizontal nav on desktop, Menu button on phones. Tables scroll in
-their own box on phones. The assistant button sits at the right end of the nav bar (icon only below `2xl`, beside the Menu button on phones). Its panel opens bottom-right on wider screens and full screen on phones; closing returns focus to the button. No floating buttons.
+their own box on phones. The assistant is one labelled button fixed at the bottom right ("Ask" on phones, "Ask the assistant" from 640px up), lifted above sticky action bars such as the register form's Save bar. Its panel opens bottom-right on wider screens and full screen on phones; closing returns focus to the button.
 Header: lockup left; language, alerts, name block (name plus role · office, truncated with the full text on hover), My account and Sign out on the right. One row at 1280.
 Page header: h1 text-2xl, meta line, actions right (secondary first, primary last).
 Public pages (/login, /track) use the same header with lockup and language only.

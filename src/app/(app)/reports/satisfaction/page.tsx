@@ -2,6 +2,7 @@ import Form from "next/form";
 import { getT } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { ReportsNav } from "@/components/reports-nav";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDate } from "@/lib/labels";
@@ -62,6 +63,7 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
 
   return (
     <div className="space-y-4">
+      <ReportsNav me={me} current="/reports/satisfaction" />
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">{t("Client satisfaction")}</h1>
         <p className="text-slate-700">{t("Send to the City Human Resource Management Office by {date}.", { date: fmtDate(hrmoDeadline(month)) })}</p>

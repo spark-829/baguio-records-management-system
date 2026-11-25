@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABEL, fmtDate } from "@/lib/labels";
 import { maskedSubject, parseOverview } from "@/lib/oversight";
 import type { Status } from "@/lib/types";
+import { StatStrip } from "@/components/stat-strip";
 
 const CITY_LATE_SHOWN = 10;
 
@@ -36,14 +37,7 @@ export async function CityOverview() {
   return (
     <div className="space-y-6">
       <p className="text-sm text-slate-600">{t("All offices, read-only. Confidential subjects are hidden.")}</p>
-      <section aria-label={t("Summary")} className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line md:grid-cols-4">
-        {cards.map((c) => (
-          <div key={c.label} className="bg-white px-4 py-3 sm:px-5 sm:py-4">
-            <div className={`text-3xl font-bold tabular-nums ${c.alert ? "text-red-700" : "text-ink"}`}>{c.value}</div>
-            <div className="text-sm text-slate-700">{c.label}</div>
-          </div>
-        ))}
-      </section>
+      <StatStrip label={t("Summary")} items={cards} />
 
       <section aria-labelledby="city-offices" className="space-y-2">
         <h2 id="city-offices" className="text-xl font-bold">{t("By office")}</h2>
@@ -53,9 +47,9 @@ export async function CityOverview() {
             <thead>
               <tr className="border-b border-line">
                 <th scope="col" className="p-3">{t("Office")}</th>
-                <th scope="col" className="p-3">{t("Open")}</th>
-                <th scope="col" className="p-3">{t("Late")}</th>
-                <th scope="col" className="p-3">{t("Waiting to be received")}</th>
+                <th scope="col" className="p-3 text-right tabular-nums">{t("Open")}</th>
+                <th scope="col" className="p-3 text-right tabular-nums">{t("Late")}</th>
+                <th scope="col" className="p-3 text-right tabular-nums">{t("Waiting to be received")}</th>
               </tr>
             </thead>
             <tbody>
@@ -64,9 +58,9 @@ export async function CityOverview() {
                   <th scope="row" className="p-3 font-medium">
                     <Link prefetch={false} href={`/records?scope=city&office=${encodeURIComponent(f.code)}`} className="inline-flex min-h-11 items-center py-2 text-brand-700 hover:underline">{f.name}</Link>
                   </th>
-                  <td className="p-3 tabular-nums">{f.open}</td>
-                  <td className={`p-3 tabular-nums ${f.late > 0 ? "font-semibold text-red-700" : ""}`}>{f.late}</td>
-                  <td className="p-3 tabular-nums">{f.waiting}</td>
+                  <td className="p-3 text-right tabular-nums">{f.open}</td>
+                  <td className={`p-3 text-right tabular-nums ${f.late > 0 ? "font-semibold text-red-700" : ""}`}>{f.late}</td>
+                  <td className="p-3 text-right tabular-nums">{f.waiting}</td>
                 </tr>
               ))}
             </tbody>

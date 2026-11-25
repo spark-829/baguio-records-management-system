@@ -1,6 +1,7 @@
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ReportsNav } from "@/components/reports-nav";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABEL, fmtDate } from "@/lib/labels";
@@ -39,9 +40,9 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="space-y-5">
+      <ReportsNav me={me} current="/reports/retention" />
       <div className="no-print flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p><Link prefetch={false} href="/reports">{t("← Reports")}</Link></p>
           <h1 className="text-2xl font-bold">{t("Retention schedule")}</h1>
           <p className="max-w-3xl text-slate-700">
             {t("How long each finished record must be kept, by kind of document, counted from the day it was finished. This page never deletes anything. It only lists what the records desk should review with the Records Officer and the disposal authority.")}

@@ -11,6 +11,7 @@ import { getT } from "@/lib/i18n/server";
 import { AlertBell } from "@/components/alert-bell";
 import { assistantContext } from "@/lib/chat-prompts";
 import { isAiDemo } from "@/lib/ai-demo";
+import { themeFor } from "@/lib/theme";
 import { hasFeature, isHrmoCss } from "@/lib/office-features";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -34,18 +35,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         ...(me.role !== "viewer" ? [{ href: "/records/new", label: t("Register") }] : []),
         ...(me.role === "records_officer" ? [{ href: "/boxes", label: t("Boxes") }] : []),
         ...(hasFeature(me, "map") ? [{ href: "/map", label: t("Map") }] : []),
-        { href: "/help", label: t("Help") },
         ...(me.role !== "staff" ? [{ href: "/reports", label: t("Reports") }] : []),
         ...(me.role === "staff" && isHrmoCss({ role: me.role, officeCode: me.office?.code, windowFlag: me.window_intake })
           ? [{ href: "/reports/satisfaction", label: t("Client satisfaction") }]
           : []),
+        { href: "/help", label: t("Help") },
       ];
   const ctx = assistantContext(me);
   const roleLabel = ROLE_LABEL[me.role];
   const showRole = !me.full_name.includes(roleLabel);
   const line2 = [showRole ? t(roleLabel) : null, me.office?.name ?? null].filter(Boolean).join(" · ");
   return (
-    <div className="app-shell flex min-h-screen flex-col">
+    <div className="app-shell flex min-h-screen flex-col" data-theme={themeFor(me.office?.code)}>
       <a href="#main" className="sr-only z-50 rounded-lg bg-white px-4 py-3 font-semibold text-brand-800 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         {t("Skip to main content")}
       </a>

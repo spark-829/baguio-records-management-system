@@ -5,6 +5,9 @@
 export type DemoAccount = { email: string; role: string };
 export type DemoOffice = { office: string; accounts: DemoAccount[] };
 
+/** Shared password of every demo account (printed on /login). */
+export const DEMO_PASSWORD = "Demo@2026";
+
 const HEAD = "Head";
 const WINDOW = "Window clerk";
 const STAFF = "Staff";

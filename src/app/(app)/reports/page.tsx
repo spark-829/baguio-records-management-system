@@ -3,14 +3,16 @@ import { txLabel } from "@/lib/transaction-type";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ReportsNav } from "@/components/reports-nav";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import type { Status } from "@/lib/types";
 import { monthLabel, onTimeSummary, parseOnTime, parseSummary, reportBounds, toBars } from "@/lib/reports";
 import { PrintButton } from "../records/[id]/slip/print-button";
-import { hasFeature, isOversight } from "@/lib/office-features";
+import { isOversight } from "@/lib/office-features";
 import { CityOverview, ScopeLinks } from "../city-overview";
+import { StatStrip } from "@/components/stat-strip";
 
 const OVERDUE_SHOWN = 10;
 
@@ -90,6 +92,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
 
   return (
     <div className="space-y-4">
+      <ReportsNav me={me} current="/reports" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="print-only text-xs font-semibold uppercase tracking-widest">{t("City Government of Baguio · Records Management System (demo)")}</p>
@@ -108,27 +111,16 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           <PrintButton label="Print report" />
         </Form>
       </div>
-      <nav aria-label={t("More reports")} className="no-print flex flex-wrap gap-2">
-        {me.role !== "viewer" && <Link href="/reports/offices" className="btn-secondary">{t("Office workload")}</Link>}
-        {(isCentral(me) || me.role === "dept_head") && hasFeature(me, "satisfaction") && <Link href="/reports/satisfaction" className="btn-secondary">{t("Client satisfaction")}</Link>}
-        {isCentral(me) && <Link href="/reports/retention" className="btn-secondary">{t("Retention schedule")}</Link>}
-        {(me.role === "records_officer" || me.role === "dept_head") && hasFeature(me, "logbook") && <Link href="/reports/released" className="btn-secondary">{t("Released documents logbook")}</Link>}
-        {me.role === "records_officer" && <Link href="/reports/step-times" className="btn-secondary">{t("Standard time per step")}</Link>}
-      </nav>
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {[
-          ["Incoming", s.incoming],
-          ["Outgoing", s.outgoing],
-          ["Open", s.open],
-          ["Overdue", s.overdue],
-        ].map(([k, v]) => (
-          <div key={k} className="card p-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">{t(String(k))}</div>
-            <div className="mt-1 text-3xl font-bold">{v}</div>
-          </div>
-        ))}
-      </div>
+      <StatStrip
+        label={t("Summary")}
+        items={[
+          { label: t("Incoming"), value: s.incoming },
+          { label: t("Outgoing"), value: s.outgoing },
+          { label: t("Open"), value: s.open },
+          { label: t("Overdue"), value: s.overdue, alert: s.overdue > 0 },
+        ]}
+      />
 
       <div className="grid gap-4 md:grid-cols-2">
         <Bars title={t("By status")} data={toBars(s.by_status, (k) => t(STATUS_LABEL[k as Status] ?? k))} />

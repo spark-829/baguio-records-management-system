@@ -5,6 +5,7 @@ import { useT } from "@/lib/i18n/client";
 
 import { useActionState, useEffect } from "react";
 import { signIn } from "./actions";
+import { DEMO_PASSWORD } from "@/lib/demo-accounts";
 
 export function LoginForm({ next = "", email = "" }: { next?: string; email?: string }) {
   const t = useT();
@@ -21,9 +22,9 @@ export function LoginForm({ next = "", email = "" }: { next?: string; email?: st
       </div>
       <div>
         <label className="label" htmlFor="password">{t("Password")}</label>
-        <input className="input" id="password" name="password" type="password" autoComplete="current-password" autoFocus={Boolean(email) && !state} required />
+        <input className="input" id="password" name="password" type="password" autoComplete="current-password" defaultValue={email ? DEMO_PASSWORD : undefined} required />
       </div>
-      <details open className="rounded-lg border border-slate-300 bg-slate-50 px-4 py-2 text-sm text-slate-700">
+      <details className="rounded-lg border border-slate-300 bg-slate-50 px-4 py-2 text-sm text-slate-700">
         <summary className="cursor-pointer font-semibold text-brand-800">{t("Privacy notice (Data Privacy Act of 2012)")}</summary>
         <div className="mt-2 space-y-2 pb-2">
           <p>
@@ -41,6 +42,7 @@ export function LoginForm({ next = "", email = "" }: { next?: string; email?: st
           type="checkbox"
           name="privacy"
           className="checkbox mt-1"
+          autoFocus={Boolean(email) && !state}
           defaultChecked={Boolean(state?.email)}
           required
           onInvalid={(e) => e.currentTarget.setCustomValidity(t("Please tick this box to agree before signing in."))}

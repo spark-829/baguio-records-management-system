@@ -45,7 +45,7 @@ export function SiteFooter({ className = "mt-10" }: { className?: string }) {
         <p className="max-w-xl leading-relaxed sm:text-right">
           <strong className="font-semibold text-white">{t("Demo system — not an official City Government of Baguio service.")}</strong>{" "}
           {t("All names and records shown are fictional.")}{" "}
-          <a href="/developer" className="inline-flex min-h-11 items-center font-semibold text-white underline">{t("About the developer")}</a>
+          <a href="/developer" className="font-semibold text-white underline">{t("About the developer")}</a>
         </p>
       </div>
     </footer>
