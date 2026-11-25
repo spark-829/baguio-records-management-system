@@ -93,7 +93,7 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
 
       <section className="card overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+          <thead className="bg-slate-50 text-left text-sm font-semibold text-slate-600">
             <tr><th className="px-3 py-2">{t("When")}</th><th className="px-3 py-2">{t("Who")}</th><th className="px-3 py-2">{t("Event")}</th><th className="px-3 py-2">{t("Record / file")}</th><th className="px-3 py-2">{t("IP address")}</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -140,7 +140,7 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
         {report?.data && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+              <thead className="bg-slate-50 text-left text-sm font-semibold text-slate-600">
                 <tr><th className="px-3 py-2">{t("When")}</th><th className="px-3 py-2">{t("Who")}</th><th className="px-3 py-2">{t("What")}</th><th className="px-3 py-2">{t("Record")}</th><th className="px-3 py-2">{t("IP")}</th></tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

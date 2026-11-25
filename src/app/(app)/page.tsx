@@ -11,6 +11,7 @@ import { DueCalendar } from "@/components/due-calendar";
 import { SecurityHub } from "./security-hub";
 import { CityOverview, ScopeLinks } from "./city-overview";
 import { isOversight } from "@/lib/office-features";
+import { StatStrip } from "@/components/stat-strip";
 
 type Row = {
   id: string;
@@ -134,14 +135,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         )}
       </div>
 
-      <section aria-label={t("Summary")} className={`grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line ${stats.length === 4 ? "md:grid-cols-4" : "md:grid-cols-3"}`}>
-        {stats.map((s, i) => (
-          <Link prefetch={false} key={s.label} href={s.href} className={`focus-inset block bg-white px-4 py-3 no-underline hover:bg-brand-50 sm:px-5 sm:py-4 ${stats.length === 3 && i === 2 ? "col-span-2 md:col-span-1" : ""}`}>
-            <span className="text-sm font-semibold text-brand-700 underline underline-offset-4">{s.label}</span>
-            <span className={`block text-2xl font-semibold tabular-nums ${s.alert ? "text-red-700" : "text-brand-900"}`}>{s.value}</span>
-          </Link>
-        ))}
-      </section>
+      <StatStrip label={t("Summary")} items={stats} />
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">

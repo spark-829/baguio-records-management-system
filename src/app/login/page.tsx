@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <p className="text-lg text-slate-700">{t("Register incoming and outgoing documents, route them between offices, see where each one is, and find it again in seconds.")}</p>
             <section className="card mt-6 p-5" aria-labelledby="demo-accounts">
               <h2 id="demo-accounts" className="text-lg font-bold">{t("Demo accounts (password: Demo@2026)")}</h2>
-              <p className="mt-1 text-sm text-slate-600">{t("Choose an email to fill it in, then type the password.")}</p>
+              <p className="mt-1 text-sm text-slate-600">{t("Choose an email to fill in the sign-in form.")}</p>
               <ul className="mt-4 divide-y divide-slate-200 border-y border-slate-200">
                 {DEMO_START.map((d) => (
                   <li key={d.email} className="py-2.5">

@@ -85,7 +85,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `settings-diff.ts` | `changedSettings` (which admin settings actually changed) |
 | `user-list.ts`, `demo-accounts.ts` | admin user list filters and status; the sign-in page demo accounts by office (`?email=` prefill) |
 
-`src/components/`: alert-bell, badges, brand, nav-links, lang-toggle, idle-logout,
+`src/components/`: alert-bell, badges, brand, nav-links, stat-strip (summary numbers), reports-nav (links between report pages), lang-toggle, idle-logout,
 scan-qr-button, rich, due-calendar, barangay-map, use-upload-prep (compress + thumbnail hook).
 
 ## Database: `supabase/`
@@ -161,3 +161,5 @@ Secret-dependent jobs skip (exit 0) when their GitHub secrets are missing.
 `system-analysis.md` (use cases, ERD), `user-manual.md`, `email-intake.md` (future Cloudflare Email Routing intake), `turnover-guide.md`,
 `security-test-report.md`, `demo-video-script.md`. Read only when the task is
 about them.
+
+`src/lib/theme.ts`: which offices get the city colour theme (`themeFor`, test `tests/theme.test.ts`).

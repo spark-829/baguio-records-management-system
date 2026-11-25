@@ -1,6 +1,7 @@
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ReportsNav } from "@/components/reports-nav";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDate } from "@/lib/labels";
@@ -49,9 +50,9 @@ export default async function OfficeWorkloadPage() {
 
   return (
     <div className="space-y-5">
+      <ReportsNav me={me} current="/reports/offices" />
       <div className="no-print flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p><Link href="/reports">{t("← Reports")}</Link></p>
           <h1 className="text-2xl font-bold">{t("Office workload")}</h1>
           <p className="max-w-3xl text-slate-700">
             {t("Which offices have documents waiting, which are late, and how quickly each office finishes its work. Offices with late documents are listed first.")}

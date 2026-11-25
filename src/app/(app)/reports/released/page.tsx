@@ -2,6 +2,7 @@ import Form from "next/form";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getT } from "@/lib/i18n/server";
+import { ReportsNav } from "@/components/reports-nav";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDate } from "@/lib/labels";
@@ -28,7 +29,7 @@ export default async function ReleasedLogbookPage({ searchParams }: { searchPara
   return (
     <div className="space-y-4">
       <style>{"@media print{@page{size:A4 landscape;margin:10mm}.sig-col{display:table-cell!important}}.sig-col{display:none}"}</style>
-      <Link href="/reports" className="no-print text-sm text-brand-700 hover:underline">{t("Back to reports")}</Link>
+      <ReportsNav me={me} current="/reports/released" />
       <div>
         <h1 className="text-2xl font-bold">{t("Released documents logbook")}</h1>
         <p className="text-sm text-slate-600">{t("Outgoing documents sent out on {date}", { date: fmtDate(day) })}</p>

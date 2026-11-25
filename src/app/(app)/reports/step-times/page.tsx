@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getT } from "@/lib/i18n/server";
+import { ReportsNav } from "@/components/reports-nav";
 import { getProfile, getSettings } from "@/lib/session";
 import { STEP_KEYS, STEP_LABEL } from "@/lib/step-times";
 import { saveStepTimes } from "./actions";
@@ -19,7 +19,7 @@ export default async function StepTimesPage({ searchParams }: { searchParams: Pr
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">
-      <Link href="/reports" className="text-sm text-brand-700 hover:underline">{t("Back to reports")}</Link>
+      <ReportsNav me={me} current="/reports/step-times" />
       <div>
         <h1 className="text-2xl font-bold">{t("Standard time per step")}</h1>
         <p className="text-sm text-slate-600">{t("From the Citizen's Charter, GSO Service 15 (24 minutes).")}</p>

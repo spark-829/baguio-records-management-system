@@ -526,7 +526,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           )}
         </section>
 
-        <div className="space-y-4 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-1">
+        <div className="min-w-0 space-y-4 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-1">
           {charterSteps && me.role !== "admin" && (
             <CharterSteps
               recordId={rec.id}
@@ -556,7 +556,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
             const [head, ...body] = parseCsv(rec.content_text);
             if (!head) return null;
             return (
-              <section className="card p-4" aria-labelledby="css-h">
+              <section className="card min-w-0 p-4" aria-labelledby="css-h">
                 <h2 id="css-h" className="mb-2 font-semibold">{t("Satisfaction summary")}</h2>
                 <p className="mb-2 text-sm text-slate-600">{t("The numbers are kept in the record itself. There is no file to download.")}</p>
                 <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("Satisfaction summary")}>
@@ -564,7 +564,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                     <thead><tr className="border-b border-line">{head.map((h) => <th key={h} scope="col" className="p-2">{t(h)}</th>)}</tr></thead>
                     <tbody>
                       {body.map((r, i) => (
-                        <tr key={i} className="border-b border-line last:border-0">{r.map((c, j) => <td key={j} className="p-2">{c}</td>)}</tr>
+                        <tr key={i} className="border-b border-line last:border-0">{r.map((c, j) => <td key={j} className="p-2">{c.trim() === "" ? "—" : c}</td>)}</tr>
                       ))}
                     </tbody>
                   </table>
