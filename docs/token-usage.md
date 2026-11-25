@@ -22,6 +22,7 @@ wakes a day to 6.
 | 2026-11-24 | QA tasks woke ~24x/day; old threads very long | Cut QA wakes, start fresh threads, one big thread at a time | QA cut done; fresh threads pending |
 | 2026-11-24 | Admin hub thread (PR #67): designer, planner, implementer (2 rounds), reviewer (2 rounds) used ~660k subagent tokens; the planner alone was ~160k | For features with a written design spec, have the planner return a shorter plan (no full SQL bodies) and let the implementer write the SQL | Open |
 | 2026-11-25 | Citizen's Charter thread (PR #69, 5 phases): designer, planner, implementers per phase, reviewer 2 rounds, 3 Sonnet QA testers (~300k tokens for QA alone); thread past 40 turns | Batch several phases into one plan and one QA run (done here, worked well); start a fresh thread for the QA-049/050 follow-ups | Open |
+| 2026-11-25 | Features per department thread (PR #73): charter PDF extraction (Sonnet), designer, planner (~180k), implementer 5 rounds (~290k), reviewer 4 rounds, 2 QA testers + 2 re-tests, SQL applied by Sonnet agents; thread past 40 turns | Apply big generated SQL through a Sonnet agent reading the file (kept the main context small); never put a test BEGIN/ROLLBACK in the same call as DDL; start a fresh thread for follow-ups | Open |
 
 ## Weekly check (ask Claude: "check my usage")
 
