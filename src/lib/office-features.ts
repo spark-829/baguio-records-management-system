@@ -125,3 +125,9 @@ export function countOn(code: string, features: string[] | null | undefined): { 
   const have = parseFeatures(features ?? []);
   return { on: allowed.filter((k) => have.includes(k)).length, of: allowed.length };
 }
+
+/** The switchable features this office has turned off, in the usual order. */
+export function featuresOff(code: string, features: string[] | null | undefined): FeatureKey[] {
+  const have = parseFeatures(features ?? []);
+  return optionalFeaturesFor(code).filter((k) => !have.includes(k));
+}

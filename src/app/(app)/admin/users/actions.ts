@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -48,8 +49,13 @@ export async function updateUser(form: FormData) {
   const patch: { role: string; office_id: string; is_active: boolean; window_intake?: boolean } = { role, office_id, is_active };
   // The checkbox is only on the form when the office has the Office window feature on.
   if (form.get("window_shown") === "1") patch.window_intake = form.get("window_intake") === "on";
-  await supabase.from("rms_profiles").update(patch).eq("id", id);
+  const { error } = await supabase.from("rms_profiles").update(patch).eq("id", id);
   revalidatePath("/admin/users");
+  // Back to the same filtered list; only ever an /admin/users path.
+  const back = String(form.get("back") ?? "");
+  const base = /^\/admin\/users(\?[^#]*)?$/.test(back) ? back : "/admin/users";
+  const sep = base.includes("?") ? "&" : "?";
+  redirect(error ? `${base}${sep}edit=${encodeURIComponent(id)}&failed=1#edit-user` : `${base}${sep}saved=${encodeURIComponent(id)}`);
 }
 
 export async function unlockUser(form: FormData) {

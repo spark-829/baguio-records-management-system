@@ -18,9 +18,9 @@ export function BarList({ rows, max }: { rows: BarRow[]; max: number }) {
     <ol className="space-y-2">
       {rows.map((r) => (
         <li key={r.key}>
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-0">
-            <span className="min-w-0 font-semibold">{r.label}</span>
-            <span className="text-sm tabular-nums">{r.value}</span>
+          <div className="flex items-baseline justify-between gap-x-4">
+            <span className="min-w-0 flex-1 font-semibold">{r.label}</span>
+            <span className="shrink-0 text-right text-sm whitespace-nowrap tabular-nums">{r.value}</span>
           </div>
           <span aria-hidden="true" className="flex h-3 w-full gap-[2px] bg-white">
             {r.parts.map((p, i) =>

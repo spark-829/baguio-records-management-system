@@ -6,15 +6,6 @@ import { fmtDateTime } from "@/lib/labels";
 import type { Profile } from "@/lib/types";
 import { EVENT_WORDS, attentionItems, findingText, parseSecuritySummary } from "@/lib/security-hub";
 
-const ADMIN_PAGES = [
-  { href: "/admin/users", label: "Users" },
-  { href: "/admin/access", label: "Access history" },
-  { href: "/admin/audit", label: "Audit log" },
-  { href: "/admin/analytics", label: "Analytics" },
-  { href: "/admin/bin", label: "Bin" },
-  { href: "/admin/settings", label: "Settings" },
-];
-
 /** The administrator's home: is anything wrong with access right now? One RPC feeds the whole screen. */
 export async function SecurityHub({ me }: { me: Profile }) {
   if (me.role !== "admin") return null;
@@ -185,16 +176,6 @@ export async function SecurityHub({ me }: { me: Profile }) {
         </section>
       </div>
 
-      <nav aria-label={t("Admin pages")}>
-        <h2 className="text-lg font-bold">{t("Admin pages")}</h2>
-        <ul className="mt-2 grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-x-6">
-          {ADMIN_PAGES.map((p) => (
-            <li key={p.href}>
-              <Link prefetch={false} href={p.href} className="inline-flex min-h-11 min-w-11 items-center font-semibold text-brand-700 underline">{t(p.label)}</Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
     </div>
   );
 }

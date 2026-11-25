@@ -3,9 +3,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { ROLE_LABEL, STATUS_LABEL, fmtDateTime } from "@/lib/labels";
-import { integrityErrorText, routeText, checkCoverageText, type CheckInfo, type RouteLookups } from "@/lib/audit-text";
-import type { Role, Status } from "@/lib/types";
+import { STATUS_LABEL, fmtDateTime } from "@/lib/labels";
+import { integrityErrorText, profileText, routeText, checkCoverageText, type CheckInfo, type RouteLookups } from "@/lib/audit-text";
+import type { Status } from "@/lib/types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -40,7 +40,7 @@ function describe(table: string, action: string, data: Record<string, unknown> |
     case "rms_attachments":
       return String(d.file_name ?? "");
     case "rms_profiles":
-      return `${d.full_name} · ${ROLE_LABEL[d.role as Role] ?? d.role}${d.is_active === false ? " · deactivated" : ""}`;
+      return profileText(action, data, old, lk.offices);
     case "ai_chat":
       return `“${d.question}” → ${(d.records as string[] | undefined)?.join(", ") || "no records"}`;
     case "ai_intake":
@@ -96,7 +96,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   for (let i = 0; i < recordIds.length; i += 100) chunks.push(recordIds.slice(i, i + 100));
   const [recordLookups, officeLookup] = await Promise.all([
     Promise.all(chunks.map((c) => supabase.from("rms_records").select("id, tracking_no").in("id", c))),
-    routeRows.length > 0 ? supabase.from("rms_offices").select("id, name") : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+    routeRows.length > 0 || (rows ?? []).some((r) => r.table_name === "rms_profiles") ? supabase.from("rms_offices").select("id, name") : Promise.resolve({ data: [] as { id: string; name: string }[] }),
   ]);
   const lk: RouteLookups = {
     tracking: new Map(recordLookups.flatMap((res) => (res.data ?? []).map((x) => [x.id, x.tracking_no] as [string, string]))),
@@ -134,7 +134,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
       <section className="card overflow-x-auto" tabIndex={0} aria-label={t("Audit entries (scroll sideways for more columns)")}>
         <table className="w-full text-sm">
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
-            <tr><th className="px-3 py-2">{t("When")}</th><th className="px-3 py-2">{t("Who")}</th><th className="px-3 py-2">{t("What")}</th><th className="px-3 py-2">{t("Change")}</th><th className="px-3 py-2">{t("Details")}</th><th className="px-3 py-2">{t("Computer (IP address)")}</th></tr>
+            <tr><th className="px-3 py-2">{t("When")}</th><th className="px-3 py-2">{t("Who")}</th><th className="px-3 py-2">{t("What")}</th><th className="px-3 py-2">{t("Change")}</th><th className="px-3 py-2">{t("Details")}</th><th className="px-3 py-2">{t("IP address")}</th></tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {(rows ?? []).map((r) => (

@@ -34,7 +34,7 @@ function Group({ label, links }: { label: string; links: { href: string; text: s
           prefetch={false}
           href={l.href}
           aria-current={l.current ? "page" : undefined}
-          className={`min-h-11 flex-1 inline-flex items-center justify-center px-3 text-center font-semibold no-underline ${l.current ? "bg-brand-700 text-white" : "border-2 border-brand-700 bg-white text-brand-800"}`}
+          className={`min-h-11 flex-1 inline-flex items-center justify-center border-2 border-brand-700 px-3 text-center font-semibold no-underline md:flex-none md:px-4 md:whitespace-nowrap ${l.current ? "bg-brand-700 text-white" : "bg-white text-brand-800"}`}
         >
           {l.text}
         </Link>
