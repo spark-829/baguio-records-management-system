@@ -16,6 +16,8 @@ import { TX_FORM_LABEL, TX_TYPES } from "@/lib/transaction-type";
 import { COPY_TYPE } from "@/lib/copy-request";
 import { MAX_EML_BYTES, emlToFields, looksLikeEml, parseEml, pickAttachments } from "@/lib/eml";
 import { compressForUpload } from "@/lib/compress-upload";
+import { formatBytes } from "@/lib/upload-policy";
+import { errorItems, filingSummary, routeFile, serverErrorField } from "@/lib/register-desk";
 import { registerRecord } from "./actions";
 import { ServicePicker } from "./service-picker";
 
@@ -60,8 +62,12 @@ export function RegisterForm(props: {
   counts: Record<string, number>;
   barangays?: string[] | null;
   replyTo?: string | null;
+  /** CGSO records desk layout (isRecordsDesk). */
+  desk?: boolean;
 }) {
   const t = useT();
+  const desk = !!props.desk;
+  const svcDefault = desk ? "other" : "";
   const canIncoming = !!props.incomingMode;
   const [state, action, pending] = useActionState(registerRecord, undefined);
   const [f, setF] = useState<Fields>({
@@ -88,7 +94,7 @@ export function RegisterForm(props: {
     arta_class: "",
     in_reply_to: props.replyTo ?? "",
   });
-  const [svc, setSvc] = useState<string>("");
+  const [svc, setSvc] = useState<string>(svcDefault);
   const [svcError, setSvcError] = useState(false);
   const [refNo, setRefNo] = useState("");
   const pickerRef = useRef<HTMLFieldSetElement>(null);
@@ -100,6 +106,12 @@ export function RegisterForm(props: {
   const captureRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<Blob | null>(null);
   const [scanName, setScanName] = useState<string | null>(null);
+  const [scanSize, setScanSize] = useState(0);
+  const [dropErr, setDropErr] = useState("");
+  const [over, setOver] = useState(false);
+  const [filledFrom, setFilledFrom] = useState<"file" | "service">("file");
+  const pickRef = useRef<HTMLInputElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
 
   const prep = useUploadPrep(fileRef);
   const extraRef = useRef<HTMLInputElement>(null);
@@ -112,12 +124,19 @@ export function RegisterForm(props: {
   useEffect(() => {
     if (state && !fileRef.current?.files?.length) clearScan();
     if (state && !extraRef.current?.files?.length) setEml(null);
+    if (desk && state?.error) {
+      const id = serverErrorField(state.error);
+      const d = id ? document.getElementById(id)?.closest("details") : null;
+      if (d) d.open = true;
+      requestAnimationFrame(() => summaryRef.current?.focus());
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   function showPreview(file: File | undefined) {
     setPreview(file && file.type.startsWith("image/") ? file : null);
     setScanName(file?.name ?? null);
+    setScanSize(file?.size ?? 0);
   }
 
   // The scan input copies its image into the main file input (memory only, never saved to the device), so the original is saved as the attachment.
@@ -138,6 +157,7 @@ export function RegisterForm(props: {
     if (captureRef.current) captureRef.current.value = "";
     setPreview(null);
     setScanName(null);
+    setScanSize(0);
   }
   function setInputFiles(input: HTMLInputElement | null, files: File[]) {
     if (!input) return;
@@ -168,6 +188,7 @@ export function RegisterForm(props: {
       setF((p) => ({ ...p, ...next }));
       const filled = (Object.keys(next) as (keyof Fields)[]).filter((k) => k !== "content_text" && next[k]);
       setAiFilled(new Set(filled));
+      setFilledFrom("file");
       clearScan();
       if (kept[0]) {
         setInputFiles(fileRef.current, [kept[0]]);
@@ -194,6 +215,28 @@ export function RegisterForm(props: {
     setInputFiles(extraRef.current, []);
     setEml(null);
     setEmlErr("");
+  }
+
+  // Records desk: one routed entry for drop and "Choose a file". Emails go to the reader, scans and PDFs to the attachment.
+  function takeAny(file: File | undefined) {
+    setDropErr("");
+    if (!file) return;
+    const r = routeFile(file);
+    if (r.kind === "error") {
+      setDropErr(r.message);
+      return;
+    }
+    if (r.kind === "eml") {
+      void takeEml(file);
+      return;
+    }
+    if (eml) removeEml();
+    clearScan();
+    setInputFiles(fileRef.current, [file]);
+    showPreview(file);
+    void prep.prepare(file);
+    setAiState("idle");
+    setAiMsg("");
   }
 
   function retake() {
@@ -269,6 +312,7 @@ export function RegisterForm(props: {
       };
       setF((p) => ({ ...p, ...next }));
       setAiFilled(new Set(Object.keys(next).filter((k) => next[k as keyof Fields]) as (keyof Fields)[]));
+      setFilledFrom("file");
       const filled = Object.keys(next).filter((k) => next[k as keyof Fields]).length;
       setAiState("done");
       const base = r.demo
@@ -305,6 +349,7 @@ export function RegisterForm(props: {
     };
     setF((prev) => ({ ...prev, ...next }));
     setAiFilled(new Set((Object.keys(next) as (keyof Fields)[]).filter((k) => next[k])));
+    setFilledFrom("service");
   }
 
   // QA-034: when the browser blocks Save for empty required fields, also list them in words on the page
@@ -323,10 +368,16 @@ export function RegisterForm(props: {
   function onInvalid(e: React.FormEvent<HTMLFormElement>) {
     const el = e.target as HTMLInputElement;
     el.setAttribute("aria-invalid", "true");
+    const d = el.closest("details");
+    if (d) d.open = true;
     const target = el.type === "radio" ? el.closest("fieldset")?.querySelector("input")?.id || "" : el.id || "";
     if (!pendingMissing.current) {
       pendingMissing.current = [];
-      setTimeout(() => { setMissing(pendingMissing.current ?? []); pendingMissing.current = null; }, 0);
+      setTimeout(() => {
+        setMissing(pendingMissing.current ?? []);
+        pendingMissing.current = null;
+        if (desk) requestAnimationFrame(() => summaryRef.current?.focus());
+      }, 0);
     }
     const label = fieldLabel(el);
     if (!pendingMissing.current.some((m) => m.label === label)) pendingMissing.current.push({ id: target, label });
@@ -338,6 +389,23 @@ export function RegisterForm(props: {
       group.forEach((x) => x.removeAttribute("aria-invalid"));
       const label = fieldLabel(el);
       setMissing((m) => m.filter((x) => x.label !== label));
+    }
+  }
+
+  function goTo(id: string) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const d = el.closest("details");
+    if (d) d.open = true;
+    el.focus();
+    el.scrollIntoView({ block: "center" });
+  }
+
+  function pickDirection(v: Fields["direction"]) {
+    set("direction", v);
+    if (v === "outgoing") {
+      setSvc(svcDefault);
+      setSvcError(false);
     }
   }
 
@@ -354,15 +422,331 @@ export function RegisterForm(props: {
   const hl = (k: keyof Fields) => (aiFilled.has(k) ? "bg-brand-50 border-brand-600" : "");
   const incoming = f.direction === "incoming";
 
-  return (
-    <form action={action} onSubmit={checkService} onInvalidCapture={onInvalid} onChangeCapture={onFieldChange} onReset={() => { clearScan(); setSvc(""); setSvcError(false); setRefNo(""); setMissing([]); }} className="grid gap-4 lg:grid-cols-3">
+  const filledNote = (k: keyof Fields) =>
+    desk && filledFrom === "file" && aiFilled.has(k) ? <p className="mt-1 text-sm text-brand-900">{t("Filled from the file: check it.")}</p> : null;
+  const filingFilled = (["priority", "confidentiality", "mode", "arta_class", "category", "keywords", "document_date", "description", "in_reply_to"] as (keyof Fields)[]).some((k) => aiFilled.has(k));
+  const items = desk ? errorItems(missing, state?.error) : [];
+
+  const scanInput = <input id="scan" ref={captureRef} type="file" accept="image/*" capture="environment" className={desk ? "peer/scan sr-only" : "sr-only"} onChange={desk ? (e) => { takeAny(e.target.files?.[0]); e.target.value = ""; } : takeScan} />;
+  const emlStatus = (
+    <>
+      {emlBusy && <p role="status" className="mt-2 text-sm text-slate-700">{t("Reading the email…")}</p>}
+      {emlErr && <p role="alert" className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-800">{t(emlErr)}</p>}
+      {eml && (
+        <div role="status" className="mt-2 space-y-2 rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
+          <p className="font-medium">{t("From {sender} · {date} · {n} attachments", { sender: eml.sender, date: eml.date, n: eml.files.length })}</p>
+          {eml.files.length > 0 && <ul className="list-disc pl-5">{eml.files.map((n) => <li key={n} className="break-all">{n}</li>)}</ul>}
+          {eml.skipped.length > 0 && (
+            <ul className="list-disc pl-5 text-slate-800">
+              {eml.skipped.map((x) => (
+                <li key={x.name} className="break-all">
+                  {t(x.reason === "type" ? "Skipped {file}: only PDF, JPG or PNG are kept." : "Skipped {file}: too big to send with the form. Attach it on the record page after saving.", { file: x.name })}
+                </li>
+              ))}
+            </ul>
+          )}
+          <button type="button" onClick={removeEml} className="btn-secondary w-full">{t("Remove email")}</button>
+        </div>
+      )}
+    </>
+  );
+  const extraInput = <input ref={extraRef} type="file" name="extra_file" multiple className="sr-only" aria-hidden tabIndex={-1} />;
+  const noAiBox = (
+    <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700">
+      <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="checkbox mt-0.5" />
+      <span>{t("Sensitive document: do not send it to the AI. Fill the form by hand.")}</span>
+    </label>
+  );
+  const aiButton = (
+    <button type="button" onClick={readWithAi} className="btn-secondary w-full" disabled={aiState === "reading" || noAi}>
+      {aiState === "reading" ? t("Reading…") : desk ? t("Fill the form from this file") : t("Read scan with AI")}
+    </button>
+  );
+  const aiNote = aiMsg ? (
+    <p role="status" className={`rounded-lg p-3 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{t(aiMsg)}</p>
+  ) : null;
+  const fromScanInput = <input type="hidden" name="from_scan" value={aiState === "done" ? "1" : ""} />;
+  const contentDetails = f.content_text ? (
+    <details className="text-sm">
+      <summary className="cursor-pointer text-slate-600">{t("Text read from the document")}</summary>
+      <p className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-2 text-xs">{f.content_text}</p>
+    </details>
+  ) : null;
+  const textInputs = (
+    <>
+      <input type="hidden" name="content_text" value={f.content_text} />
+      <input type="hidden" name="ai_summary" value={f.ai_summary} />
+    </>
+  );
+  const pickerBlock = showPicker ? (
+    <>
+      <ServicePicker
+        ref={pickerRef}
+        value={svc}
+        onPick={pickService}
+        error={svcError}
+        services={props.services}
+        otherServices={props.otherServices}
+        counts={props.counts}
+        officeName={props.myOfficeName}
+        central={props.incomingMode === "central"}
+        offices={props.offices}
+        desk={desk}
+      />
+      <p role="status" className="text-sm text-slate-700 md:col-span-2">
+        {chosen
+          ? t("Filled in from the Citizen's Charter: {class}, {tx}, due {date}. You can change these below.", {
+              class: t(ARTA_LABEL[isArtaClass(chosen.classification) ? chosen.classification : "none"]),
+              tx: chosen.tx_types[0] ?? "",
+              date: f.due_date || t("not set"),
+            })
+          : ""}
+      </p>
+    </>
+  ) : null;
+  const refBlock =
+    refLabel !== null ? (
+      <div className="md:col-span-2">
+        <label className="label" htmlFor="f-reference_no">{t("{label} (optional)", { label: t(refLabel) })}</label>
+        <input id="f-reference_no" name="reference_no" maxLength={40} autoComplete="off" spellCheck={false} className="input font-mono md:max-w-sm" aria-describedby="f-reference_no-hint" value={refNo} onChange={(e) => setRefNo(e.target.value)} />
+        <p id="f-reference_no-hint" className="mt-1 text-sm text-slate-600">{t("The number this document has in another system. Leave blank if none.")}</p>
+      </div>
+    ) : null;
+  const svcHidden = chosen ? (
+    <>
+      <input type="hidden" name="service_id" value={chosen.id} />
+      <input type="hidden" name="document_type_id" value={f.document_type_id} />
+    </>
+  ) : null;
+  const kindBlock = showKind ? (
+    <div>
+      <label className="label" htmlFor="f-document_type_id">{t("Kind of document")}</label>
+      <select id="f-document_type_id" name="document_type_id" required className={`input ${hl("document_type_id")}`} value={f.document_type_id} onChange={(e) => set("document_type_id", e.target.value)}>
+        <option value="">{t("Choose…")}</option>
+        {props.types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+      </select>
+      {filledNote("document_type_id")}
+    </div>
+  ) : null;
+  const txBlock = (
+    <fieldset className="md:col-span-2" aria-describedby="f-tx-hint">
+      <legend className="label">{t("Transaction type")}</legend>
+      <p id="f-tx-hint" className="mb-2 text-sm text-slate-600">{t("Pick Government for letters from or to another government office.")}</p>
+      <div className="grid gap-1">
+        {TX_TYPES.map((k) => (
+          <label key={k} className="flex min-h-11 items-center gap-3">
+            <input type="radio" id={`f-tx-${k}`} name="transaction_type" value={k} required checked={f.transaction_type === k} onChange={() => set("transaction_type", k)} />
+            <span>{t(TX_FORM_LABEL[k])}</span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+  const copyBlock =
+    props.incomingMode === "central" && props.types.find((x) => x.id === f.document_type_id)?.name === COPY_TYPE ? (
+      <fieldset className="md:col-span-2 grid gap-3 rounded-md border-2 border-slate-200 p-3 md:grid-cols-2">
+        <legend className="label px-1">{t("About the copy")}</legend>
+        <div className="md:col-span-2">
+          <label className="label" htmlFor="f-copy_source">{t("Tracking number of the record asked for")}</label>
+          <input id="f-copy_source" name="copy_source" required className="input font-mono uppercase" placeholder="IN-2026-0001" autoComplete="off" />
+        </div>
+        <div>
+          <label className="label" htmlFor="f-copy_pages">{t("Number of pages")}</label>
+          <input id="f-copy_pages" name="copy_pages" type="number" min={1} max={5000} className="input" />
+        </div>
+        <div>
+          <label className="label" htmlFor="f-copy_fee">{t("Fee (₱)")}</label>
+          <input id="f-copy_fee" name="copy_fee" inputMode="decimal" className="input" />
+        </div>
+        <fieldset className="md:col-span-2">
+          <legend className="label">{t("Who is asking?")}</legend>
+          <div className="grid gap-1">
+            <label className="flex min-h-11 items-center gap-3">
+              <input type="radio" name="copy_requester" value="owner" required checked={copyKind === "owner"} onChange={() => setCopyKind("owner")} />
+              <span>{t("The owner")}</span>
+            </label>
+            <label className="flex min-h-11 items-center gap-3">
+              <input type="radio" name="copy_requester" value="representative" required checked={copyKind === "representative"} onChange={() => setCopyKind("representative")} />
+              <span>{t("A representative")}</span>
+            </label>
+          </div>
+        </fieldset>
+        <label className="flex min-h-11 items-center gap-3 md:col-span-2">
+          <input type="checkbox" name="copy_id" className="checkbox" />
+          <span>{t("Valid ID checked")}</span>
+        </label>
+        {copyKind === "representative" && (
+          <label className="flex min-h-11 items-center gap-3 md:col-span-2">
+            <input type="checkbox" name="copy_auth" className="checkbox" required />
+            <span>{t("Authorization letter or SPA checked")}</span>
+          </label>
+        )}
+      </fieldset>
+    ) : null;
+  const subjectBlock = (
+    <div className="md:col-span-2">
+      <label className="label" htmlFor="f-subject">{t("Subject (what it is about)")}</label>
+      <input id="f-subject" name="subject" required className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />
+      {filledNote("subject")}
+    </div>
+  );
+  const descBlock = (
+    <div className="md:col-span-2">
+      <label className="label" htmlFor="f-description">{t("Short description (optional)")}</label>
+      <textarea id="f-description" name="description" rows={2} className={`input ${hl("description")}`} value={f.description} onChange={(e) => set("description", e.target.value)} />
+      {filledNote("description")}
+    </div>
+  );
+  const senderFields = (
+    <>
+      <div>
+        <label className="label" htmlFor="f-sender_name">{desk ? t("Name (optional)") : t("Name of sender (optional)")}</label>
+        <input id="f-sender_name" name="sender_name" className={`input ${hl("sender_name")}`} value={f.sender_name} onChange={(e) => set("sender_name", e.target.value)} />
+        {filledNote("sender_name")}
+      </div>
+      <div>
+        <label className="label" htmlFor="f-sender_org">{desk ? t("Office, barangay or company (optional)") : t("Sender's office, barangay or company (optional)")}</label>
+        <input id="f-sender_org" name="sender_org" className={`input ${hl("sender_org")}`} value={f.sender_org} onChange={(e) => set("sender_org", e.target.value)} />
+        {filledNote("sender_org")}
+      </div>
+    </>
+  );
+  const recipientFields = (
+    <>
+      <div>
+        <label className="label" htmlFor="f-recipient_name">{desk ? t("Name (optional)") : t("Name of recipient (optional)")}</label>
+        <input id="f-recipient_name" name="recipient_name" className={`input ${hl("recipient_name")}`} value={f.recipient_name} onChange={(e) => set("recipient_name", e.target.value)} />
+        {filledNote("recipient_name")}
+      </div>
+      <div>
+        <label className="label" htmlFor="f-recipient_org">{desk ? t("Office, barangay or company (optional)") : t("Recipient's office, barangay or company (optional)")}</label>
+        <input id="f-recipient_org" name="recipient_org" className={`input ${hl("recipient_org")}`} value={f.recipient_org} onChange={(e) => set("recipient_org", e.target.value)} />
+        {filledNote("recipient_org")}
+      </div>
+    </>
+  );
+  const replyBlock = (
+    <div className="md:col-span-2">
+      <label className="label" htmlFor="f-in_reply_to">{t("In reply to (optional)")}</label>
+      <input id="f-in_reply_to" name="in_reply_to" className="input font-mono" placeholder="IN-2026-0001" aria-describedby="f-in_reply_to-help" value={f.in_reply_to} onChange={(e) => set("in_reply_to", e.target.value)} />
+      <p id="f-in_reply_to-help" className="mt-1 text-sm text-slate-600">{t("Answering a letter the City received? Type its tracking number. Both records will link to each other.")}</p>
+    </div>
+  );
+  const barangayBlock = props.barangays ? (
+    <div>
+      <label className="label" htmlFor="f-barangay">{t("Barangay it is about (optional)")}</label>
+      <select id="f-barangay" name="barangay" className="input" defaultValue="">
+        <option value="">{t("None, or not about a place")}</option>
+        {props.barangays.map((b) => <option key={b} value={b}>{b}</option>)}
+      </select>
+    </div>
+  ) : null;
+  const docDateBlock = (
+    <div>
+      <label className="label" htmlFor="f-document_date">{t("Date written on the document (optional)")}</label>
+      <input id="f-document_date" name="document_date" type="date" className={`input ${hl("document_date")}`} value={f.document_date} onChange={(e) => set("document_date", e.target.value)} />
+      {filledNote("document_date")}
+    </div>
+  );
+  const modeBlock = (
+    <div>
+      <label className="label" htmlFor="f-mode">{t(incoming ? "How it arrived" : "How it will be sent")}</label>
+      <select id="f-mode" name="mode" className="input" value={f.mode} onChange={(e) => set("mode", e.target.value)}>
+        <option value="walk-in">{t("Hand-carried (walk-in)")}</option>
+        <option value="courier">{t("Courier")}</option>
+        <option value="mail">{t("Mail")}</option>
+        <option value="email">{t("Email")}</option>
+        <option value="internal">{t(incoming ? "From another City office" : "To another City office")}</option>
+      </select>
+    </div>
+  );
+  const categoryBlock = (
+    <div>
+      <label className="label" htmlFor="f-category">{t("Subject area (optional)")}</label>
+      <input id="f-category" name="category" className={`input ${hl("category")}`} value={f.category} onChange={(e) => set("category", e.target.value)} />
+    </div>
+  );
+  const keywordsBlock = (
+    <div>
+      <label className="label" htmlFor="f-keywords">{t("Search words (optional)")}</label>
+      <input id="f-keywords" name="keywords" className={`input ${hl("keywords")}`} value={f.keywords} onChange={(e) => set("keywords", e.target.value)} />
+    </div>
+  );
+  const priorityBlock = (
+    <div>
+      <label className="label" htmlFor="f-priority">{t("Priority")}</label>
+      <select id="f-priority" name="priority" className={`input ${hl("priority")}`} value={f.priority} onChange={(e) => set("priority", e.target.value as Fields["priority"])}>
+        <option value="low">{t("Low")}</option>
+        <option value="normal">{t("Normal")}</option>
+        <option value="urgent">{t("Urgent")}</option>
+      </select>
+    </div>
+  );
+  const confBlock = (
+    <fieldset className={`min-w-0 rounded-md border-2 p-1 ${hl("confidentiality") || "border-transparent"}`}>
+      <legend className="label">{t("Who may see it")}</legend>
+      {([
+        ["public", "Public", "Anyone in the City offices"],
+        ["internal", "Internal", "City staff involved with it"],
+        ["confidential", "Confidential", "Records desk and handling offices only"],
+      ] as const).map(([v, name, hint]) => (
+        <label key={v} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md px-2 py-2 hover:bg-brand-50">
+          <input type="radio" name="confidentiality" value={v} checked={f.confidentiality === v} onChange={() => set("confidentiality", v)} className="checkbox mt-0.5" />
+          <span><span className="font-semibold">{t(name)}</span><span className="block text-sm text-slate-600">{t(hint)}</span></span>
+        </label>
+      ))}
+    </fieldset>
+  );
+  const forwardBlock = (
+    <div>
+      <label className="label" htmlFor="f-forward_to">{t("Send to office (optional)")}</label>
+      <select id="f-forward_to" name="forward_to" className={`input ${hl("forward_to")}`} value={f.forward_to} onChange={(e) => set("forward_to", e.target.value)}>
+        <option value="">{desk ? t("Keep at the Records Section") : t("Keep in my office")}</option>
+        {props.offices.filter((o) => o.id !== props.myOfficeId).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+      </select>
+      {filledNote("forward_to")}
+    </div>
+  );
+  const artaBlock = (
+    <div>
+      <label className="label" htmlFor="f-arta_class">{t("ARTA processing time (optional)")}</label>
+      <p id="f-arta_class-hint" className="mb-2 text-sm text-slate-600">{t("Anti-Red Tape Act. Picking one fills in the date below.")}</p>
+      <select id="f-arta_class" name="arta_class" aria-describedby="f-arta_class-hint" className="input" value={f.arta_class} onChange={(e) => pickArta(e.target.value)}>
+        <option value="">{t("Not set")}</option>
+        {ARTA_CLASSES.map((c) => <option key={c} value={c}>{t(ARTA_LABEL[c])}</option>)}
+      </select>
+    </div>
+  );
+  const dueBlock = (
+    <div>
+      <label className="label" htmlFor="f-due_date">{t("Must be acted on by (optional)")}</label>
+      <input id="f-due_date" name="due_date" type="date" className="input" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} />
+      {f.arta_class in ARTA_DAYS && (
+        <p className="mt-1 text-sm text-slate-600">{t("Counted {n} working days from today, skipping weekends and holidays. You can change the date.", { n: ARTA_DAYS[f.arta_class as keyof typeof ARTA_DAYS] })}</p>
+      )}
+    </div>
+  );
+  const feeLine = chosen ? (
+    <p className="text-sm text-slate-700 md:col-span-2">
+      {feeShort(chosen) === "No fee" ? t("No fee") : t("Charter fee: {fee}", { fee: chosen.fee_text ?? t(feeShort(chosen)) })}
+    </p>
+  ) : null;
+  const cancelSave = (
+    <>
+      <Link href="/records" className="btn-secondary"><span className="sm:hidden">{t("Cancel")}</span><span className="hidden sm:inline">{t("Cancel (nothing is saved)")}</span></Link>
+      <button className="btn-primary" disabled={pending || prep.busy || prep.tooBig}>{pending ? t("Saving…") : <><span className="sm:hidden">{t("Save")}</span><span className="hidden sm:inline">{t("Save and get tracking number")}</span></>}</button>
+    </>
+  );
+
+  const classicBody = (
+    <>
       <section className="card space-y-4 p-5 lg:col-span-1 lg:self-start">
         <h2 className="text-lg font-bold">{t("1. Scanned copy (optional)")}</h2>
         <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-800">
           <strong>{t("No scan?")}</strong> {t("That is fine. Just fill in the form and press Save.")}
         </p>
         <label htmlFor="scan" className="btn-primary flex w-full cursor-pointer items-center justify-center text-center">{t("Scan document")}</label>
-        <input id="scan" ref={captureRef} type="file" accept="image/*" capture="environment" className="sr-only" onChange={takeScan} />
+        {scanInput}
         <p className="text-sm text-slate-600">{t("Scans go straight to the secure record and aren't kept on this device.")}</p>
         <label htmlFor="file" className="label">{t("Or upload a file from the office scanner")}</label>
         <input id="file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" onChange={(e) => { const f = e.target.files?.[0]; showPreview(f); void prep.prepare(f); }} />
@@ -380,36 +764,12 @@ export function RegisterForm(props: {
             <p className="mb-2">{t("Drop the email file here, or choose it")}</p>
             <input id="eml" type="file" accept=".eml,message/rfc822" className="file-input" onChange={(e) => { void takeEml(e.target.files?.[0]); e.target.value = ""; }} />
           </div>
-          {emlBusy && <p role="status" className="mt-2 text-sm text-slate-700">{t("Reading the email…")}</p>}
-          {emlErr && <p role="alert" className="mt-2 rounded-lg bg-red-50 p-3 text-sm text-red-800">{t(emlErr)}</p>}
-          {eml && (
-            <div role="status" className="mt-2 space-y-2 rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
-              <p className="font-medium">{t("From {sender} · {date} · {n} attachments", { sender: eml.sender, date: eml.date, n: eml.files.length })}</p>
-              {eml.files.length > 0 && <ul className="list-disc pl-5">{eml.files.map((n) => <li key={n} className="break-all">{n}</li>)}</ul>}
-              {eml.skipped.length > 0 && (
-                <ul className="list-disc pl-5 text-slate-800">
-                  {eml.skipped.map((x) => (
-                    <li key={x.name} className="break-all">
-                      {t(x.reason === "type" ? "Skipped {file}: only PDF, JPG or PNG are kept." : "Skipped {file}: too big to send with the form. Attach it on the record page after saving.", { file: x.name })}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <button type="button" onClick={removeEml} className="btn-secondary w-full">{t("Remove email")}</button>
-            </div>
-          )}
-          <input ref={extraRef} type="file" name="extra_file" multiple className="sr-only" aria-hidden tabIndex={-1} />
+          {emlStatus}
+          {extraInput}
         </div>
-        <label className="flex cursor-pointer items-start gap-2 text-sm text-slate-700">
-          <input type="checkbox" checked={noAi} onChange={(e) => setNoAi(e.target.checked)} className="checkbox mt-0.5" />
-          <span>{t("Sensitive document: do not send it to the AI. Fill the form by hand.")}</span>
-        </label>
-        <button type="button" onClick={readWithAi} className="btn-secondary w-full" disabled={aiState === "reading" || noAi}>
-          {t(aiState === "reading" ? "Reading…" : "Read scan with AI")}
-        </button>
-        {aiMsg && (
-          <p role="status" className={`rounded-lg p-3 text-sm ${aiState === "error" ? "bg-red-50 text-red-800" : "bg-brand-50 text-brand-900"}`}>{t(aiMsg)}</p>
-        )}
+        {noAiBox}
+        {aiButton}
+        {aiNote}
         {scanName && (
           <div className="space-y-2">
             {preview ? (
@@ -420,15 +780,9 @@ export function RegisterForm(props: {
             <button type="button" onClick={retake} className="btn-secondary w-full" disabled={aiState === "reading"}>{t("Retake")}</button>
           </div>
         )}
-        <input type="hidden" name="from_scan" value={aiState === "done" ? "1" : ""} />
-        {f.content_text && (
-          <details className="text-sm">
-            <summary className="cursor-pointer text-slate-600">{t("Text read from the document")}</summary>
-            <p className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-2 text-xs">{f.content_text}</p>
-          </details>
-        )}
-        <input type="hidden" name="content_text" value={f.content_text} />
-        <input type="hidden" name="ai_summary" value={f.ai_summary} />
+        {fromScanInput}
+        {contentDetails}
+        {textInputs}
       </section>
 
       <section className="card grid gap-4 p-5 md:grid-cols-2 lg:col-span-2">
@@ -436,7 +790,7 @@ export function RegisterForm(props: {
         <p className="text-sm text-slate-600 md:col-span-2">{t("Fill in every box unless it says (optional).")}</p>
         <div>
           <label className="label" htmlFor="f-direction">{t("Received or sent out?")}</label>
-          <select id="f-direction" name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => { set("direction", e.target.value as Fields["direction"]); if (e.target.value === "outgoing") { setSvc(""); setSvcError(false); } }}>
+          <select id="f-direction" name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => pickDirection(e.target.value as Fields["direction"])}>
             {canIncoming && <option value="incoming">{t(props.incomingMode === "window" ? "Incoming (handed in at our window)" : "Incoming (received by the City)")}</option>}
             <option value="outgoing">{t("Outgoing (sent by the City or your office)")}</option>
           </select>
@@ -450,222 +804,28 @@ export function RegisterForm(props: {
             </>
           )}
         </div>
-        {showPicker && (
-          <>
-            <ServicePicker
-              ref={pickerRef}
-              value={svc}
-              onPick={pickService}
-              error={svcError}
-              services={props.services}
-              otherServices={props.otherServices}
-              counts={props.counts}
-              officeName={props.myOfficeName}
-              central={props.incomingMode === "central"}
-              offices={props.offices}
-            />
-            <p role="status" className="text-sm text-slate-700 md:col-span-2">
-              {chosen
-                ? t("Filled in from the Citizen's Charter: {class}, {tx}, due {date}. You can change these below.", {
-                    class: t(ARTA_LABEL[isArtaClass(chosen.classification) ? chosen.classification : "none"]),
-                    tx: chosen.tx_types[0] ?? "",
-                    date: f.due_date || t("not set"),
-                  })
-                : ""}
-            </p>
-          </>
-        )}
-        {refLabel !== null && (
-          <div className="md:col-span-2">
-            <label className="label" htmlFor="f-reference_no">{t("{label} (optional)", { label: t(refLabel) })}</label>
-            <input id="f-reference_no" name="reference_no" maxLength={40} autoComplete="off" spellCheck={false} className="input font-mono md:max-w-sm" aria-describedby="f-reference_no-hint" value={refNo} onChange={(e) => setRefNo(e.target.value)} />
-            <p id="f-reference_no-hint" className="mt-1 text-sm text-slate-600">{t("The number this document has in another system. Leave blank if none.")}</p>
-          </div>
-        )}
-        {chosen && (
-          <>
-            <input type="hidden" name="service_id" value={chosen.id} />
-            <input type="hidden" name="document_type_id" value={f.document_type_id} />
-          </>
-        )}
-        {showKind && (
-          <div>
-            <label className="label" htmlFor="f-document_type_id">{t("Kind of document")}</label>
-            <select id="f-document_type_id" name="document_type_id" required className={`input ${hl("document_type_id")}`} value={f.document_type_id} onChange={(e) => set("document_type_id", e.target.value)}>
-              <option value="">{t("Choose…")}</option>
-              {props.types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-          </div>
-        )}
-        <fieldset className="md:col-span-2" aria-describedby="f-tx-hint">
-          <legend className="label">{t("Transaction type")}</legend>
-          <p id="f-tx-hint" className="mb-2 text-sm text-slate-600">{t("Pick Government for letters from or to another government office.")}</p>
-          <div className="grid gap-1">
-            {TX_TYPES.map((k) => (
-              <label key={k} className="flex min-h-11 items-center gap-3">
-                <input type="radio" name="transaction_type" value={k} required checked={f.transaction_type === k} onChange={() => set("transaction_type", k)} />
-                <span>{t(TX_FORM_LABEL[k])}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        {props.incomingMode === "central" && props.types.find((x) => x.id === f.document_type_id)?.name === COPY_TYPE && (
-          <fieldset className="md:col-span-2 grid gap-3 rounded-md border-2 border-slate-200 p-3 md:grid-cols-2">
-            <legend className="label px-1">{t("About the copy")}</legend>
-            <div className="md:col-span-2">
-              <label className="label" htmlFor="f-copy_source">{t("Tracking number of the record asked for")}</label>
-              <input id="f-copy_source" name="copy_source" required className="input font-mono uppercase" placeholder="IN-2026-0001" autoComplete="off" />
-            </div>
-            <div>
-              <label className="label" htmlFor="f-copy_pages">{t("Number of pages")}</label>
-              <input id="f-copy_pages" name="copy_pages" type="number" min={1} max={5000} className="input" />
-            </div>
-            <div>
-              <label className="label" htmlFor="f-copy_fee">{t("Fee (₱)")}</label>
-              <input id="f-copy_fee" name="copy_fee" inputMode="decimal" className="input" />
-            </div>
-            <fieldset className="md:col-span-2">
-              <legend className="label">{t("Who is asking?")}</legend>
-              <div className="grid gap-1">
-                <label className="flex min-h-11 items-center gap-3">
-                  <input type="radio" name="copy_requester" value="owner" required checked={copyKind === "owner"} onChange={() => setCopyKind("owner")} />
-                  <span>{t("The owner")}</span>
-                </label>
-                <label className="flex min-h-11 items-center gap-3">
-                  <input type="radio" name="copy_requester" value="representative" required checked={copyKind === "representative"} onChange={() => setCopyKind("representative")} />
-                  <span>{t("A representative")}</span>
-                </label>
-              </div>
-            </fieldset>
-            <label className="flex min-h-11 items-center gap-3 md:col-span-2">
-              <input type="checkbox" name="copy_id" className="checkbox" />
-              <span>{t("Valid ID checked")}</span>
-            </label>
-            {copyKind === "representative" && (
-              <label className="flex min-h-11 items-center gap-3 md:col-span-2">
-                <input type="checkbox" name="copy_auth" className="checkbox" required />
-                <span>{t("Authorization letter or SPA checked")}</span>
-              </label>
-            )}
-          </fieldset>
-        )}
-        <div className="md:col-span-2">
-          <label className="label" htmlFor="f-subject">{t("Subject (what it is about)")}</label>
-          <input id="f-subject" name="subject" required className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />
-        </div>
-        <div className="md:col-span-2">
-          <label className="label" htmlFor="f-description">{t("Short description (optional)")}</label>
-          <textarea id="f-description" name="description" rows={2} className={`input ${hl("description")}`} value={f.description} onChange={(e) => set("description", e.target.value)} />
-        </div>
-        {incoming ? (
-          <>
-            <div>
-              <label className="label" htmlFor="f-sender_name">{t("Name of sender (optional)")}</label>
-              <input id="f-sender_name" name="sender_name" className={`input ${hl("sender_name")}`} value={f.sender_name} onChange={(e) => set("sender_name", e.target.value)} />
-            </div>
-            <div>
-              <label className="label" htmlFor="f-sender_org">{t("Sender's office, barangay or company (optional)")}</label>
-              <input id="f-sender_org" name="sender_org" className={`input ${hl("sender_org")}`} value={f.sender_org} onChange={(e) => set("sender_org", e.target.value)} />
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <label className="label" htmlFor="f-recipient_name">{t("Name of recipient (optional)")}</label>
-              <input id="f-recipient_name" name="recipient_name" className={`input ${hl("recipient_name")}`} value={f.recipient_name} onChange={(e) => set("recipient_name", e.target.value)} />
-            </div>
-            <div>
-              <label className="label" htmlFor="f-recipient_org">{t("Recipient's office, barangay or company (optional)")}</label>
-              <input id="f-recipient_org" name="recipient_org" className={`input ${hl("recipient_org")}`} value={f.recipient_org} onChange={(e) => set("recipient_org", e.target.value)} />
-            </div>
-            <div className="md:col-span-2">
-              <label className="label" htmlFor="f-in_reply_to">{t("In reply to (optional)")}</label>
-              <input id="f-in_reply_to" name="in_reply_to" className="input font-mono" placeholder="IN-2026-0001" aria-describedby="f-in_reply_to-help" value={f.in_reply_to} onChange={(e) => set("in_reply_to", e.target.value)} />
-              <p id="f-in_reply_to-help" className="mt-1 text-sm text-slate-600">{t("Answering a letter the City received? Type its tracking number. Both records will link to each other.")}</p>
-            </div>
-          </>
-        )}
-        {props.barangays && (
-          <div>
-            <label className="label" htmlFor="f-barangay">{t("Barangay it is about (optional)")}</label>
-            <select id="f-barangay" name="barangay" className="input" defaultValue="">
-              <option value="">{t("None, or not about a place")}</option>
-              {props.barangays.map((b) => <option key={b} value={b}>{b}</option>)}
-            </select>
-          </div>
-        )}
-        <div>
-          <label className="label" htmlFor="f-document_date">{t("Date written on the document (optional)")}</label>
-          <input id="f-document_date" name="document_date" type="date" className={`input ${hl("document_date")}`} value={f.document_date} onChange={(e) => set("document_date", e.target.value)} />
-        </div>
-        <div>
-          <label className="label" htmlFor="f-mode">{t(incoming ? "How it arrived" : "How it will be sent")}</label>
-          <select id="f-mode" name="mode" className="input" value={f.mode} onChange={(e) => set("mode", e.target.value)}>
-            <option value="walk-in">{t("Hand-carried (walk-in)")}</option>
-            <option value="courier">{t("Courier")}</option>
-            <option value="mail">{t("Mail")}</option>
-            <option value="email">{t("Email")}</option>
-            <option value="internal">{t(incoming ? "From another City office" : "To another City office")}</option>
-          </select>
-        </div>
+        {pickerBlock}
+        {refBlock}
+        {svcHidden}
+        {kindBlock}
+        {txBlock}
+        {copyBlock}
+        {subjectBlock}
+        {descBlock}
+        {incoming ? senderFields : <>{recipientFields}{replyBlock}</>}
+        {barangayBlock}
+        {docDateBlock}
+        {modeBlock}
 
         <h2 className="mt-4 border-t border-slate-200 pt-4 text-lg font-bold md:col-span-2">{t("3. Filing and where it goes next")}</h2>
-        <div>
-          <label className="label" htmlFor="f-category">{t("Subject area (optional)")}</label>
-          <input id="f-category" name="category" className={`input ${hl("category")}`} value={f.category} onChange={(e) => set("category", e.target.value)} />
-        </div>
-        <div>
-          <label className="label" htmlFor="f-keywords">{t("Search words (optional)")}</label>
-          <input id="f-keywords" name="keywords" className={`input ${hl("keywords")}`} value={f.keywords} onChange={(e) => set("keywords", e.target.value)} />
-        </div>
-        <div>
-          <label className="label" htmlFor="f-priority">{t("Priority")}</label>
-          <select id="f-priority" name="priority" className={`input ${hl("priority")}`} value={f.priority} onChange={(e) => set("priority", e.target.value as Fields["priority"])}>
-            <option value="low">{t("Low")}</option>
-            <option value="normal">{t("Normal")}</option>
-            <option value="urgent">{t("Urgent")}</option>
-          </select>
-        </div>
-        <fieldset className={`min-w-0 rounded-md border-2 p-1 ${hl("confidentiality") || "border-transparent"}`}>
-          <legend className="label">{t("Who may see it")}</legend>
-          {([
-            ["public", "Public", "Anyone in the City offices"],
-            ["internal", "Internal", "City staff involved with it"],
-            ["confidential", "Confidential", "Records desk and handling offices only"],
-          ] as const).map(([v, name, hint]) => (
-            <label key={v} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md px-2 py-2 hover:bg-brand-50">
-              <input type="radio" name="confidentiality" value={v} checked={f.confidentiality === v} onChange={() => set("confidentiality", v)} className="checkbox mt-0.5" />
-              <span><span className="font-semibold">{t(name)}</span><span className="block text-sm text-slate-600">{t(hint)}</span></span>
-            </label>
-          ))}
-        </fieldset>
-        <div>
-          <label className="label" htmlFor="f-forward_to">{t("Send to office (optional)")}</label>
-          <select id="f-forward_to" name="forward_to" className={`input ${hl("forward_to")}`} value={f.forward_to} onChange={(e) => set("forward_to", e.target.value)}>
-            <option value="">{t("Keep in my office")}</option>
-            {props.offices.filter((o) => o.id !== props.myOfficeId).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="label" htmlFor="f-arta_class">{t("ARTA processing time (optional)")}</label>
-          <p id="f-arta_class-hint" className="mb-2 text-sm text-slate-600">{t("Anti-Red Tape Act. Picking one fills in the date below.")}</p>
-          <select id="f-arta_class" name="arta_class" aria-describedby="f-arta_class-hint" className="input" value={f.arta_class} onChange={(e) => pickArta(e.target.value)}>
-            <option value="">{t("Not set")}</option>
-            {ARTA_CLASSES.map((c) => <option key={c} value={c}>{t(ARTA_LABEL[c])}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="label" htmlFor="f-due_date">{t("Must be acted on by (optional)")}</label>
-          <input id="f-due_date" name="due_date" type="date" className="input" value={f.due_date} onChange={(e) => set("due_date", e.target.value)} />
-          {f.arta_class in ARTA_DAYS && (
-            <p className="mt-1 text-sm text-slate-600">{t("Counted {n} working days from today, skipping weekends and holidays. You can change the date.", { n: ARTA_DAYS[f.arta_class as keyof typeof ARTA_DAYS] })}</p>
-          )}
-        </div>
-        {chosen && (
-          <p className="text-sm text-slate-700 md:col-span-2">
-            {feeShort(chosen) === "No fee" ? t("No fee") : t("Charter fee: {fee}", { fee: chosen.fee_text ?? t(feeShort(chosen)) })}
-          </p>
-        )}
+        {categoryBlock}
+        {keywordsBlock}
+        {priorityBlock}
+        {confBlock}
+        {forwardBlock}
+        {artaBlock}
+        {dueBlock}
+        {feeLine}
 
         <div data-sticky-actions className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-lg border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
           {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{t(state.error)}</p>}
@@ -680,10 +840,131 @@ export function RegisterForm(props: {
               ))}
             </p>
           )}
-          <Link href="/records" className="btn-secondary"><span className="sm:hidden">{t("Cancel")}</span><span className="hidden sm:inline">{t("Cancel (nothing is saved)")}</span></Link>
-          <button className="btn-primary" disabled={pending || prep.busy || prep.tooBig}>{pending ? t("Saving…") : <><span className="sm:hidden">{t("Save")}</span><span className="hidden sm:inline">{t("Save and get tracking number")}</span></>}</button>
+          {cancelSave}
         </div>
       </section>
+    </>
+  );
+
+  const deskBody = (
+    <>
+      {items.length > 0 && (
+        <div ref={summaryRef} tabIndex={-1} role="alert" aria-labelledby="err-h" className="rounded-lg border-2 border-red-700 bg-white p-4">
+          <h2 id="err-h" className="text-lg font-bold text-red-800">{t("There is a problem")}</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {items.map((it) => (
+              <li key={it.text}>
+                {it.id ? (
+                  <a href={"#" + it.id} onClick={(e) => { e.preventDefault(); goTo(it.id as string); }} className="font-semibold text-red-800 underline">{it.server ? t(it.text) : it.text}</a>
+                ) : (
+                  <span className="font-semibold text-red-800">{it.server ? t(it.text) : it.text}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div
+        className={`rounded-lg border-2 border-dashed p-4 sm:p-6 ${over ? "border-brand-600 bg-brand-50" : "border-line"}`}
+        onDragOver={(e) => { e.preventDefault(); if (!over) setOver(true); }}
+        onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false); }}
+        onDrop={(e) => { e.preventDefault(); setOver(false); takeAny(e.dataTransfer.files?.[0]); }}
+      >
+        <p className="mb-3 hidden text-center text-slate-700 sm:block">{t("Drop a scan, a PDF or an email file here")}</p>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-center sm:gap-3">
+          {scanInput}
+          <label htmlFor="scan" className="btn-primary min-h-11 cursor-pointer justify-center text-center peer-focus-visible/scan:outline-3 peer-focus-visible/scan:outline-offset-2 peer-focus-visible/scan:outline-brand-700">{t("Scan document")}</label>
+          <input id="file-pick" ref={pickRef} type="file" accept="application/pdf,image/png,image/jpeg,image/webp,.eml,message/rfc822" className="peer/pick sr-only" onChange={(e) => { takeAny(e.target.files?.[0]); e.target.value = ""; }} />
+          <label htmlFor="file-pick" className="btn-secondary min-h-11 cursor-pointer justify-center text-center peer-focus-visible/pick:outline-3 peer-focus-visible/pick:outline-offset-2 peer-focus-visible/pick:outline-brand-700">{t("Choose a file")}</label>
+        </div>
+        <input id="file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="sr-only" aria-hidden tabIndex={-1} />
+      </div>
+      {dropErr && <p role="alert" className="text-sm text-red-800">{t(dropErr)}</p>}
+      {emlStatus}
+      {extraInput}
+      {prep.controls}
+      {prep.fields}
+
+      {scanName && (
+        <div className="space-y-3 rounded-lg border border-line p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 break-all font-medium">{scanName}{scanSize ? ` · ${formatBytes(scanSize)}` : ""}</p>
+            <button type="button" onClick={retake} className="btn-secondary min-h-11" disabled={aiState === "reading"}>{t("Remove")}</button>
+          </div>
+          {preview && <ScanPreview image={preview} label={t("Preview of the scanned page")} />}
+          {aiButton}
+          {noAiBox}
+        </div>
+      )}
+      {aiNote}
+      {contentDetails}
+      {fromScanInput}
+      {textInputs}
+
+      <section className="card grid gap-4 p-5 md:grid-cols-2">
+        <h2 className="text-lg font-bold md:col-span-2">{t("What arrived")}</h2>
+        <fieldset className={`md:col-span-2 min-w-0 rounded-md border-2 p-1 ${hl("direction") || "border-transparent"}`}>
+          <legend className="label">{t("Received or sent out?")}</legend>
+          {canIncoming && (
+            <label className="flex min-h-11 items-center gap-3">
+              <input type="radio" name="direction" id="f-direction-incoming" value="incoming" checked={incoming} onChange={() => pickDirection("incoming")} />
+              <span>{t("Received by the City")}</span>
+            </label>
+          )}
+          <label className="flex min-h-11 items-center gap-3">
+            <input type="radio" name="direction" id="f-direction-outgoing" value="outgoing" checked={!incoming} onChange={() => pickDirection("outgoing")} />
+            <span>{t("Sent out by the City")}</span>
+          </label>
+        </fieldset>
+        {subjectBlock}
+        <fieldset className="md:col-span-2 grid gap-4 md:grid-cols-2">
+          <legend className="label">{incoming ? t("Who sent it") : t("Who it goes to")}</legend>
+          {incoming ? senderFields : recipientFields}
+        </fieldset>
+        {pickerBlock}
+        {kindBlock}
+        {copyBlock}
+        {txBlock}
+        {svcHidden}
+        {feeLine}
+      </section>
+
+      <section className="card grid gap-4 p-5 md:grid-cols-2">
+        <h2 className="text-lg font-bold md:col-span-2">{t("Where it goes")}</h2>
+        {forwardBlock}
+        {dueBlock}
+      </section>
+
+      <details className="card p-5">
+        <summary className="min-h-11 cursor-pointer py-1">
+          <span className="text-lg font-bold">{t("Filing details")}</span>
+          <span className="block text-sm text-slate-600">{filingSummary(f, t)}{filingFilled ? " " + t("Filled in for you. Open to change.") : ""}</span>
+        </summary>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {priorityBlock}
+          {confBlock}
+          {modeBlock}
+          {artaBlock}
+          {categoryBlock}
+          {keywordsBlock}
+          {barangayBlock}
+          {docDateBlock}
+          {refBlock}
+          {descBlock}
+          {!incoming && replyBlock}
+        </div>
+      </details>
+
+      <div data-sticky-actions className="sticky bottom-0 grid grid-cols-2 items-center gap-2 border-t border-slate-300 bg-white py-2 sm:flex sm:justify-between sm:py-3">
+        {cancelSave}
+      </div>
+    </>
+  );
+
+  return (
+    <form action={action} onSubmit={checkService} onInvalidCapture={onInvalid} onChangeCapture={onFieldChange} onReset={() => { clearScan(); setSvc(svcDefault); setSvcError(false); setRefNo(""); setMissing([]); }} className={desk ? "space-y-4" : "grid gap-4 lg:grid-cols-3"}>
+      {desk ? deskBody : classicBody}
     </form>
   );
 }
