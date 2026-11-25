@@ -22,5 +22,6 @@ describe("complaint clock", () => {
   it("matches the type name exactly", () => {
     expect(isComplaint("Complaint")).toBe(true);
     expect(isComplaint("Request / Complaint")).toBe(false);
+    expect(isComplaint("Request")).toBe(false);
   });
 });

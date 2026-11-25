@@ -6,7 +6,7 @@ import {
 
 const svc = (o: Partial<ServiceOpt> = {}): ServiceOpt => ({
   id: "s1", office_id: "o1", title: "Service", classification: "simple", tx_types: ["G2C", "G2B"], fee_text: null,
-  fee_php: null, total_text: "20 minutes", total_minutes: 20, confidential: false, doc_type_name: "Request / Complaint", sort_order: 1, ...o,
+  fee_php: null, total_text: "20 minutes", total_minutes: 20, confidential: false, doc_type_name: "Request", sort_order: 1, ...o,
 });
 
 describe("small helpers", () => {
@@ -38,7 +38,7 @@ describe("splitCatalog", () => {
 });
 
 describe("prefillFromService", () => {
-  const types = [{ id: "t1", name: "Letter" }, { id: "t2", name: "Request / Complaint" }];
+  const types = [{ id: "t1", name: "Letter" }, { id: "t2", name: "Request" }];
   it("maps the fields", () => {
     const p = prefillFromService(svc({ confidential: true }), types, "2026-11-23");
     expect(p).toMatchObject({ document_type_id: "t2", transaction_type: "G2C", arta_class: "simple", confidentiality: "confidential" });

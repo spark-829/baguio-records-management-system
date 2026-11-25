@@ -22,11 +22,13 @@ export async function GET(req: Request) {
       },
     });
   }
-  const [rows, { data: offices }] = await Promise.all([
+  const [rows, { data: offices }, { data: types }] = await Promise.all([
     searchRecords(ctx.supabase, filtersFromParams(sp), 200),
     ctx.supabase.from("rms_offices").select("code, name"),
+    ctx.supabase.from("rms_document_types").select("name, series_code"),
   ]);
   const officeNames = new Map((offices ?? []).map((o) => [o.code, o.name]));
+  const seriesByType = new Map((types ?? []).map((x) => [x.name, x.series_code ?? ""]));
   // Excel-friendly: plain words, Manila dates and times, and a byte-order mark so ñ and dashes show correctly.
   const day = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date(iso));
   const stamp = (iso: string) => {
@@ -34,12 +36,13 @@ export async function GET(req: Request) {
     const t = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Manila", hour: "2-digit", minute: "2-digit", hour12: false }).format(d);
     return `${day(iso)} ${t}`;
   };
-  const header = ["Tracking no.", "Direction", "Subject", "Type", "Transaction type", "Status", "Priority", "Current office", "Origin office", "From", "To", "Registered by", "Registered (Manila time)", "Due date"];
+  const header = ["Tracking no.", "Direction", "Subject", "Type", "File plan code", "Transaction type", "Status", "Priority", "Current office", "Origin office", "From", "To", "Registered by", "Registered (Manila time)", "Due date"];
   const lines = rows.map((r) => [
       r.tracking_no,
       r.direction === "incoming" ? "Received" : "Sent out",
       r.subject,
       r.document_type,
+      seriesByType.get(r.document_type) ?? "",
       r.transaction_type ?? "",
       STATUS_LABEL[r.status] ?? r.status,
       PRIORITY_LABEL[r.priority] ?? r.priority,

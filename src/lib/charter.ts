@@ -1,6 +1,7 @@
 // Citizen's Charter services: pure helpers for the catalog in Register and the steps on a record.
 import { artaDue, isArtaClass, type ArtaClass } from "./arta";
 import { officeMinutesBetween } from "./step-times";
+import { matchDocType } from "./doc-types";
 import type { Role, Status } from "./types";
 
 export type ServiceOpt = {
@@ -67,7 +68,9 @@ export function prefillFromService(
   types: { id: string; name: string }[],
   today: string,
 ): { document_type_id: string; transaction_type: string; arta_class: ArtaClass; due_date: string; confidentiality?: "confidential" } {
-  const type = types.find((x) => x.name === s.doc_type_name) ?? types.find((x) => x.name === "Letter");
+  const names = types.map((x) => x.name);
+  const wanted = matchDocType(s.doc_type_name, names) ?? "Letter";
+  const type = types.find((x) => x.name === wanted);
   const cls = artaFromCharter(s.classification);
   return {
     document_type_id: type?.id ?? "",

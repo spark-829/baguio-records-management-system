@@ -29,7 +29,7 @@ def doc_type(title):
     if re.search(r"voucher", title, re.I):
         return "Disbursement Voucher"
     if re.search(r"request|application|issuance|registration|permit|certif|clearance|license|licence|petition|inquiry|assistance|reservation", title, re.I):
-        return "Request / Complaint"
+        return "Request"
     return "Letter"
 
 
