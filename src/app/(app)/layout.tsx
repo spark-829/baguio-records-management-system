@@ -11,7 +11,6 @@ import { getT } from "@/lib/i18n/server";
 import { AlertBell } from "@/components/alert-bell";
 import { assistantContext } from "@/lib/chat-prompts";
 import { isAiDemo } from "@/lib/ai-demo";
-import { themeFor } from "@/lib/theme";
 import { hasFeature, isHrmoCss } from "@/lib/office-features";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -46,7 +45,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const showRole = !me.full_name.includes(roleLabel);
   const line2 = [showRole ? t(roleLabel) : null, me.office?.name ?? null].filter(Boolean).join(" · ");
   return (
-    <div className="app-shell flex min-h-screen flex-col" data-theme={themeFor(me.office?.code)}>
+    <div className="app-shell flex min-h-screen flex-col">
       <a href="#main" className="sr-only z-50 rounded-lg bg-white px-4 py-3 font-semibold text-brand-800 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         {t("Skip to main content")}
       </a>

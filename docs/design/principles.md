@@ -104,7 +104,7 @@ including older and low-literacy users. Borrow freely.
 - `autocomplete`, correct `type` and `inputmode` on every field; never
   block paste.
 - The URL reflects state: filters, tabs and pages are deep-linkable. Search and filter forms use `next/form` (`<Form action="/path" prefetch={false}>`), never a plain `<form method="get">`, so a search keeps the page on screen instead of a full white reload.
-- Page changes keep the current page visible and show the thin gold bar at the top (`NavProgress`) until the next page is ready; no full-page skeletons that blank the screen.
+- Page changes keep the current page visible and show the thin mint bar at the top (`NavProgress`) until the next page is ready; no full-page skeletons that blank the screen.
 - Links are `<a>`/`<Link>`; never a `div` with `onClick` for navigation.
 - Confirm destructive actions or give an Undo window.
 - Honour `prefers-reduced-motion`; animate only `transform` and `opacity`;
@@ -122,7 +122,7 @@ including older and low-literacy users. Borrow freely.
   dark, secondary text slate-600, never lighter than the AA tokens.
 - **Spacing scale**, not ad-hoc pixels: Tailwind steps 1, 2, 3, 4, 6, 8, 12.
   More space between groups than within them (proximity).
-- **Limited palette**: pine green for primary actions and links, gold for
+- **Limited palette**: city teal for primary actions and links, mint for
   accent stripes and highlights, red only for late/destructive, amber for
   warnings, emerald for done. No new hues without a reason.
 - **Type scale** is fixed in `globals.css` (15, 17, 18, 21, 24, 30, 36px).
@@ -152,7 +152,7 @@ content.
 
 - **Older, non-technical staff first**: 18px body, plain labels, big
   targets, help nearby (see project memory "design direction").
-- **Baguio City look without official marks**: pine green and gold, no
+- **Baguio City look without official marks**: the baguio.gov.ph teal and mint palette, no
   seal or logo files, keep the "Demo system" footer note.
 - **Cloudflare free plan CPU budget**: design changes must not make pages
   heavier. Prefer CSS over client JavaScript, no new UI libraries, no web
