@@ -49,17 +49,36 @@ export function feeShort(s: Pick<ServiceOpt, "fee_php" | "fee_text">): string {
 const RADIO_ALL = 8;
 const RADIO_TOP = 5;
 
+/** A sorted copy: most used first, ties by catalog order. */
+export function rankByUse<T extends Pick<ServiceOpt, "id"> & { sort_order?: number }>(
+  services: T[],
+  counts: Record<string, number>,
+): T[] {
+  return [...services].sort(
+    (a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0) || (a.sort_order ?? 0) - (b.sort_order ?? 0),
+  );
+}
+
 /** Up to 8 services: all as radios. More: the 5 most used as radios (ties by catalog order), the rest for the select. */
 export function splitCatalog<T extends Pick<ServiceOpt, "id"> & { sort_order?: number }>(
   services: T[],
   counts: Record<string, number>,
 ): { radios: T[]; rest: T[] } {
   if (services.length <= RADIO_ALL) return { radios: services, rest: [] };
-  const ranked = [...services].sort(
-    (a, b) => (counts[b.id] ?? 0) - (counts[a.id] ?? 0) || (a.sort_order ?? 0) - (b.sort_order ?? 0),
-  );
+  const ranked = rankByUse(services, counts);
   const top = new Set(ranked.slice(0, RADIO_TOP).map((s) => s.id));
   return { radios: ranked.slice(0, RADIO_TOP), rest: services.filter((s) => !top.has(s.id)) };
+}
+
+/** Records desk: the n most used services as radios, the rest (in catalog order) in the select. */
+export function topServices<T extends Pick<ServiceOpt, "id"> & { sort_order?: number }>(
+  services: T[],
+  counts: Record<string, number>,
+  n = 3,
+): { radios: T[]; rest: T[] } {
+  const radios = rankByUse(services, counts).slice(0, n);
+  const top = new Set(radios.map((s) => s.id));
+  return { radios, rest: services.filter((s) => !top.has(s.id)) };
 }
 
 /** What picking a service fills in on the Register form. */

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   artaFromCharter, canMarkStep, canUndoStep, charterSlowByRoute, feeShort, parseSteps, prefillFromService, primaryTx,
-  splitCatalog, stepsView, type ServiceOpt, type ServiceStep,
+  splitCatalog, stepsView, topServices, type ServiceOpt, type ServiceStep,
 } from "../src/lib/charter";
 
 const svc = (o: Partial<ServiceOpt> = {}): ServiceOpt => ({
@@ -34,6 +34,26 @@ describe("splitCatalog", () => {
     const r = splitCatalog(mk(10), { s9: 4, s8: 4, s10: 1 });
     expect(r.radios.map((s) => s.id)).toEqual(["s8", "s9", "s10", "s1", "s2"]);
     expect(r.rest.map((s) => s.id)).toEqual(["s3", "s4", "s5", "s6", "s7"]);
+  });
+});
+
+describe("topServices", () => {
+  const mk = (n: number) => Array.from({ length: n }, (_, i) => svc({ id: `s${i + 1}`, sort_order: i + 1 }));
+  it("top 3 by count in rank order", () => {
+    const r = topServices(mk(6), { s5: 9, s2: 5, s6: 7, s1: 1 });
+    expect(r.radios.map((s) => s.id)).toEqual(["s5", "s6", "s2"]);
+  });
+  it("ties fall back to sort_order", () => {
+    const r = topServices(mk(6), { s4: 2, s3: 2 });
+    expect(r.radios.map((s) => s.id)).toEqual(["s3", "s4", "s1"]);
+  });
+  it("rest keeps catalog order and excludes the top", () => {
+    const r = topServices(mk(6), { s5: 9, s2: 5, s6: 7 });
+    expect(r.rest.map((s) => s.id)).toEqual(["s1", "s3", "s4"]);
+  });
+  it("3 or fewer services leave rest empty", () => {
+    expect(topServices(mk(3), {}).rest).toEqual([]);
+    expect(topServices(mk(2), {}).radios).toHaveLength(2);
   });
 });
 

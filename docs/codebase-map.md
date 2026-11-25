@@ -81,7 +81,8 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `back-link.ts` | `listQuery`, `recordsBackHref` (record page "Back to search results" keeps the list filters; always a /records path) |
 | `office-features.ts` | pure: feature keys, labels, RECOMMENDED per office (mirror of migration 0200), `hasFeature`, `canWindowIntake`, `isOversight`, `isRecordsDesk`, `isHrmoCss`, `parseFeatureForm` |
 | `records-desk.ts` | pure: desk start screen buckets (late by office, due today/this week, ready to send out, not in a box), `countText`, saved views and tab matching |
-| `charter.ts`, `reference-no.ts` | pure: Charter service helpers (`splitCatalog`, `prefillFromService`, `stepsView`, `canMarkStep`, `canUndoStep`); `cleanRefNo` |
+| `charter.ts`, `reference-no.ts` | pure: Charter service helpers (`splitCatalog`, `topServices`, `prefillFromService`, `stepsView`, `canMarkStep`, `canUndoStep`); `cleanRefNo` |
+| `register-desk.ts` | pure: records desk register form (`routeFile`, `filingSummary`, `errorItems`, `serverErrorField`) |
 | `oversight.ts` | pure: parsers for the city-view RPCs, `maskedSubject` |
 | `settings-diff.ts` | `changedSettings` (which admin settings actually changed) |
 | `user-list.ts`, `demo-accounts.ts` | admin user list filters and status; the sign-in page demo accounts by office (`?email=` prefill) |

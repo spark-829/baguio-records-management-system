@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { useT } from "@/lib/i18n/client";
 import { ARTA_LABEL } from "@/lib/arta";
-import { durationText, feeShort, splitCatalog, artaFromCharter, type ServiceOpt } from "@/lib/charter";
+import { durationText, feeShort, splitCatalog, topServices, artaFromCharter, type ServiceOpt } from "@/lib/charter";
 
 type Props = {
   value: string;
@@ -15,17 +15,24 @@ type Props = {
   officeName: string;
   central: boolean;
   offices: { id: string; name: string }[];
+  desk?: boolean;
 };
 
 /** "What is this?": the office's Citizen's Charter services as radios, the rest in a select, then "Something else". */
 export const ServicePicker = forwardRef<HTMLFieldSetElement, Props>(function ServicePicker(p, ref) {
   const t = useT();
-  const { radios, rest } = splitCatalog(p.services, p.counts);
+  const { radios, rest } = p.desk ? topServices(p.services, p.counts) : splitCatalog(p.services, p.counts);
   const restIds = new Set(rest.map((s) => s.id));
   const otherIds = new Set(p.otherServices.map((s) => s.id));
   const byOffice = p.offices
     .map((o) => ({ o, list: p.otherServices.filter((s) => s.office_id === o.id) }))
     .filter((g) => g.list.length > 0);
+  const other = (
+    <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md px-2 py-2 hover:bg-brand-50">
+      <input type="radio" name="svc_pick" value="other" checked={p.value === "other"} onChange={() => p.onPick("other")} className="mt-1" />
+      <span className="font-semibold">{t("Something else (letter, memo, voucher…)")}</span>
+    </label>
+  );
   return (
     <fieldset
       ref={ref}
@@ -39,6 +46,7 @@ export const ServicePicker = forwardRef<HTMLFieldSetElement, Props>(function Ser
       <p id="f-service-hint" className="mb-2 text-sm text-slate-600">
         {t(p.central ? "Pick the Records Section service, or Something else." : "Pick what the client handed in. The kind of document, time limit and due date fill in for you.")}
       </p>
+      {p.desk && other}
       <div className="grid gap-1">
         {radios.map((s) => (
           <label key={s.id} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md px-2 py-2 hover:bg-brand-50">
@@ -63,11 +71,12 @@ export const ServicePicker = forwardRef<HTMLFieldSetElement, Props>(function Ser
           </select>
         </div>
       )}
-      <p className="my-2 text-sm text-slate-600" aria-hidden>{t("or")}</p>
-      <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md px-2 py-2 hover:bg-brand-50">
-        <input type="radio" name="svc_pick" value="other" checked={p.value === "other"} onChange={() => p.onPick("other")} className="mt-1" />
-        <span className="font-semibold">{t("Something else (letter, memo, voucher…)")}</span>
-      </label>
+      {!p.desk && (
+        <>
+          <p className="my-2 text-sm text-slate-600" aria-hidden>{t("or")}</p>
+          {other}
+        </>
+      )}
       {p.central && byOffice.length > 0 && (
         <div className="mt-3">
           <label className="label" htmlFor="f-service-office">{t("Service of the office it goes to (optional)")}</label>
