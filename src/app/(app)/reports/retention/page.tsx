@@ -31,7 +31,7 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
   const supabase = await createClient();
   const [{ data, error }, { data: types }] = await Promise.all([
     supabase.rpc("rms_report_retention", { p_show: show && show in STATE ? show : null, p_limit: limit }),
-    supabase.from("rms_document_types").select("name, retention_years").eq("is_active", true).order("retention_years", { ascending: false }),
+    supabase.from("rms_document_types").select("name, retention_years, series_code, series_title").eq("is_active", true).order("retention_years", { ascending: false }),
   ]);
   if (error) throw new Error("Retention totals failed");
   const { counts, rows } = parseRetention(data);
@@ -109,10 +109,11 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
       <section className="card p-4">
         <h2 className="text-lg font-bold">{t("Keep periods by kind of document")}</h2>
         <p className="text-slate-700">{t("Set by the administrator. Based on the City's records disposition schedule.")}</p>
+        <p className="text-sm text-slate-600">{t("File plan codes are the City's own records classification, grouped by records series. They are not National Archives (NAP) item numbers.")}</p>
         <ul className="mt-2 grid gap-1 sm:grid-cols-2">
           {(types ?? []).map((ty) => (
-            <li key={ty.name} className="flex justify-between border-b border-slate-100 py-1">
-              <span>{ty.name}</span>
+            <li key={ty.name} className="flex justify-between gap-3 border-b border-slate-100 py-1">
+              <span>{ty.series_code && <span className="mr-2 font-mono text-sm text-slate-600">{ty.series_code}</span>}{ty.name}{ty.series_title && <span className="block text-sm text-slate-600">{ty.series_title}</span>}</span>
               <span className="font-semibold">{ty.retention_years >= 50 ? t("Permanent (50 years or more)") : t("{n} years", { n: ty.retention_years })}</span>
             </li>
           ))}

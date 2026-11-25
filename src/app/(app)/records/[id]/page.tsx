@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProfile, getSettings, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
+import { seriesLabel } from "@/lib/doc-types";
 import { CONF_HELP, CONF_LABEL, PRIORITY_LABEL, daysFromToday, dueText, fmtDate, fmtDateTime, officeName } from "@/lib/labels";
 import { allowedActions, canAttach, isOverdue } from "@/lib/workflow";
 import { newestFirst } from "@/lib/history";
@@ -71,7 +72,7 @@ type Rec = {
   deleted_at: string | null;
   delete_reason: string | null;
   deleter: { full_name: string } | null;
-  doc_type: { name: string } | null;
+  doc_type: { name: string; series_code?: string | null; series_title?: string | null } | null;
   transaction_type?: string | null;
   assigned_to?: string | null;
   assignee?: { full_name: string } | null;
@@ -104,7 +105,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
   const { data } = await supabase
     .from("rms_records")
     .select(
-      "*, doc_type:rms_document_types(name), current_office:rms_offices!rms_records_current_office_id_fkey(code, name), origin_office:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), deleter:rms_profiles!rms_records_deleted_by_fkey(full_name), assignee:rms_profiles!rms_records_assigned_to_fkey(full_name), box:rms_boxes!rms_records_box_id_fkey(id, code, room, shelf)",
+      "*, doc_type:rms_document_types(name, series_code, series_title), current_office:rms_offices!rms_records_current_office_id_fkey(code, name), origin_office:rms_offices!rms_records_origin_office_id_fkey(code, name), creator:rms_profiles!rms_records_created_by_fkey(full_name), deleter:rms_profiles!rms_records_deleted_by_fkey(full_name), assignee:rms_profiles!rms_records_assigned_to_fkey(full_name), box:rms_boxes!rms_records_box_id_fkey(id, code, room, shelf)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -265,7 +266,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
 
   const facts: [string, React.ReactNode][] = [
     [t("Received or sent out"), t(incoming ? "Received by the City" : "Sent out by the City")],
-    [t("Document type"), rec.doc_type?.name],
+    [t("Document type"), rec.doc_type && seriesLabel(rec.doc_type) ? <>{rec.doc_type.name}<span className="block text-sm text-slate-600">{t("File plan: {series}", { series: seriesLabel(rec.doc_type) })}</span></> : rec.doc_type?.name],
     [t("Transaction type"), t(txLabel(rec.transaction_type))],
     [t(incoming ? "From" : "To"), [incoming ? rec.sender_name : rec.recipient_name, incoming ? rec.sender_org : rec.recipient_org].filter(Boolean).join(", ") || "—"],
     ...(rec.barangay !== undefined ? [[t("Barangay"), rec.barangay ?? "—"] as [string, React.ReactNode]] : []),

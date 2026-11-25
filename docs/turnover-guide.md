@@ -20,7 +20,7 @@ For the person who will run and maintain the system.
 The app has no service-role key. Without `SPARK_DEEPSEEK_API`, or when the 0.33 USD cap or a rate limit is reached, AI features run in demo mode (prepared or rule-based output, labeled on screen); everything else is unaffected. Set `AI_DEMO_MODE=1` to force demo mode.
 
 ## Routine tasks
-- **Add an office or document type:** insert a row in `rms_offices` / `rms_document_types` (admin role in the app, or SQL editor).
+- **Add an office or document type:** insert a row in `rms_offices` / `rms_document_types` (admin role in the app, or SQL editor; set `series_code` and `series_title` for the file plan).
 - **New user:** Users page (admin).
 - **Someone leaves:** untick **Active** on the Users page. Their history stays and their access stops at once, even on an open session.
 - **Locked account:** Users page shows "Locked until"; click **Unlock**.

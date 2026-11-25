@@ -8,7 +8,7 @@ const OFFICES = [
   { code: "CEO", name: "City Engineering Office" },
   { code: "CBO", name: "City Budget Office" },
 ];
-const TYPES = ["Letter", "Memorandum", "Disbursement Voucher", "Request / Complaint"];
+const TYPES = ["Letter", "Memorandum", "Disbursement Voucher", "Request"];
 
 describe("questions the records officer tried", () => {
   it("urgent road requests from barangays last month", () => {

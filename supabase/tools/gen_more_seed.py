@@ -30,7 +30,7 @@ def rec(direction, subject, desc, dtype, cat, kw, prio, conf, name, org, mode, d
 # ---- finished and archived (older) ----
 rec("incoming", "Request for permit to hold Panagbenga street dancing practice at Burnham Park",
     "School cluster asks to use the Burnham Park athletic bowl for weekend street dancing practice in January and February.",
-    "Request / Complaint", "Tourism and events", ["panagbenga", "burnham park", "permit", "festival"], "normal", "public",
+    "Request", "Tourism and events", ["panagbenga", "burnham park", "permit", "festival"], "normal", "public",
     "Mrs. Lourdes Cabrera", "Baguio Central School Cluster", "walk-in", 140, "CMO", 10,
     [(1, "fwd", "CAO", "ro", "Forwarded for scheduling", "Coordinate with the festival foundation calendar."),
      (1, "rcv", None, "ca", "Received by City Administrator's Office", None),
@@ -65,14 +65,14 @@ rec("outgoing", "Reply to request for certified true copy of Ordinance on plasti
 # ---- in progress, on time ----
 rec("incoming", "Complaint on uncollected garbage along Kayang Street",
     "Store owners report that garbage has not been collected for four days.",
-    "Request / Complaint", "Environment", ["garbage", "kayang", "complaint", "collection"], "urgent", "public",
+    "Request", "Environment", ["garbage", "kayang", "complaint", "collection"], "urgent", "public",
     "Mr. Danilo Ramos", "Kayang Street Vendors Association", "walk-in", 3, "CMO", 4,
     [(0, "fwd", "CEO", "ro", "Forwarded for immediate action", "Coordinate with the collection contractor today."),
      (0, "rcv", None, "es", "Received by Engineering", None),
      (1, "act", None, "eh", "Collection truck dispatched", "Truck 7 assigned to Kayang Street route.")])
 rec("incoming", "Application for building permit, four-storey residential building in Barangay Pacdal",
     "Owner submits plans and requirements for a four-storey residential building.",
-    "Request / Complaint", "Building permits", ["building permit", "pacdal", "residential"], "normal", "public",
+    "Request", "Building permits", ["building permit", "pacdal", "residential"], "normal", "public",
     "Engr. Victor Santiago", "for Mr. and Mrs. Robles", "walk-in", 6, "CMO", 9,
     [(0, "fwd", "CEO", "ro", "Forwarded for plan evaluation", None),
      (1, "rcv", None, "es", "Received by Engineering", None),
@@ -93,7 +93,7 @@ rec("incoming", "Purchase request for 20 units of laptops for the City Treasurer
      (3, "act", None, "bo", "Checking available appropriation", "Charge to capital outlay, ICT equipment.")])
 rec("incoming", "Request for financial assistance for burial of a senior citizen",
     "Family requests burial assistance under the city's social welfare program.",
-    "Request / Complaint", "Social services", ["financial assistance", "burial", "senior citizen"], "urgent", "confidential",
+    "Request", "Social services", ["financial assistance", "burial", "senior citizen"], "urgent", "confidential",
     "Mrs. Elena Dulay", None, "walk-in", 1, "CMO", 3,
     [(0, "fwd", "CTO", "ro", "Forwarded for release of assistance", "Approved by the City Mayor. Handle as confidential."),
      (0, "rcv", None, "ts", "Received by Treasury", None)])
@@ -113,14 +113,14 @@ rec("incoming", "Notice of hearing on the proposed amendment of the Baguio zonin
      (2, "note", None, "ph", "Position paper being drafted", None)])
 rec("incoming", "Request for leave credits certification of a retiring employee",
     "Retiring employee asks for a certification of unused leave credits for terminal leave pay.",
-    "Request / Complaint", "Human resources", ["leave credits", "retirement", "certification"], "normal", "confidential",
+    "Request", "Human resources", ["leave credits", "retirement", "certification"], "normal", "confidential",
     "Mr. Rodolfo Baccay", "City Engineering Office", "internal", 8, "CMO", 10,
     [(0, "fwd", "HRMO", "ro", "Forwarded for certification", None),
      (1, "rcv", None, "hr", "Received by HRMO", None),
      (3, "act", None, "hr", "Computing leave credits", "Service record requested from Engineering.")])
 rec("incoming", "Report of a leaning pine tree near the Wright Park riding circle",
     "Park visitor reports a pine tree leaning over the footpath after heavy rain.",
-    "Request / Complaint", "Environment", ["pine tree", "wright park", "safety", "rain"], "urgent", "public",
+    "Request", "Environment", ["pine tree", "wright park", "safety", "rain"], "urgent", "public",
     "Ms. Joy Pacio", None, "email", 2, "CMO", 3,
     [(0, "fwd", "CEO", "ro", "Forwarded for inspection", "Possible danger to visitors. Please inspect today."),
      (0, "rcv", None, "es", "Received by Engineering", None),
@@ -129,7 +129,7 @@ rec("incoming", "Report of a leaning pine tree near the Wright Park riding circl
 # ---- overdue ----
 rec("incoming", "Request for repair of streetlights along Marcos Highway, Barangay Irisan",
     "Barangay council reports twelve streetlights not working near the Irisan junction.",
-    "Request / Complaint", "Infrastructure", ["streetlights", "irisan", "marcos highway", "repair"], "urgent", "public",
+    "Request", "Infrastructure", ["streetlights", "irisan", "marcos highway", "repair"], "urgent", "public",
     "Punong Barangay", "Barangay Irisan", "walk-in", 16, "CMO", 7,
     [(0, "fwd", "CEO", "ro", "Forwarded for repair", "Road safety concern at night."),
      (2, "rcv", None, "es", "Received by Engineering", None),
@@ -221,7 +221,7 @@ rec("incoming", "Purchase request for rain gear of street sweepers",
      (30, "arch", None, "ro", "Filed", None)])
 rec("incoming", "Request for traffic rerouting plan during the Session Road in Bloom",
     "Festival committee asks for a rerouting plan while Session Road is closed to vehicles.",
-    "Request / Complaint", "Traffic", ["traffic", "rerouting", "session road", "panagbenga"], "urgent", "public",
+    "Request", "Traffic", ["traffic", "rerouting", "session road", "panagbenga"], "urgent", "public",
     "Festival Director", "Baguio Flower Festival Foundation", "walk-in", 120, "CMO", 14,
     [(0, "fwd", "CEO", "ro", "Forwarded for traffic plan", None),
      (1, "rcv", None, "es", "Received by Engineering", None),
@@ -268,7 +268,7 @@ rec("incoming", "Water interruption advisory affecting City Hall",
      (1, "done", None, "ca", "Advisory posted at all entrances", None)])
 rec("incoming", "Request for a copy of the Comprehensive Land Use Plan by a graduate student",
     "Student asks for the land use maps for a thesis on urban growth.",
-    "Request / Complaint", "Planning", ["clup", "land use", "student", "research"], "low", "public",
+    "Request", "Planning", ["clup", "land use", "student", "research"], "low", "public",
     "Mr. Kevin Dalisay", "University of the Philippines Baguio", "email", 3, "CMO", 15,
     [(0, "fwd", "CPDO", "ro", "Forwarded for reply", None)])
 rec("incoming", "Notice of salary adjustment under the new salary standardization law",

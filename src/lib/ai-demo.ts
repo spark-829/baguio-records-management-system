@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { IntakeResult } from "./ai-schemas";
+import { matchDocType } from "./doc-types";
 import { searchRecords } from "./search";
 import { STATUS_LABEL, partyLabel } from "./labels";
 import type { SearchFilters } from "./types";
@@ -76,7 +77,7 @@ const SAMPLES: Sample[] = [
     sender_org: null,
     recipient_name: null,
     recipient_org: "City Engineering Office",
-    document_type: "Request / Complaint",
+    document_type: "Request",
     category: "Permits",
     keywords: ["building permit", "certified true copy", "request"],
     priority: "normal",
@@ -105,7 +106,7 @@ function isoDaysAgo(n: number) {
 /** Returns one of three prepared sample letters (chosen from the file name), shaped exactly like the real AI result. */
 export function demoIntake(fileName: string, docTypes: string[], offices: { code: string }[]): IntakeResult {
   const s = pick(SAMPLES, fileName);
-  const docType = docTypes.find((t) => t.toLowerCase() === s.document_type.toLowerCase()) ?? docTypes[0];
+  const docType = matchDocType(s.document_type, docTypes) ?? docTypes[0];
   const office = offices.find((o) => o.code === s.office)?.code ?? offices[0]?.code ?? s.office;
   const { office: _o, daysAgo, ...rest } = s;
   void _o;

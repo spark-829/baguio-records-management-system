@@ -401,6 +401,8 @@ export const FIL: Record<string, string> = {
   "Keep periods by kind of document": "Tagal ng pagtatago ayon sa uri ng dokumento",
   "Set by the administrator. Based on the City's records disposition schedule.": "Itinakda ng administrador. Batay sa records disposition schedule ng Lungsod.",
   "Permanent (50 years or more)": "Permanente (50 taon o higit pa)",
+  "File plan: {series}": "Klasipikasyon sa file plan: {series}",
+  "File plan codes are the City's own records classification, grouped by records series. They are not National Archives (NAP) item numbers.": "Ang mga file plan code ay sariling klasipikasyon ng mga rekord ng Lungsod, nakagrupo ayon sa records series. Hindi ito mga item number ng National Archives (NAP).",
   "Loading…": "Naglo-load…",
   "On since {date}": "Naka-on mula {date}",
   "Turn off": "I-off",
