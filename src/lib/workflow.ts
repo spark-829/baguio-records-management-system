@@ -93,3 +93,49 @@ export function canAttach(o: { role: Role; userOfficeId: string | null; currentO
   }
   return false;
 }
+
+export type ButtonKind = Exclude<ActionKind, "remark">;
+export type ButtonChoice = ButtonKind | "return";
+
+/** Records desk button names (A2). "return" uses "Send back to {office}". */
+export const BUTTON_LABEL: Record<ButtonKind, string> = {
+  receive: "Mark as received",
+  forward: "Send to another office",
+  act: "Start working on it",
+  complete: "Mark as done",
+  release: "Mark as sent out",
+  archive: "File away in a box",
+};
+
+/** The usual next step for this status, if the user may take it; else the first allowed non-note action. */
+export function primaryAction(status: Status, direction: Direction, allowed: ActionKind[]): ButtonKind | null {
+  const out = direction === "outgoing";
+  const want: Partial<Record<Status, ButtonKind>> = {
+    forwarded: "receive",
+    registered: out ? "release" : "forward",
+    received: "act",
+    under_action: "complete",
+    completed: out ? "release" : "archive",
+    released: "archive",
+  };
+  const w = want[status];
+  if (w && allowed.includes(w)) return w;
+  return (allowed.find((a) => a !== "remark") as ButtonKind | undefined) ?? null;
+}
+
+/** Split allowed actions into one primary, up to 2 secondary and the rest ("More actions"). Notes are left out. */
+export function actionButtons(
+  allowed: ActionKind[],
+  primary: ActionKind | null,
+  canReturn: boolean,
+): { primary: ButtonKind | null; secondary: ButtonChoice[]; more: ButtonChoice[] } {
+  const p = primary && primary !== "remark" && allowed.includes(primary) ? primary : null;
+  const rest: ButtonChoice[] = [];
+  if (p === "forward" && canReturn) rest.push("return");
+  for (const a of allowed) {
+    if (a === "remark" || a === p) continue;
+    rest.push(a);
+    if (a === "forward" && canReturn) rest.push("return");
+  }
+  return { primary: p, secondary: rest.slice(0, 2), more: rest.slice(2) };
+}

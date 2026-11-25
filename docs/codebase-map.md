@@ -18,7 +18,7 @@ MFA-pending users. All queries use `createClient()` from
 | `/` dashboard | `page.tsx` (+ `components/due-calendar.tsx`); admins get the Security overview, `security-hub.tsx`; CGSO records desk (`isRecordsDesk`) gets the Records Section start screen (`?cal=month` shows the calendar) |
 | `/records` list, search | `records/page.tsx`, `records/ai-search-box.tsx`; saved-view tabs for the records desk |
 | `/records/new` register | `records/new/{page,register-form,actions}.tsx` (scan to prefill; `?reply_to=IN-...` starts a reply) |
-| `/records/[id]` detail | `records/[id]/page.tsx`, `forms.tsx` (take action, attach), `actions.ts`, `summary-box.tsx` |
+| `/records/[id]` detail | `records/[id]/page.tsx`, `forms.tsx` (take action, attach), `actions.ts`, `summary-box.tsx`; records desk (`isRecordsDesk`) gets the A2 layout: Actions sidebar with named buttons, note box (`NoteForm`) |
 | `/records/[id]/slip`, `/receipt` | routing slip with QR, QR receipt |
 | `/r/[tracking]` | QR scan landing, `receive-form.tsx` (receive by QR) |
 | `/assistant` | `assistant/chat.tsx` (records chat, also used in the right-hand panel of `components/assistant-launcher.tsx`) |
@@ -48,9 +48,9 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `doc-types.ts` | `matchDocType` (old type names such as "Request / Complaint" map to "Request"), `seriesLabel` (file plan code and series) |
 | `session.ts` | `getProfile`, `isCentral`, `getSettings` |
 | `types.ts`, `labels.ts` | Role/Status/Profile types; labels, `maskName`, dates |
-| `workflow.ts` | actions, `allowedActions`, `nextStatus`, `isOverdue`, `isAlreadyReceived`, `canAttach` (mirror of `rms_can_attach`; admins get no record actions) |
+| `workflow.ts` | actions, `allowedActions`, `nextStatus`, `isOverdue`, `isAlreadyReceived`, `primaryAction`, `actionButtons`, `BUTTON_LABEL`, `canAttach` (mirror of `rms_can_attach`; admins get no record actions) |
 | `security-hub.ts`, `flow-analytics.ts` | pure: admin Security overview parser, attention items, finding text; System analytics parser, ranking, ticks, open-pile line, top-N-plus-other, KPI comparison, text helpers |
-| `history.ts`, `audit-text.ts` | `newestFirst`, `collapseSteps` (history order, citizen progress); `routeText` (audit routing rows) |
+| `history.ts`, `audit-text.ts` | `newestFirst`, `collapseSteps`, `foldMiddle` (history order, citizen progress); `routeText` (audit routing rows) |
 | `search.ts` | record search filters → `rms_search_records_v5` (v4 plus open-only, now-in-office and priority in the database) |
 | `boxes.ts`, `dispatch.ts` | pure: box codes, box form checks, history text; send methods, release and delivery form checks, `canRecordDelivery` (mirror of `rms_record_delivery`), logbook parser and CSV rows |
 | `transaction-type.ts` | G2C/G2G/G2B codes, labels, `isTxType`, `txLabel` (test `tests/transaction-type.test.ts`) |
