@@ -1,3 +1,4 @@
+import Form from "next/form";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -49,7 +50,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
         {!adding && <Link href={`${usersHref(f, { add: "1" })}#add-user`} className="btn-primary">{t("Add a user")}</Link>}
       </div>
 
-      <form method="get" action="/admin/users" className="card flex flex-wrap items-end gap-3 p-4">
+      <Form action="/admin/users" prefetch={false} className="card flex flex-wrap items-end gap-3 p-4">
         <div className="w-full sm:w-56">
           <label className="label" htmlFor="uf-q">{t("Name")}</label>
           <input id="uf-q" name="q" type="text" defaultValue={f.q} className="input" />
@@ -79,7 +80,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
           <button className="btn-secondary">{t("Filter")}</button>
           {hasUserFilters(f) && <Link href="/admin/users" className="font-semibold text-brand-700 underline">{t("Clear")}</Link>}
         </div>
-      </form>
+      </Form>
 
       {saved && <p role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-emerald-900">{t("Changes saved for {name}.", { name: saved.full_name })}</p>}
 

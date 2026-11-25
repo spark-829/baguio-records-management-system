@@ -1,3 +1,4 @@
+import Form from "next/form";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -80,7 +81,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
 
       {aiNote && <p className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900">{t("Assistant applied:")} {aiNote}</p>}
 
-      <form className="card space-y-4 p-5" method="get">
+      <Form action="/records" prefetch={false} className="card space-y-4 p-5">
         {f.tx && <input type="hidden" name="tx" value={f.tx} />}
         <div>
           <label className="label" htmlFor="q">{t("Search records")}</label>
@@ -172,7 +173,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </div>
           </div>
         </details>
-      </form>
+      </Form>
 
       <nav aria-label={t("Filter by transaction type")} className="flex flex-wrap gap-2">
         {([undefined, ...TX_TYPES] as (TxType | undefined)[]).map((tx) => {
@@ -290,7 +291,7 @@ async function CityRecords({ sp }: { sp: Record<string, string | string[] | unde
       <h1 className="text-2xl font-bold">{t("Records")}</h1>
       <ScopeLinks base="/records" scope="city" />
       <p className="text-sm text-slate-600">{t("All offices, read-only. Confidential subjects are hidden.")}</p>
-      <form method="get" className="card grid gap-4 p-5 md:grid-cols-3">
+      <Form action="/records" prefetch={false} className="card grid gap-4 p-5 md:grid-cols-3">
         <input type="hidden" name="scope" value="city" />
         <div>
           <label className="label" htmlFor="city-q">{t("Search records")}</label>
@@ -307,7 +308,7 @@ async function CityRecords({ sp }: { sp: Record<string, string | string[] | unde
           <input type="checkbox" className="checkbox" name="late" value="1" defaultChecked={late} /> {t("Late only")}
         </label>
         <div className="md:col-span-3"><button className="btn-primary">{t("Search")}</button></div>
-      </form>
+      </Form>
       {rows.length === 0 ? (
         <p className="card p-5">{t("No records found.")}</p>
       ) : (

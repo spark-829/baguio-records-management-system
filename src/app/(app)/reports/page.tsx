@@ -1,3 +1,4 @@
+import Form from "next/form";
 import { txLabel } from "@/lib/transaction-type";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
@@ -99,13 +100,13 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           </p>
           <p className="print-only text-sm">{t("Prepared by {name} on {date}", { name: me.full_name, date: printedAt })}</p>
         </div>
-        <form className="no-print flex flex-wrap items-end gap-2" method="get">
+        <Form action="/reports" prefetch={false} className="no-print flex flex-wrap items-end gap-2">
           <div><label className="label" htmlFor="rep-from">{t("From|date")}</label><input id="rep-from" type="date" name="from" defaultValue={from} className="input" /></div>
           <div><label className="label" htmlFor="rep-to">{t("To|date")}</label><input id="rep-to" type="date" name="to" defaultValue={to} className="input" /></div>
           <button className="btn-secondary">{t("Apply")}</button>
           <a className="btn-secondary" href={`/api/reports/csv?${new URLSearchParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) })}`}>{t("Download list (CSV, opens in Excel)")}</a>
           <PrintButton label="Print report" />
-        </form>
+        </Form>
       </div>
       <nav aria-label={t("More reports")} className="no-print flex flex-wrap gap-2">
         {me.role !== "viewer" && <Link href="/reports/offices" className="btn-secondary">{t("Office workload")}</Link>}

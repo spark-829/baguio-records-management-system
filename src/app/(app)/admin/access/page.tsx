@@ -1,3 +1,4 @@
+import Form from "next/form";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -67,7 +68,7 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
         <p className="text-sm text-slate-600">{t("Sign-ins, failed attempts, records opened and files downloaded, with IP address. Entries cannot be edited or deleted.")}</p>
       </div>
 
-      <form method="get" className="card flex flex-wrap items-end gap-3 p-4">
+      <Form action="/admin/access" prefetch={false} className="card flex flex-wrap items-end gap-3 p-4">
         <div>
           <label className="label" htmlFor="acc-user">{t("User")}</label>
           <select id="acc-user" name="user" defaultValue={sp.user ?? ""} className="input min-h-12 w-56">
@@ -88,7 +89,7 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
         </div>
         <button className="btn-secondary">{t("Filter")}</button>
         {(sp.user || sp.record || sp.event) && <Link href="/admin/access" className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">{t("Clear")}</Link>}
-      </form>
+      </Form>
 
       <section className="card overflow-x-auto">
         <table className="w-full text-sm">
@@ -130,11 +131,11 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
             {t("For Data Privacy Act requests. Lists every time a record naming this person as sender or recipient was opened or downloaded.")}
           </p>
         </div>
-        <form method="get" className="flex flex-wrap gap-2">
+        <Form action="/admin/access" prefetch={false} className="flex flex-wrap gap-2">
           <label htmlFor="acc-person" className="sr-only">{t("Person's name")}</label>
           <input id="acc-person" name="person" defaultValue={sp.person ?? ""} className="input w-72" placeholder={t("e.g. Juan dela Cruz")} minLength={3} required />
           <button className="btn-secondary">{t("Run report")}</button>
-        </form>
+        </Form>
         {report?.error && <p className="text-sm text-red-700">{report.error.message}</p>}
         {report?.data && (
           <div className="overflow-x-auto">

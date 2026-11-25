@@ -1,3 +1,4 @@
+import Form from "next/form";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -110,14 +111,14 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           <h1 className="text-2xl font-bold">{t("Audit log")}</h1>
           <p className="text-sm text-slate-600">{t("Every change, download and assistant use, recorded automatically. Nobody can edit or delete entries.")}</p>
         </div>
-        <form method="get" className="flex gap-2">
+        <Form action="/admin/audit" prefetch={false} className="flex gap-2">
           <label htmlFor="audit-t" className="sr-only">{t("Show")}</label>
           <select id="audit-t" name="t" defaultValue={table ?? ""} className="input">
             <option value="">{t("All entries")}</option>
             {Object.entries(TABLE_LABEL).map(([k, v]) => <option key={k} value={k}>{t(v)}</option>)}
           </select>
           <button className="btn-secondary">{t("Filter")}</button>
-        </form>
+        </Form>
       </div>
       {chain.error ? (
         <p className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">{t(integrityErrorText(chain.error))}</p>

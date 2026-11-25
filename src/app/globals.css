@@ -269,3 +269,24 @@ main table tbody tr:hover {
   html[data-assistant="open"] .app-shell { padding-right: 26rem; }
   html[data-assistant="open"] .shell-who { display: none; }
 }
+
+/* Top page-change bar (src/components/nav-progress.tsx): grows quickly, then slowly, never reaches the end on its own. */
+.nav-progress {
+  transform-origin: left;
+  animation: nav-progress-grow 8s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
+}
+.nav-progress-done {
+  animation: none;
+  transform: scaleX(1);
+  opacity: 0;
+  transition: opacity 200ms linear 50ms;
+}
+@keyframes nav-progress-grow {
+  from { transform: scaleX(0.05); }
+  to { transform: scaleX(0.9); }
+}
+html[data-navigating] { cursor: progress; }
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress { animation: none; transform: scaleX(1); opacity: 0.7; }
+  .nav-progress-done { transition: none; }
+}

@@ -1,3 +1,4 @@
+import Form from "next/form";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -61,7 +62,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
         <p className="text-lg">
           <Rich text={t("Type the **tracking number** and the **tracking code** printed on the receipt you got when you filed your document.")} />
         </p>
-        <form className="card grid gap-4 p-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end" method="get">
+        <Form action="/track" prefetch={false} className="card grid gap-4 p-5 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
           <div>
             <label className="label" htmlFor="no">{t("Tracking number")}</label>
             <input className="input font-mono uppercase" id="no" name="no" defaultValue={no} placeholder={t("IN-2026-0001")} required autoComplete="off" />
@@ -71,7 +72,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
             <input className="input font-mono uppercase" id="code" name="code" defaultValue={code} placeholder={t("6 letters or numbers")} required autoComplete="off" />
           </div>
           <button className="btn-primary">{t("Check")}</button>
-        </form>
+        </Form>
 
         {result && "error" in result && (
           <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-950">
