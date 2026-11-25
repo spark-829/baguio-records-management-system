@@ -67,27 +67,27 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
         <p className="text-sm text-slate-600">{t("Sign-ins, failed attempts, records opened and files downloaded, with IP address. Entries cannot be edited or deleted.")}</p>
       </div>
 
-      <form method="get" className="card flex flex-wrap items-end gap-2 p-3">
+      <form method="get" className="card flex flex-wrap items-end gap-3 p-4">
         <div>
           <label className="label" htmlFor="acc-user">{t("User")}</label>
-          <select id="acc-user" name="user" defaultValue={sp.user ?? ""} className="input w-56">
+          <select id="acc-user" name="user" defaultValue={sp.user ?? ""} className="input min-h-12 w-56">
             <option value="">{t("Everyone")}</option>
             {(people ?? []).map((p) => <option key={p.id} value={p.id}>{p.full_name}</option>)}
           </select>
         </div>
         <div>
           <label className="label" htmlFor="acc-record">{t("Record (tracking no.)")}</label>
-          <input id="acc-record" name="record" defaultValue={sp.record ?? ""} className="input w-40 font-mono" placeholder={t("IN-2026-0001")} />
+          <input id="acc-record" name="record" defaultValue={sp.record ?? ""} className="input min-h-12 w-52 font-mono" placeholder={t("IN-2026-0001")} />
         </div>
         <div>
           <label className="label" htmlFor="acc-event">{t("Event")}</label>
-          <select id="acc-event" name="event" defaultValue={sp.event ?? ""} className="input w-48">
+          <select id="acc-event" name="event" defaultValue={sp.event ?? ""} className="input min-h-12 w-48">
             <option value="">{t("All events")}</option>
             {Object.entries(EVENT_LABEL).map(([k, v]) => <option key={k} value={k}>{t(v)}</option>)}
           </select>
         </div>
         <button className="btn-secondary">{t("Filter")}</button>
-        {(sp.user || sp.record || sp.event) && <Link href="/admin/access" className="text-sm text-brand-700 hover:underline">{t("Clear")}</Link>}
+        {(sp.user || sp.record || sp.event) && <Link href="/admin/access" className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">{t("Clear")}</Link>}
       </form>
 
       <section className="card overflow-x-auto">
@@ -100,12 +100,12 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
               <tr key={r.id} className={ALERT.has(r.event) ? "bg-red-50/60" : ""}>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.created_at)}</td>
                 <td className="px-3 py-2">{r.user?.full_name ?? r.email ?? "—"}</td>
-                <td className="px-3 py-2">
+                <td className="whitespace-nowrap px-3 py-2">
                   {t(EVENT_LABEL[r.event] ?? r.event)}
                   {r.event === "login_failed" && r.detail?.attempt ? <span className="text-xs text-slate-500"> (attempt {String(r.detail.attempt)})</span> : null}
                 </td>
                 <td className="px-3 py-2">
-                  {r.record ? <Link className="font-mono text-brand-700 hover:underline" href={`/records/${r.record.id}`}>{r.record.tracking_no}</Link> : "—"}
+                  {r.record ? <Link className="font-mono whitespace-nowrap text-brand-700 hover:underline" href={`/records/${r.record.id}`}>{r.record.tracking_no}</Link> : "—"}
                   {r.detail?.file ? <span className="text-slate-600"> · {String(r.detail.file)}</span> : null}
                 </td>
                 <td className="px-3 py-2 font-mono text-xs text-slate-600" title={r.user_agent ?? ""}>{r.ip || "—"}</td>
@@ -148,7 +148,7 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
                     <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.accessed_at)}</td>
                     <td className="px-3 py-2">{r.accessed_by}</td>
                     <td className="px-3 py-2">{t(EVENT_LABEL[r.event] ?? r.event)}</td>
-                    <td className="px-3 py-2"><Link className="font-mono text-brand-700 hover:underline" href={`/records/${r.record_id}`}>{r.tracking_no}</Link> <span className="text-slate-600">{r.subject}</span></td>
+                    <td className="px-3 py-2"><Link className="font-mono whitespace-nowrap text-brand-700 hover:underline" href={`/records/${r.record_id}`}>{r.tracking_no}</Link> <span className="text-slate-600">{r.subject}</span></td>
                     <td className="px-3 py-2 font-mono text-xs">{r.ip || "—"}</td>
                   </tr>
                 ))}

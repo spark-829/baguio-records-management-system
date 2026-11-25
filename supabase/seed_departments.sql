@@ -16,7 +16,7 @@ begin
       from (values
         ('SP', 'Sangguniang Panlungsod'), ('CACCO', 'Accounting'), ('CASSO', 'Assessor'), ('CBAO', 'Building Official'),
         ('CCRO', 'Civil Registry'), ('CEPMO', 'Environment'), ('HSO', 'Health'), ('CSWDO', 'Social Welfare'),
-        ('CTCAO', 'Traffic and Transport'), ('CVAO', 'Veterans Affairs'), ('CMO-PLD', 'Permits and Licensing'),
+        ('CTCAO', 'Tourism'), ('CVAO', 'Veterinary'), ('CMO-PLD', 'Permits and Licensing'),
         ('PESO', 'Public Employment'), ('CDRRMO', 'Disaster Risk Reduction')
       ) as o(code, area)
   loop
@@ -24,8 +24,7 @@ begin
     for i in 1..2 loop
       declare
         v_email text := case i when 1 then u.head_email else u.window_email end;
-        v_name text := case i when 1 then 'Head of ' || u.area || ' (' || u.area || ' Head)'
-                              else 'Window clerk of ' || u.area || ' (' || u.area || ' Window Clerk)' end;
+        v_name text := case i when 1 then u.area || ' Head' else u.area || ' Window Clerk' end;
         v_role public.rms_role := case i when 1 then 'dept_head' else 'staff' end;
       begin
         select id into v_id from auth.users where email = v_email;

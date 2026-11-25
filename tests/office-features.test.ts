@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  canWindowIntake, countOn, differsFromRecommended, hasFeature, isHrmoCss, isOversight, optionalFeaturesFor,
+  canWindowIntake, countOn, differsFromRecommended, featuresOff, hasFeature, isHrmoCss, isOversight, optionalFeaturesFor,
   parseFeatureForm, parseFeatures, RECOMMENDED,
 } from "../src/lib/office-features";
 
@@ -66,6 +66,9 @@ describe("parseFeatureForm and friends", () => {
   it("counts and compares", () => {
     expect(countOn("CEO", RECOMMENDED.CEO)).toEqual({ on: 6, of: 8 });
     expect(countOn("CMO", RECOMMENDED.CMO)).toEqual({ on: 6, of: 9 });
+    expect(featuresOff("CEO", RECOMMENDED.CEO)).toHaveLength(2);
+    expect(featuresOff("CEO", ["window", "services", "logbook", "copies", "boxes", "map", "satisfaction"])).toEqual(["refno"]);
+    expect(featuresOff("CMO", null)).toContain("oversight");
     expect(optionalFeaturesFor("CAO")).toContain("oversight");
     expect(differsFromRecommended("CEO", RECOMMENDED.CEO)).toBe(false);
     expect(differsFromRecommended("CEO", [...RECOMMENDED.CEO].reverse())).toBe(false);

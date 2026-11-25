@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { integrityErrorText, routeText, checkCoverageText } from "../src/lib/audit-text";
+import { integrityErrorText, profileText, routeText, checkCoverageText } from "../src/lib/audit-text";
 
 describe("checkCoverageText", () => {
   const fmt = (s: string) => `on ${s}`;
@@ -53,5 +53,19 @@ describe("integrityErrorText", () => {
   });
   it("uses a generic message for other errors", () => {
     expect(integrityErrorText({ code: "42501", message: "permission denied" })).toBe("Could not run the integrity check right now. Try again in a minute.");
+  });
+});
+
+describe("profileText", () => {
+  const offices = new Map([["o2", "City Legal Office"]]);
+  const base = { full_name: "Ana Dizon", role: "staff", office_id: "o1", is_active: true, locked_until: null, last_login_at: "a", failed_attempts: 0, window_intake: false, updated_at: "x" };
+  it("says sign-ins and lockouts plainly", () => {
+    expect(profileText("UPDATE", { ...base, last_login_at: "b", updated_at: "y" }, base, offices)).toBe("Signed in (last sign-in time saved)");
+    expect(profileText("UPDATE", { ...base, failed_attempts: 5, locked_until: "z" }, base, offices)).toBe("Locked after too many wrong passwords");
+    expect(profileText("UPDATE", { ...base, failed_attempts: 2 }, base, offices)).toBe("Wrong password (2 in a row)");
+  });
+  it("lists admin changes", () => {
+    expect(profileText("UPDATE", { ...base, role: "dept_head", office_id: "o2", is_active: false }, base, offices)).toBe("Ana Dizon: role Department Staff → Department Head, office → City Legal Office, deactivated");
+    expect(profileText("INSERT", base, null, offices)).toBe("Ana Dizon · Department Staff");
   });
 });

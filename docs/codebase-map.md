@@ -27,7 +27,7 @@ MFA-pending users. All queries use `createClient()` from
 | `/reports/released` | released documents logbook (records desk, office heads), CSV via `api/reports/csv?report=released` |
 | `/records/new` catalog, `/records/[id]` steps | `records/new/service-picker.tsx` (Charter services), `records/[id]/charter-steps.tsx` + `charter-step-button.tsx` (mark step done, undo); `reports/satisfaction/{page,actions}.ts` (HRMO consolidation, send summary to HRMO) |
 | `/map` | barangay map (`components/barangay-map.tsx`, `lib/baguio-map.ts`) |
-| `/admin/users`, `access`, `audit`, `bin`, `settings` | admin screens; `actions.ts` beside each (`users?locked=1` filters locked accounts) |
+| `/admin/users`, `access`, `audit`, `bin`, `settings` | admin screens; `actions.ts` beside each. Users is a filtered list (`?q=&office=&role=&status=`, `?locked=1` still works) with `?edit=<id>` / `?add=1` opening the side panel (`lib/user-list.ts`) |
 | `/admin/offices`, `/admin/offices/[code]` | admin: which features each office sees (`office-features.ts`), `actions.ts` saves; `?scope=city` on `/`, `/reports`, `/records` and `/records/[id]` is the read-only city view for CMO and CAO heads (`city-overview.tsx`, `records/[id]/oversight-view.tsx`) |
 | `/admin/analytics` | admin flow analytics: `admin/analytics/page.tsx`, `charts.tsx` (server-only BarList, OpenLine, PairedColumns); one RPC `rms_admin_flow_analytics` |
 | `/security` | MFA setup; `/help` user help |
@@ -81,6 +81,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `charter.ts`, `reference-no.ts` | pure: Charter service helpers (`splitCatalog`, `prefillFromService`, `stepsView`, `canMarkStep`, `canUndoStep`); `cleanRefNo` |
 | `oversight.ts` | pure: parsers for the city-view RPCs, `maskedSubject` |
 | `settings-diff.ts` | `changedSettings` (which admin settings actually changed) |
+| `user-list.ts`, `demo-accounts.ts` | admin user list filters and status; the sign-in page demo accounts by office (`?email=` prefill) |
 
 `src/components/`: alert-bell, badges, brand, nav-links, lang-toggle, idle-logout,
 scan-qr-button, rich, due-calendar, barangay-map, use-upload-prep (compress + thumbnail hook).
