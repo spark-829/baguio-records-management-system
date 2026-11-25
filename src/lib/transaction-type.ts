@@ -13,9 +13,9 @@ export const TX_FORM_LABEL: Record<TxType, string> = {
 };
 
 export const TX_CHIP_LABEL: Record<TxType, string> = {
-  G2C: "Citizen (G2C)",
-  G2G: "Government (G2G)",
-  G2B: "Business (G2B)",
+  G2C: "Citizen",
+  G2G: "Government",
+  G2B: "Business",
 };
 
 export function txLabel(k: string | null | undefined): string {

@@ -13,8 +13,9 @@ import type { Status } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
 import { ScanQrButton } from "@/components/scan-qr-button";
 import { AiSearchButton } from "./ai-search-box";
-import { isOversight } from "@/lib/office-features";
+import { isOversight, isRecordsDesk } from "@/lib/office-features";
 import { maskedSubject, parseCityRows } from "@/lib/oversight";
+import { activeView, savedViews, viewHref } from "@/lib/records-desk";
 import { ScopeLinks } from "../city-overview";
 
 export default async function RecordsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
@@ -42,34 +43,56 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   const officeNames = new Map((offices.data ?? []).map((o) => [o.code, o.name]));
   const narrowed = Boolean(f.at || f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here || f.tx || f.box);
   const active = Boolean(f.q || aiNote || narrowed);
+  const views = isRecordsDesk(me) ? savedViews(me.office?.code) : null;
+  const view = views ? activeView(f, views) : null;
+  const emptyText = t(view?.empty ?? "No records match. Try fewer filters.");
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+      <div className="space-y-1">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-bold">{t("Records")}</h1>
-          {oversight && <div className="my-2"><ScopeLinks base="/records" scope="mine" /></div>}
-          {f.box && (
-            <p className="text-lg font-semibold">
-              {t("In box {code}").split("{code}")[0]}<span className="whitespace-nowrap font-mono">{f.box}</span>{t("In box {code}").split("{code}")[1]}
-            </p>
-          )}
-          <p className="text-sm text-slate-600">
-            {t(foundText(rows.length, page.more, onlyOpen), { n: rows.length })}
-            {onlyOpen && (
-              <>
-                {" · "}
-                <Link prefetch={false} href={`/records?${filtersToParams({ ...f, open: false }).toString()}`}>{t("Show finished ones too")}</Link>
-              </>
-            )}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <ScanQrButton />
-          <a href={exportHref} className="btn-secondary">{t("Download for Excel (CSV)")}</a>
           {me.role !== "viewer" && me.role !== "admin" && <Link prefetch={false} href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
         </div>
+        {oversight && <div className="my-2"><ScopeLinks base="/records" scope="mine" /></div>}
+        {f.box && (
+          <p className="text-lg font-semibold">
+            {t("In box {code}").split("{code}")[0]}<span className="whitespace-nowrap font-mono">{f.box}</span>{t("In box {code}").split("{code}")[1]}
+          </p>
+        )}
+        <p className="text-sm text-slate-600">
+          {t(foundText(rows.length, page.more, onlyOpen), { n: rows.length })}
+          {" · "}
+          <a href={exportHref} className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-4">{t("Download for Excel (CSV)")}</a>
+          {onlyOpen && (
+            <>
+              {" · "}
+              <Link prefetch={false} href={`/records?${filtersToParams({ ...f, open: false }).toString()}`} className="inline-flex min-h-11 items-center">{t("Show finished ones too")}</Link>
+            </>
+          )}
+        </p>
       </div>
+
+      {views && (
+        <div className="overflow-x-auto">
+          <nav aria-label={t("Saved views")} className="flex min-w-max gap-1 border-b border-line">
+            {views.map((v) => {
+              const on = view?.key === v.key;
+              return (
+                <Link
+                  key={v.key}
+                  prefetch={false}
+                  href={viewHref(f, v)}
+                  aria-current={on ? "page" : undefined}
+                  className={`focus-inset -mb-px inline-flex min-h-11 items-center whitespace-nowrap border-b-2 px-3 no-underline ${on ? "border-brand-700 font-semibold text-ink" : "border-transparent text-slate-700 hover:text-ink"}`}
+                >
+                  {t(v.label)}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      )}
 
       {typeof sp.deleted === "string" && (
         <p role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-emerald-900">
@@ -81,21 +104,23 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
 
       {aiNote && <p className="rounded-lg border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-900">{t("Assistant applied:")} {aiNote}</p>}
 
-      <Form action="/records" prefetch={false} className="card space-y-4 p-5">
-        {f.tx && <input type="hidden" name="tx" value={f.tx} />}
+      <div className="card space-y-4 p-5">
         <div>
           <label className="label" htmlFor="q">{t("Search records")}</label>
           <p id="q-hint" className="mb-2 text-sm text-slate-600">{t("Type words, a name, or a tracking, permit, voucher or tax declaration number. To search with a sentence, press Ask the assistant to find it.")}</p>
-          <input className="input" id="q" name="q" defaultValue={f.q} aria-describedby="q-hint" />
+          <input className="input" id="q" name="q" form="records-search" defaultValue={f.q} aria-describedby="q-hint" />
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button className="btn-primary">{t("Search")}</button>
+          <button form="records-search" className="btn-primary">{t("Search")}</button>
+          <ScanQrButton align="left" />
           <AiSearchButton inputId="q" />
           {active && (
             <Link prefetch={false} href="/records" className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-4">{t("Clear search")}</Link>
           )}
         </div>
-        <details open={narrowed}>
+        <Form id="records-search" action="/records" prefetch={false}>
+          {f.tx && <input type="hidden" name="tx" value={f.tx} />}
+        <details open={narrowed && !view}>
           <summary className="cursor-pointer py-1 font-medium text-brand-700">{t("More ways to narrow the list")}</summary>
           <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <div>
@@ -173,9 +198,11 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </div>
           </div>
         </details>
-      </Form>
+        </Form>
+      </div>
 
       <nav aria-label={t("Filter by transaction type")} className="flex flex-wrap gap-2">
+        <span className="self-center text-sm font-semibold text-slate-700">{t("For:")}</span>
         {([undefined, ...TX_TYPES] as (TxType | undefined)[]).map((tx) => {
           const on = f.tx === tx;
           const qs = filtersToParams({ ...f, tx }).toString();
@@ -215,7 +242,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
             </Link>
           </li>
         ))}
-        {rows.length === 0 && <li className="card p-6 text-center text-slate-600">{t("No records match. Try fewer filters.")}</li>}
+        {rows.length === 0 && <li className="card p-6 text-center text-slate-600">{emptyText}</li>}
       </ul>
 
       <div className="card hidden overflow-x-auto lg:block">
@@ -251,7 +278,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
               </tr>
             ))}
             {rows.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">{t("No records match. Try fewer filters.")}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">{emptyText}</td></tr>
             )}
           </tbody>
         </table>

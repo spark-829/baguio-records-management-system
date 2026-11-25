@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isTxType, txLabel } from "../src/lib/transaction-type";
+import { isTxType, txLabel, TX_CHIP_LABEL } from "../src/lib/transaction-type";
 
 describe("transaction type", () => {
   it("accepts only the three codes", () => {
@@ -11,6 +11,8 @@ describe("transaction type", () => {
   });
   it("labels", () => {
     expect(txLabel("G2G")).toBe("Government office (G2G)");
+    expect(txLabel("G2B")).toBe("Business (G2B)");
+    expect(TX_CHIP_LABEL).toEqual({ G2C: "Citizen", G2G: "Government", G2B: "Business" });
     expect(txLabel(null)).toBe("Not set");
     expect(txLabel("none")).toBe("Not set");
   });

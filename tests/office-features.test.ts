@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  canWindowIntake, countOn, differsFromRecommended, featuresOff, hasFeature, isHrmoCss, isOversight, optionalFeaturesFor,
+  canWindowIntake, countOn, differsFromRecommended, featuresOff, hasFeature, isHrmoCss, isOversight, isRecordsDesk, optionalFeaturesFor,
   parseFeatureForm, parseFeatures, RECOMMENDED,
 } from "../src/lib/office-features";
 
@@ -84,6 +84,18 @@ describe("RECOMMENDED matches migration 20261125000200", () => {
       const m = sql.match(new RegExp(`\\('${code}',\\s+'\\{([^}]*)\\}'\\)`));
       expect(m, code).not.toBeNull();
       expect(m![1].split(",").sort()).toEqual([...feats].sort());
+    }
+  });
+});
+
+describe("isRecordsDesk", () => {
+  it("is true only for a records officer at CGSO", () => {
+    expect(isRecordsDesk({ role: "records_officer", office: { code: "CGSO" } })).toBe(true);
+    expect(isRecordsDesk({ role: "records_officer", office: { code: "HRMO" } })).toBe(false);
+    expect(isRecordsDesk({ role: "records_officer", office: null })).toBe(false);
+    expect(isRecordsDesk({ role: "records_officer" })).toBe(false);
+    for (const role of ["dept_head", "staff", "admin"] as const) {
+      expect(isRecordsDesk({ role, office: { code: "CGSO" } })).toBe(false);
     }
   });
 });
