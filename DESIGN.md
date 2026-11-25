@@ -1,25 +1,25 @@
 ---
 name: Baguio RMS
-description: City of Pines records system for City Hall staff and citizens
+description: City records system for City Hall staff and citizens
 colors:
-  brand-50: "#eff6f0"
-  brand-100: "#dcebdf"
-  brand-200: "#b9d6c0"
-  brand-600: "#22663f"
-  brand-700: "#1b5136"
-  brand-800: "#143d29"
-  brand-900: "#0e2a1c"
-  gold-100: "#f8edcf"
-  gold-300: "#e6c66f"
-  gold-500: "#c8962e"
-  gold-800: "#6b4c0e"
-  slate-400: "#5f6b7a"
-  slate-500: "#4a5565"
-  slate-600: "#3c4655"
-  input-border: "#8a948f"
-  page: "#f3f5f2"
-  line: "#d3d9d4"
-  ink: "#1a1f1c"
+  brand-50: "#ebf7f4"
+  brand-100: "#d6efe9"
+  brand-200: "#addfd3"
+  brand-600: "#288c75"
+  brand-700: "#1f7360"
+  brand-800: "#1c373e"
+  brand-900: "#0f342c"
+  gold-100: "#d6efe9"
+  gold-300: "#addfd3"
+  gold-500: "#addfd3"
+  gold-800: "#0f342c"
+  slate-400: "#4f6a86"
+  slate-500: "#355c87"
+  slate-600: "#2a4a6c"
+  input-border: "#7d8b99"
+  page: "#ebeff3"
+  line: "#d3dbe3"
+  ink: "#404040"
   surface: "#ffffff"
 typography:
   body:
@@ -87,24 +87,25 @@ rules and checks are in `docs/design/principles.md` and
 
 ## Overview
 An Operate-mode tool for City Hall staff, plus a Read-mode public tracking
-page. Calm, civic and plain: deep pine green header with a gold stripe,
-cool off-white page, white content cards, large type. Ambition shows as
+page. Calm, civic and plain: dark teal header with a mint stripe (the
+baguio.gov.ph palette), cool grey page, white content cards, large type. Ambition shows as
 precision and restraint, not decoration.
 
 ## Colors
 ### Primary
-Pine green (`brand-700` buttons and links, `brand-800` header, `brand-900`
-headings). White on brand-700 is 9.2:1.
-### City theme
-Offices listed in `src/lib/theme.ts` (only General Services, `CGSO`, for now) get the baguio.gov.ph palette: teal brand (`#1f7360` buttons and links, `#1c373e` header, `#0f342c` headings), a mint stripe in place of gold (`#addfd3`), city navy for secondary text (`#4f6a86`, `#355c87`, `#2a4a6c`), page `#ebeff3`, ink `#404040`. It overrides the tokens in `globals.css` through `data-theme="city"` on the app shell; contrast pairs are listed at the top of that file.
+City teal from baguio.gov.ph, for every office and role (`brand-700`
+#1f7360 buttons and links, `brand-800` #1c373e header, `brand-900` #0f342c
+headings). White on brand-700 is 5.7:1. `brand-600` #288c75 is 4.1:1 on
+white: large text, borders and accents only.
 
 ### Secondary
-Gold: `gold-500` for the header stripe and highlights only, `gold-800` on
-`gold-100` for text. Never gold text on white.
+Mint (the `gold-*` token names are kept so classes stay stable; the city
+site has no gold): `gold-500` #addfd3 for the header stripe and highlights,
+`gold-800` on `gold-100` for text (11.2:1). Never mint text on white.
 ### Neutral
-`ink` on `page` for body (15.2:1). Secondary text `slate-500`/`slate-600`
-(remapped darker so they pass AA). No lighter greys for text.
-`line` (#d3d9d4) for card edges and dividers; decorative (1.4:1), never the only signal.
+`ink` #404040 on `page` #ebeff3 for body (9:1). Secondary text
+`slate-500`/`slate-600` (city navy, 4.9 to 9.2:1). No lighter greys for text.
+`line` (#d3dbe3) for card edges and dividers; decorative (1.4:1), never the only signal.
 ### Named Rules
 - Status colours are fixed: red = late or destructive, amber = due soon or
   warning, emerald = done or on track, blue/indigo = in progress. Always
@@ -139,7 +140,7 @@ shadows, no glass.
   `input-border` (3.1:1), green focus ring.
 - Badges: `badge`, word + colour, never colour alone.
 - Cards: `card` only to group related content.
-- Focus: 3px brand-700 outline, gold on dark backgrounds.
+- Focus: 3px brand-700 outline, mint on dark backgrounds.
 - Callouts: tinted, 1px border all round, never a side stripe.
 
 ## Component kit

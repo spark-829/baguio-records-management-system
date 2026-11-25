@@ -10,7 +10,7 @@ import type { BarangayTally } from "@/lib/map-tally";
 export type MapRecord = { id: string; tracking_no: string; subject: string; barangay: string; late: boolean; open: boolean };
 
 // One green hue from light to dark, like public-health choropleth maps: darker means more records.
-const SHADES = ["#d8eee0", "#a6d6b6", "#6fb98b", "#368f5d", "#14532d"];
+const SHADES = ["#d6efe9", "#addfd3", "#6fbfa9", "#288c75", "#0f342c"];
 const EMPTY = "#eef0f2";
 
 // The downtown barangays are tiny on the whole-city view, so there is a "City center" zoom, like a map inset.

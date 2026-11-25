@@ -1,61 +1,49 @@
 @import "tailwindcss";
 
 /*
- * Design tokens: "City of Pines" palette.
- * Inspired by the colour conventions of Baguio City Government web pages
- * (deep pine green, warm gold accents, white/off-white content areas).
- * Original design for a demo system — no official seals, logos or emblems.
+ * Design tokens: city palette, read from baguio.gov.ph on 2026-11-26
+ * (teal, deep forest, mint tints, navy text accents, cool grey page; no gold).
+ * Used by every office and role since 2026-11-26 (first CGSO only).
+ * Original design for a demo system: no official seals, logos or emblems.
  *
  * Contrast (WCAG 2.1):
- *   white on brand-700 #1b5136  ............ 9.2:1
- *   white on brand-800 #143d29  ............ 12.1:1
- *   brand-100 #dcebdf on brand-800 ......... 9.8:1
- *   brand-700 on white (links) ............. 9.2:1
- *   ink #1a1f1c on page #f3f5f2 ............ 15.2:1
- *   brand-700 on page ...................... 8.4:1
- *   gold-100 #f8edcf on brand-800 (logo) ... 10.4:1
- *   gold-500 #c8962e on brand-800 (logo fold) ... 4.5:1
- *   line #d3d9d4 on page ................... 1.4:1 (decorative only)
- *   slate-500 (remapped) on white/page ..... 7.6:1 / 6.9:1
- *   placeholder #5f6b7a on white ........... 5.4:1
- *   input border #8a948f on white .......... 3.1:1 (non-text, >= 3:1)
- *   gold-800 #6b4c0e on gold-100 #f8edcf ... 6.8:1
- * City theme (CGSO only, see below):
  *   white on brand-700 #1f7360 ............. 5.7:1 (on page 4.9:1)
  *   white on brand-800 #1c373e ............. 12.6:1
  *   brand-900 #0f342c on page #ebeff3 ...... 11.7:1
  *   brand-600 #288c75 on white ............. 4.1:1 (large text, borders only)
- *   gold-500 #addfd3 on brand-800 .......... 8.6:1
+ *   gold-500 #addfd3 on brand-800 .......... 8.6:1 (mint stripe)
+ *   gold-800 #0f342c on gold-100 #d6efe9 ... 11.2:1
  *   slate-400 #4f6a86 to slate-600 #2a4a6c .. 4.9 to 9.2:1
  *   ink #404040 on page #ebeff3 ............ 9:1
- *   input border #7d8b99 on white .......... 3.5:1
+ *   line #d3dbe3 on page ................... decorative only
+ *   input border #7d8b99 on white .......... 3.5:1 (non-text, >= 3:1)
  */
 @theme {
-  /* Pine green, primary (replaces the old teal "brand" scale) */
-  --color-brand-50: #eff6f0;
-  --color-brand-100: #dcebdf;
-  --color-brand-200: #b9d6c0;
-  --color-brand-600: #22663f;
-  --color-brand-700: #1b5136;
-  --color-brand-800: #143d29;
-  --color-brand-900: #0e2a1c;
+  /* City teal, primary. 600 is for large text, borders and accents only; 700 for buttons and links. */
+  --color-brand-50: #ebf7f4;
+  --color-brand-100: #d6efe9;
+  --color-brand-200: #addfd3;
+  --color-brand-600: #288c75;
+  --color-brand-700: #1f7360;
+  --color-brand-800: #1c373e; /* header (city footer colour) */
+  --color-brand-900: #0f342c; /* headings, footer */
 
-  /* Gold accent (decorative stripes, highlights; dark gold for text) */
-  --color-gold-100: #f8edcf;
-  --color-gold-300: #e6c66f;
-  --color-gold-500: #c8962e;
-  --color-gold-800: #6b4c0e;
+  /* "Gold" names kept so classes stay stable; the city site has no gold, so these are mints. */
+  --color-gold-100: #d6efe9;
+  --color-gold-300: #addfd3;
+  --color-gold-500: #addfd3;
+  --color-gold-800: #0f342c;
 
   /* Neutrals: no light-grey body text. slate-400/500 are darkened so
      existing secondary text classes meet AA on white and on the page tint. */
-  --color-slate-400: #5f6b7a;
-  --color-slate-500: #4a5565;
-  --color-slate-600: #3c4655;
+  --color-slate-400: #4f6a86;
+  --color-slate-500: #355c87;
+  --color-slate-600: #2a4a6c;
 
-  --color-page: #f3f5f2;
-  --color-line: #d3d9d4; /* card edges, dividers: decorative (1.4:1), never the only signal */
-  --color-ink: #1a1f1c;
-  --color-input-border: #8a948f; /* 3.1:1 on white */
+  --color-page: #ebeff3;
+  --color-line: #d3dbe3; /* card edges, dividers: decorative, never the only signal */
+  --color-ink: #404040;
+  --color-input-border: #7d8b99; /* 3.5:1 on white */
 
   --font-sans: "Segoe UI", "Noto Sans", Roboto, "Helvetica Neue", Arial, system-ui, sans-serif;
   --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, "Liberation Mono", monospace;
@@ -75,19 +63,6 @@
   --text-2xl--line-height: 1.3;
   --text-3xl: 2.25rem;
   --text-3xl--line-height: 1.2;
-}
-
-/* City palette, read from baguio.gov.ph on 2026-11-26. Only offices listed in src/lib/theme.ts see it for now. */
-:root:has(.app-shell[data-theme="city"]) {
-  --color-brand-50: #ebf7f4;  --color-brand-100: #d6efe9; --color-brand-200: #addfd3;
-  --color-brand-600: #288c75; /* city teal: large text, borders, accents only (4.1:1 on white) */
-  --color-brand-700: #1f7360; /* buttons, links: white on it 5.7:1, on page 4.9:1 */
-  --color-brand-800: #1c373e; /* header (city footer colour): white 12.6:1 */
-  --color-brand-900: #0f342c; /* headings, footer: 11.7:1 on page */
-  --color-gold-100: #d6efe9; --color-gold-300: #addfd3; --color-gold-500: #addfd3; --color-gold-800: #0f342c; /* the city site has no gold: mint stripe (8.6:1 on header) */
-  --color-slate-400: #4f6a86; --color-slate-500: #355c87; --color-slate-600: #2a4a6c; /* city navy, 4.9 to 9.2:1 */
-  --color-page: #ebeff3; --color-line: #d3dbe3; --color-ink: #404040; /* ink 9:1 on page */
-  --color-input-border: #7d8b99; /* 3.5:1 on white */
 }
 
 html {

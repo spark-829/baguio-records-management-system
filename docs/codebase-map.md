@@ -164,4 +164,3 @@ Secret-dependent jobs skip (exit 0) when their GitHub secrets are missing.
 `security-test-report.md`, `demo-video-script.md`. Read only when the task is
 about them.
 
-`src/lib/theme.ts`: which offices get the city colour theme (`themeFor`, test `tests/theme.test.ts`).

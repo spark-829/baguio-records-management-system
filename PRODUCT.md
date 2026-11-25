@@ -23,7 +23,7 @@ Office desks with shared Windows PCs and printers (routing slips and QR receipts
 - Bilingual: every string goes through `t()` with a Filipino line; Filipino runs about 30% longer.
 
 ## Brand Commitments
-- Looks like it belongs to Baguio City (pine green and gold, cues from baguio.gov.ph) but never uses the official seal or logo.
+- Looks like it belongs to Baguio City (the baguio.gov.ph teal and mint palette) but never uses the official seal or logo.
 - Footer note on every page: "Demo system, not an official City Government of Baguio service."
 - Office vocabulary: log, route, forward, receive, routing slip, receipt, tracking number.
 
