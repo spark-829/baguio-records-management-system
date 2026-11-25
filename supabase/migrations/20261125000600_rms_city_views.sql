@@ -16,7 +16,7 @@ end $$;
 create or replace function public.rms_css_status(p_month date)
 returns jsonb language plpgsql stable security definer set search_path = '' as $$
 begin
-  if not (public.rms_my_role() in ('admin', 'records_officer') or public.rms_is_hrmo_css()) then
+  if not coalesce(public.rms_my_role() in ('admin', 'records_officer') or public.rms_is_hrmo_css(), false) then
     raise exception 'not allowed';
   end if;
   return coalesce((
@@ -39,7 +39,7 @@ create or replace function public.rms_oversight_overview()
 returns jsonb language plpgsql stable security definer set search_path = '' as $$
 declare v_today date := public.rms_today();
 begin
-  if not (public.rms_is_oversight() or public.rms_my_role() = 'records_officer') then
+  if not coalesce(public.rms_is_oversight() or public.rms_my_role() = 'records_officer', false) then
     raise exception 'not allowed';
   end if;
   return (
@@ -95,7 +95,7 @@ returns table (
 )
 language plpgsql stable security definer set search_path = '' as $$
 begin
-  if not (public.rms_is_oversight() or public.rms_my_role() = 'records_officer') then
+  if not coalesce(public.rms_is_oversight() or public.rms_my_role() = 'records_officer', false) then
     raise exception 'not allowed';
   end if;
   return query
@@ -129,7 +129,7 @@ declare
   v_conf boolean;
   v_email text;
 begin
-  if not (public.rms_is_oversight() or public.rms_my_role() = 'records_officer') then
+  if not coalesce(public.rms_is_oversight() or public.rms_my_role() = 'records_officer', false) then
     raise exception 'not allowed';
   end if;
   select x.*, dt.name as doc_type, co.name as current_name, co.code as current_code, oo.name as origin_name,

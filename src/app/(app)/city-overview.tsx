@@ -59,7 +59,7 @@ export async function CityOverview() {
               {o.offices.map((f) => (
                 <tr key={f.code} className="border-b border-line last:border-0">
                   <th scope="row" className="p-3 font-medium">
-                    <Link prefetch={false} href={`/records?scope=city&office=${encodeURIComponent(f.code)}`} className="text-brand-700 hover:underline">{f.name}</Link>
+                    <Link prefetch={false} href={`/records?scope=city&office=${encodeURIComponent(f.code)}`} className="inline-flex min-h-11 items-center py-2 text-brand-700 hover:underline">{f.name}</Link>
                   </th>
                   <td className="p-3 tabular-nums">{f.open}</td>
                   <td className={`p-3 tabular-nums ${f.late > 0 ? "font-semibold text-red-700" : ""}`}>{f.late}</td>
@@ -81,7 +81,7 @@ export async function CityOverview() {
               <li key={r.id} className="grid gap-1 px-4 py-3 sm:px-5">
                 <span className="font-semibold">{maskedSubject(r, t)}</span>
                 <span className="text-sm text-slate-600">
-                  <Link prefetch={false} href={`/records/${r.id}?scope=city`} className="font-mono text-brand-700 hover:underline">{r.tracking_no}</Link>
+                  <Link prefetch={false} href={`/records/${r.id}?scope=city`} className="inline-flex min-h-11 items-center font-mono text-brand-700 hover:underline">{r.tracking_no}</Link>
                   {" · "}{r.office}
                   {" · "}{t(STATUS_LABEL[r.status as Status] ?? r.status)}
                   {r.due_date ? <> · <span className="font-semibold text-red-700">{t("Due {date}", { date: fmtDate(r.due_date) })}</span></> : null}

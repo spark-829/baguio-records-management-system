@@ -16,24 +16,31 @@ begin
 end $$;
 
 -- Records officer sees everything, including the confidential complaint
+-- Counts are compared with the owner's own count under the same rule, so they hold with demo or volume data.
+select set_config('rms.n_conf', (select count(*)::text from rms_records where confidentiality = 'confidential' and deleted_at is null), false);
+select set_config('rms.n_public', (select count(*)::text from rms_records where confidentiality = 'public' and deleted_at is null), false);
 select pg_temp.as_user('records@rms-demo.test');
-select pg_temp.expect('records officer sees confidential', (select count(*) from rms_records where confidentiality = 'confidential'), 1);
+select pg_temp.expect('records officer sees every confidential record', (select count(*) from rms_records where confidentiality = 'confidential'), current_setting('rms.n_conf')::bigint);
 reset role;
 
 -- Treasury staff sees Public records plus what was routed to Treasury, never Confidential
 select pg_temp.as_user('treasury.staff@rms-demo.test');
 select pg_temp.expect('treasury sees no confidential', (select count(*) from rms_records where confidentiality = 'confidential'), 0);
-select pg_temp.expect('treasury sees public records', (select count(*) from rms_records where confidentiality = 'public'), 2);
+select pg_temp.expect('treasury sees public records', (select count(*) from rms_records where confidentiality = 'public'), current_setting('rms.n_public')::bigint);
 select pg_temp.expect('treasury sees no other office''s internal record', (select count(*) from rms_records where tracking_no = 'IN-2026-0004'), 0);
 select pg_temp.expect('treasury cannot read audit log', (select count(*) from rms_audit_log), 0);
 select pg_temp.expect('treasury cannot read access history', (select count(*) from rms_access_log), 0);
-select pg_temp.expect('search function respects access', (select count(*) from rms_search_records(null)), 3);
-select pg_temp.expect('AI search can exclude confidential', (select count(*) from rms_search_records(null, p_exclude_confidential => true)), 3);
+select pg_temp.expect('search function respects access', (select count(*) from rms_search_records(null) where confidentiality = 'confidential'), 0);
+select pg_temp.expect('AI search can exclude confidential', (select count(*) from rms_search_records(null, p_exclude_confidential => true) where confidentiality = 'confidential'), 0);
 reset role;
 
 -- Viewer: reads Public records, cannot write anything
 select pg_temp.as_user('viewer@rms-demo.test');
-select pg_temp.expect('viewer sees only public records', (select count(*) from rms_records), 2);
+select pg_temp.expect('viewer sees every public record', (select count(*) from rms_records where confidentiality = 'public'), current_setting('rms.n_public')::bigint);
+select pg_temp.expect('viewer sees no confidential record', (select count(*) from rms_records where confidentiality = 'confidential'), 0);
+select pg_temp.expect('viewer sees internal records only of its own office', (select count(*) from rms_records r where confidentiality = 'internal'
+  and not (r.origin_office_id = rms_my_office() or r.current_office_id = rms_my_office()
+           or exists (select 1 from rms_routes h where h.record_id = r.id and (h.from_office_id = rms_my_office() or h.to_office_id = rms_my_office())))), 0);
 do $$
 begin
   insert into rms_routes (record_id, status, action_taken, acted_by)
@@ -52,7 +59,7 @@ begin
   values ('x', 'incoming', 'Should be blocked', (select id from rms_document_types limit 1),
           (select office_id from rms_profiles where id = auth.uid()), (select office_id from rms_profiles where id = auth.uid()), auth.uid());
   raise exception 'FAILED staff registered an incoming record';
-exception when insufficient_privilege then
+exception when insufficient_privilege or raise_exception then
   raise notice 'ok  staff cannot register incoming records';
 end $$;
 
@@ -119,39 +126,40 @@ select pg_temp.expect('restored record visible again', (select count(*) from rms
 reset role;
 
 -- Office window, charter steps and city views (run after seed_departments.sql; everything is rolled back at the end)
-create or replace function pg_temp.expect_error(p_label text, p_sql text) returns void language plpgsql as $$
+create or replace function pg_temp.expect_error(p_label text, p_sql text, p_like text default '%') returns void language plpgsql as $$
 begin
   begin
     execute p_sql;
   exception when others then
+    if sqlerrm not like p_like then raise exception 'FAILED %: wrong error (%)', p_label, sqlerrm; end if;
     raise notice 'ok  % (%)', p_label, sqlerrm;
     return;
   end;
   raise exception 'FAILED %: no error', p_label;
 end $$;
 
-create or replace function pg_temp.window_insert(p_email text) returns text language sql as $$
-  select format($f$insert into rms_records (direction, subject, document_type_id, transaction_type, priority, confidentiality,
+-- The SQL runs as the signed-in user, so it reads nothing from auth.users (a role without access would give a false pass).
+create or replace function pg_temp.window_insert() returns text language sql as $$
+  select $f$insert into rms_records (direction, subject, document_type_id, transaction_type, priority, confidentiality,
       origin_office_id, current_office_id, created_by, tracking_no)
     values ('incoming', 'Window test', (select id from rms_document_types where name = 'Letter'), 'G2C', 'normal', 'internal',
-      (select office_id from rms_profiles where id = %L), (select office_id from rms_profiles where id = %L), %L, 'pending')$f$,
-    (select id from auth.users where email = p_email), (select id from auth.users where email = p_email), (select id from auth.users where email = p_email))
+      (select rms_my_office()), (select rms_my_office()), auth.uid(), 'pending')$f$
 $$;
 
 select pg_temp.as_user('treasury.staff@rms-demo.test');
-select pg_temp.expect_error('treasury staff cannot log incoming while the window flag is off', pg_temp.window_insert('treasury.staff@rms-demo.test'));
+select pg_temp.expect_error('treasury staff cannot log incoming while the window flag is off', pg_temp.window_insert());
 reset role;
 update rms_profiles set window_intake = true where id = (select id from auth.users where email = 'treasury.staff@rms-demo.test');
 select pg_temp.as_user('treasury.staff@rms-demo.test');
-do $$ begin execute pg_temp.window_insert('treasury.staff@rms-demo.test'); end $$;
+do $$ begin execute pg_temp.window_insert(); end $$;
 select pg_temp.expect('window record is marked intake_window', (select count(*) from rms_records where subject = 'Window test' and intake_window), 1);
 reset role;
 
 select pg_temp.as_user('budget.head@rms-demo.test');
-select pg_temp.expect_error('cbo head (window off) cannot log incoming', pg_temp.window_insert('budget.head@rms-demo.test'));
+select pg_temp.expect_error('cbo head (window off) cannot log incoming', pg_temp.window_insert());
 reset role;
 select pg_temp.as_user('admin@rms-demo.test');
-select pg_temp.expect_error('admin still cannot register', pg_temp.window_insert('admin@rms-demo.test'));
+select pg_temp.expect_error('admin still cannot register', pg_temp.window_insert());
 reset role;
 
 -- Charter steps: another office cannot mark them; out of order is refused; nobody edits them directly
@@ -165,6 +173,17 @@ select pg_temp.as_user('engineering.head@rms-demo.test');
 select pg_temp.expect_error('another office cannot mark a charter step (only the office holding)',
   $q$select rms_mark_charter_step(current_setting('rms.test_rec')::uuid, 2)$q$);
 reset role;
+-- Staff of the holding office without the window flag cannot mark steps on an unassigned record (QA review fix 0700)
+select set_config('rms.test_unassigned', (select r.id::text from rms_records r where r.service_steps is not null and r.status = 'registered'
+  and r.assigned_to is null and r.current_office_id = (select id from rms_offices where code = 'CCRO') limit 1), false);
+update rms_profiles set window_intake = false, office_id = (select id from rms_offices where code = 'CCRO')
+ where id = (select id from auth.users where email = 'engineering.staff@rms-demo.test');
+select pg_temp.as_user('engineering.staff@rms-demo.test');
+select pg_temp.expect_error('staff without the window flag cannot mark steps on an unassigned record',
+  $q$select rms_mark_charter_step(current_setting('rms.test_unassigned')::uuid, 2)$q$, '%only the office holding%');
+reset role;
+update rms_profiles set office_id = (select id from rms_offices where code = 'CEO')
+ where id = (select id from auth.users where email = 'engineering.staff@rms-demo.test');
 select pg_temp.as_user('ccro.window@rms-demo.test');
 select pg_temp.expect_error('steps must be marked in order',
   $q$select rms_mark_charter_step((select id from rms_records where service_steps is not null and status = 'registered' limit 1), 3)$q$);
@@ -206,6 +225,12 @@ reset role;
 select pg_temp.as_user('engineering.head@rms-demo.test');
 select pg_temp.expect('engineering head sees only CEO answers', (select count(*) from rms_satisfaction where office_id <> (select id from rms_offices where code = 'CEO')), 0);
 select pg_temp.expect_error('city overview is refused for an office head', 'select rms_oversight_overview()');
+reset role;
+-- A signed-in caller with no RMS profile gets 'not allowed'
+select set_config('request.jwt.claims', json_build_object('sub', gen_random_uuid(), 'role', 'authenticated')::text, true);
+set local role authenticated;
+select pg_temp.expect_error('no-role caller: city overview', 'select rms_oversight_overview()', '%not allowed%');
+select pg_temp.expect_error('no-role caller: css status', $q$select rms_css_status(date '2026-11-01')$q$, '%not allowed%');
 reset role;
 select pg_temp.as_user('cmo.head@rms-demo.test');
 select pg_temp.expect('city overview works for the mayor''s office head', (select jsonb_typeof(rms_oversight_overview()) = 'object')::int, 1);

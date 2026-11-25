@@ -180,3 +180,24 @@ export function parseSteps(v: unknown): ServiceStep[] | null {
   }
   return out.length ? out.sort((a, b) => a.n - b.n) : null;
 }
+
+const UNIT_KEYS: Record<string, [string, string]> = {
+  second: ["{n} second", "{n} seconds"],
+  minute: ["{n} minute", "{n} minutes"],
+  hour: ["{n} hour", "{n} hours"],
+  day: ["{n} day", "{n} days"],
+  "working day": ["{n} working day", "{n} working days"],
+  month: ["{n} month", "{n} months"],
+  year: ["{n} year", "{n} years"],
+};
+
+/** Charter durations ("1 hour 45 minutes", "22 minutes per document") through the translator, unit by unit. */
+export function durationText(text: string | null | undefined, t: (s: string, v?: Record<string, string | number>) => string): string {
+  if (!text) return "";
+  return text
+    .replace(/(\d[\d,]*)\s+(working day|second|minute|hour|day|month|year)s?\b/g, (_m, n: string, unit: string) => {
+      const [one, many] = UNIT_KEYS[unit];
+      return t(n === "1" ? one : many, { n });
+    })
+    .replace(/\bper document\b/, t("per document"));
+}

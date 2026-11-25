@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 import { useT } from "@/lib/i18n/client";
 import { ARTA_LABEL } from "@/lib/arta";
-import { feeShort, splitCatalog, artaFromCharter, type ServiceOpt } from "@/lib/charter";
+import { durationText, feeShort, splitCatalog, artaFromCharter, type ServiceOpt } from "@/lib/charter";
 
 type Props = {
   value: string;
@@ -47,7 +47,7 @@ export const ServicePicker = forwardRef<HTMLFieldSetElement, Props>(function Ser
               <span className="block break-words font-semibold">{s.title}</span>
               <span className="block text-[15px] text-slate-600">
                 {t(ARTA_LABEL[artaFromCharter(s.classification)])}
-                {s.total_text ? ` · ${s.total_text}` : ""} · {t(feeShort(s))}
+                {s.total_text ? ` · ${durationText(s.total_text, t)}` : ""} · {t(feeShort(s))}
                 {s.confidential && <span className="badge ml-2 bg-slate-100 text-slate-800">{t("Confidential")}</span>}
               </span>
             </span>

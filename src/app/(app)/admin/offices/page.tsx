@@ -22,7 +22,7 @@ export default async function OfficesPage() {
         <p className="max-w-3xl text-slate-700">{t("Choose which features each office sees. Turning a feature off only hides it. Nothing is deleted.")}</p>
       </div>
       <div className="card overflow-x-auto" tabIndex={0} role="region" aria-label={t("Offices")}>
-        <table className="w-full text-left text-sm">
+        <table className="w-full min-w-[32rem] text-left text-sm">
           <thead>
             <tr className="border-b border-line">
               <th scope="col" className="p-3">{t("Office")}</th>

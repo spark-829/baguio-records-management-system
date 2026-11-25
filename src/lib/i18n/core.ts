@@ -41,6 +41,10 @@ export function actionText(text: string | null | undefined, t: T) {
   if (sentHow) return t("Sent out by {how}", { how: t(sentHow[1]) });
   const got = /^Delivery recorded: received by (.+) on (\d{1,2} [A-Z][a-z]{2} \d{4})$/.exec(text);
   if (got) return t("Delivery recorded: received by {name} on {date}", { name: got[1], date: got[2] });
+  const stepDone = /^Step (\d+) done: ([\s\S]*)$/.exec(text);
+  if (stepDone) return t("Step {n} done: {action}", { n: stepDone[1], action: stepDone[2] });
+  const stepUndone = /^Step (\d+) undone: ([\s\S]*)$/.exec(text);
+  if (stepUndone) return t("Step {n} undone: {action}", { n: stepUndone[1], action: stepUndone[2] });
   const put = /^Put in box (\S+)$/.exec(text);
   if (put) return t("Put in box {code}", { code: put[1] });
   const moved = /^Moved from box (\S+) to (\S+)$/.exec(text);

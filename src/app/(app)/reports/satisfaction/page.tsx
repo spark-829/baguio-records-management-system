@@ -38,6 +38,7 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
   ]);
   if (error) throw new Error("Satisfaction report failed");
   const rep = parseSatisfactionReport(data);
+  const mineResponses = rep.offices.reduce((a, o) => a + o.responses, 0);
   const sentBy = new Map(((Array.isArray(cssData) ? cssData : []) as CssSent[]).map((c) => [c.office_id, c]));
   const deadline = hrmoDeadline(month);
   const today = manilaDay();
@@ -83,7 +84,7 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
           ) : (
             <form action={sendCssSummary} className="no-print">
               <input type="hidden" name="month" value={month} />
-              <SendButton label={t("Send this month's summary to HRMO")} pendingLabel={t("Saving…")} />
+              <SendButton label={mineResponses === 0 ? t("Send a no-response notice") : t("Send this month's summary to HRMO")} pendingLabel={t("Saving…")} />
             </form>
           )}
         </section>
@@ -109,7 +110,7 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
                 {rows.map((o) => (
                   <tr key={o.office_id} className="border-b border-line last:border-0">
                     <th scope="row" className="p-3 font-medium">{o.office}</th>
-                    <td className="p-3">{o.responses === 0 ? t("0 responses") : o.responses}</td>
+                    <td className="p-3">{t(o.responses === 1 ? "{n} response" : "{n} responses", { n: o.responses })}</td>
                     <td className="p-3">{P(o.sat_yes, o.sat_n)}</td>
                     <td className="p-3">{P(o.time_yes, o.time_n)}</td>
                     <td className="p-3">{P(o.steps_yes, o.steps_n)}</td>

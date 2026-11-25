@@ -1,5 +1,5 @@
 import { getT } from "@/lib/i18n/server";
-import { stepsView, canUndoStep, type ServiceStep } from "@/lib/charter";
+import { durationText, stepsView, canUndoStep, type ServiceStep } from "@/lib/charter";
 import { fmtMinutes } from "@/lib/step-times";
 import { CharterStepButton } from "./charter-step-button";
 
@@ -62,12 +62,12 @@ export async function CharterSteps({
       <h2 id="charter-h" className="font-semibold">{t("Charter steps")}</h2>
       {title && (
         <p className="text-sm text-slate-600">
-          {title}{totalText ? ` · ${t("standard total {total}", { total: totalText })}` : ""}
+          {title}{totalText ? ` · ${t("standard total {total}", { total: durationText(totalText, t) })}` : ""}
         </p>
       )}
       {doneRows.length > 0 && (
         <details className="mt-2">
-          <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-brand-700">{t("Show {n} done steps", { n: doneRows.length })}</summary>
+          <summary className="min-h-11 cursor-pointer py-2 text-sm font-semibold text-brand-700">{doneRows.length === 1 ? t("Show 1 done step") : t("Show {n} done steps", { n: doneRows.length })}</summary>
           <ol className="divide-y divide-line">{doneRows.map((r) => <Row key={r.n} r={r} />)}</ol>
         </details>
       )}

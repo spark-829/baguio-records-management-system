@@ -317,7 +317,7 @@ async function CityRecords({ sp }: { sp: Record<string, string | string[] | unde
               {r.confidential ? (
                 <span className="font-semibold">{maskedSubject(r, t)}</span>
               ) : (
-                <Link prefetch={false} href={`/records/${r.id}?scope=city`} className="font-semibold">{maskedSubject(r, t)}</Link>
+                <Link prefetch={false} href={`/records/${r.id}?scope=city`} className="inline-flex min-h-11 items-center font-semibold">{maskedSubject(r, t)}</Link>
               )}
               <span className="text-sm text-slate-600">
                 <span className="font-mono">{r.tracking_no}</span> · {r.office} · {t(STATUS_LABEL[r.status] ?? r.status)}

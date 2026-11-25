@@ -29,6 +29,7 @@ import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 import { canMarkStep, charterSlowByRoute, parseSteps } from "@/lib/charter";
 import { CharterSteps } from "./charter-steps";
 import { OversightView } from "./oversight-view";
+import { parseCsv } from "@/lib/csv";
 
 type CopyRow = {
   source_tracking_no: string;
@@ -445,7 +446,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               {arrival && open && <dd className="text-sm text-slate-700">{t("Sent by {office}", { office: officeName(arrival.from_office) })}</dd>}
               {latestNote && open && latestNote !== arrival && (
                 <dd className="mt-2 rounded-md bg-gold-100 px-3 py-2 text-sm text-slate-800">
-                  <span className="font-semibold">{t("Latest note:")}</span> “{latestNote.remarks || latestNote.action_taken}”
+                  <span className="font-semibold">{t("Latest note:")}</span> “{latestNote.remarks || actionText(latestNote.action_taken, t)}”
                   <span className="block text-slate-600">{latestNote.actor?.full_name ?? "—"}, {fmtDate(latestNote.created_at)}</span>
                 </dd>
               )}
@@ -550,6 +551,26 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               nowIso={new Date().toISOString()}
             />
           )}
+          {rec.category === "CSS summary" && rec.content_text && (() => {
+            const [head, ...body] = parseCsv(rec.content_text);
+            if (!head) return null;
+            return (
+              <section className="card p-4" aria-labelledby="css-h">
+                <h2 id="css-h" className="mb-2 font-semibold">{t("Satisfaction summary")}</h2>
+                <p className="mb-2 text-sm text-slate-600">{t("The numbers are kept in the record itself. There is no file to download.")}</p>
+                <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("Satisfaction summary")}>
+                  <table className="w-full min-w-[32rem] text-left text-sm">
+                    <thead><tr className="border-b border-line">{head.map((h) => <th key={h} scope="col" className="p-2">{t(h)}</th>)}</tr></thead>
+                    <tbody>
+                      {body.map((r, i) => (
+                        <tr key={i} className="border-b border-line last:border-0">{r.map((c, j) => <td key={j} className="p-2">{c}</td>)}</tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            );
+          })()}
           <SummaryBox recordId={rec.id} initial={rec.ai_summary} aiBlocked={rec.confidentiality === "confidential" && settings.aiExcludeConfidential} />
 
           {isCopy && (
