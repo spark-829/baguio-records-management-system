@@ -61,7 +61,7 @@ export function DueCalendar({ items, today, lateTotal }: { items: DueItem[]; tod
   const stillLate = picked === today ? items.filter((i) => i.due_date < today).sort((a, b) => a.due_date.localeCompare(b.due_date)) : [];
   // Heading and link use the server total; the list itself comes from the dashboard's 500-row sample
   const lateN = Math.max(lateTotal ?? 0, stillLate.length);
-  const lateListed = Math.min(stillLate.length, 5);
+  const lateListed = Math.min(stillLate.length, 3);
 
   return (
     <section className="card p-4" aria-labelledby="cal-title">
@@ -90,7 +90,7 @@ export function DueCalendar({ items, today, lateTotal }: { items: DueItem[]; tod
       </ul>
 
       <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <div role="group" aria-label={`${t("Due dates")}, ${fmt.month.format(first)}`}>
+        <div role="group" aria-label={`${t("Due dates")}, ${fmt.month.format(first)}`} className="self-start lg:sticky lg:top-4">
           <div className="grid grid-cols-7 border-b-2 border-brand-100 pb-1" aria-hidden>
             {WEEKDAYS.map((w) => (
               <div key={w} className="text-center text-sm font-semibold text-slate-600">{t(w)}</div>
@@ -142,7 +142,7 @@ export function DueCalendar({ items, today, lateTotal }: { items: DueItem[]; tod
           {stillLate.length > 0 && (
             <>
               <h3 className="mt-4 text-base font-bold text-red-800">{t("Still late from earlier days ({n})", { n: lateN })}</h3>
-              <Items list={stillLate.slice(0, 5)} today={today} showDate />
+              <Items list={stillLate.slice(0, 3)} today={today} showDate />
               {lateN > lateListed && (
                 <Link prefetch={false} href="/records?overdue=1" className="mt-1 inline-block py-2 font-medium text-brand-700 underline">
                   {t("See all {n} late records", { n: lateN })}

@@ -26,7 +26,7 @@ export default async function OfficesPage() {
           <thead>
             <tr className="border-b border-line">
               <th scope="col" className="px-4">{t("Office")}</th>
-              <th scope="col" className="px-3">{t("Features on")}</th>
+              <th scope="col" className="px-3 whitespace-nowrap">{t("Features on")}</th>
               <th scope="col" className="px-3">{t("Turned off")}</th>
               <th scope="col" className="px-4"><span className="sr-only">{t("Actions")}</span></th>
             </tr>

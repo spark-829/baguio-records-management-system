@@ -109,3 +109,12 @@ export function fmtDateTime(value: string | null | undefined, locale = "en-PH") 
   if (!value) return "—";
   return plainSpaces(fmt("dt", locale).format(new Date(value)));
 }
+
+/** Name for "Good day, …": the first name of a person ("Ana Dizon (Engineering Head)" → "Ana", "Atty. Teresa Navarro" → "Teresa"),
+ *  or the whole title for a role account ("Civil Registry Window Clerk"). */
+export function greetingName(fullName: string): string {
+  const base = fullName.split(" (")[0].trim();
+  if (/\b(Head|Clerk|Staff|Officer)$/i.test(base)) return base;
+  const words = base.split(/\s+/).filter((w) => !/^(Atty|Engr|Dr|Arch|Hon)\.?$/i.test(w));
+  return words[0] ?? base;
+}

@@ -166,7 +166,7 @@ export function DeliveryForm({ recordId, trackingNo, sentOn, today }: { recordId
       {confirming ? (
         <div ref={confirmBox} tabIndex={-1} className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3" role="alertdialog" aria-label={t("Please confirm")} aria-describedby="deliv-confirm-q">
           <p id="deliv-confirm-q" className="font-medium text-amber-950">
-            {t("Record delivery for {no}: received by {name} on {date}?", { no: trackingNo, name: name.trim(), date: `${dayMonth(on)} ${on.slice(0, 4)}` })}
+            {t("Record delivery for {no}: received by {name} on {date}?", { no: trackingNo, name: name.trim(), date: `${dayMonth(on)}, ${on.slice(0, 4)}` })}
           </p>
           <div className="flex gap-2">
             <button className="btn-primary flex-1" disabled={pending} aria-busy={pending}>{t(pending ? "Saving…" : "Yes, save it")}</button>

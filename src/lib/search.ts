@@ -21,7 +21,7 @@ export function trackingGuesses(q: string | undefined, year = new Date().getFull
 }
 
 async function rpc(supabase: SupabaseClient, f: SearchFilters, limit: number, excludeConfidential: boolean) {
-  const { data, error } = await supabase.rpc("rms_search_records_v4", {
+  const { data, error } = await supabase.rpc("rms_search_records_v5", {
     p_q: f.q || null,
     p_person: f.person || null,
     p_direction: f.direction || null,
@@ -37,6 +37,9 @@ async function rpc(supabase: SupabaseClient, f: SearchFilters, limit: number, ex
     p_tx: f.tx || null,
     p_box_code: f.box || null,
     p_intake: f.at || null,
+    p_open: Boolean(f.open),
+    p_here: Boolean(f.here && f.office),
+    p_priority: f.priority || null,
   });
   if (error) throw new Error(error.message);
   return (data ?? []) as SearchRow[];

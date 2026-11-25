@@ -36,14 +36,14 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
         <h1 className="text-2xl font-bold">{t("Storage boxes")}</h1>
         <Link href="/boxes/new" className="btn-primary">{t("Add a box")}</Link>
       </div>
-      <form method="get" className="card flex flex-wrap items-end gap-2 p-4">
-        <div className="min-w-0 flex-1">
-          <label className="label" htmlFor="q">{t("Find a box")}</label>
-          <input id="q" name="q" className="input" defaultValue={q} autoComplete="off" aria-describedby="q-hint" />
-          <p id="q-hint" className="mt-1 text-sm text-slate-600">{t("Box code, office, room or what is inside")}</p>
+      <form method="get" className="card p-4">
+        <label className="label" htmlFor="q">{t("Find a box")}</label>
+        <div className="flex flex-wrap gap-2">
+          <input id="q" name="q" className="input min-w-0 flex-1 basis-60" defaultValue={q} autoComplete="off" aria-describedby="q-hint" />
+          <button className="btn-secondary">{t("Search")}</button>
+          {q && <Link href="/boxes" className="btn-secondary">{t("Clear search")}</Link>}
         </div>
-        <button className="btn-secondary">{t("Search")}</button>
-        {q && <Link href="/boxes" className="btn-secondary">{t("Clear search")}</Link>}
+        <p id="q-hint" className="mt-1 text-sm text-slate-600">{t("Box code, office, room or what is inside")}</p>
       </form>
       {error && <p role="alert" className="text-sm text-red-700">{t("Something went wrong. Please try again.")}</p>}
       {rows.length === 0 && !error ? (
@@ -89,9 +89,9 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
                 {rows.map((r) => (
                   <tr key={r.id} className="border-b border-slate-100 align-top">
                     <td className="px-3 py-2"><Link href={`/boxes/${r.id}`} className="font-mono whitespace-nowrap">{r.code}</Link></td>
-                    <td className="px-3 py-2" title={r.office_name}>{r.office_code}</td>
+                    <td className="px-3 py-2">{r.office_name}</td>
                     <td className="px-3 py-2">{boxWhere(r.room, r.shelf)}</td>
-                    <td className="px-3 py-2 whitespace-nowrap">{years(r)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{years(r) || "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{r.records}</td>
                     <td className="max-w-xs truncate px-3 py-2" title={r.contents ?? undefined}>{r.contents ?? "—"}</td>
                   </tr>

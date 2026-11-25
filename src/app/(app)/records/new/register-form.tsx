@@ -307,7 +307,42 @@ export function RegisterForm(props: {
     setAiFilled(new Set((Object.keys(next) as (keyof Fields)[]).filter((k) => next[k])));
   }
 
+  // QA-034: when the browser blocks Save for empty required fields, also list them in words on the page
+  // (GOV.UK-style error summary) and mark each one aria-invalid.
+  const [missing, setMissing] = useState<{ id: string; label: string }[]>([]);
+  const pendingMissing = useRef<{ id: string; label: string }[] | null>(null);
+  function fieldLabel(el: HTMLElement): string {
+    const byFor = el.id ? el.ownerDocument.querySelector(`label[for="${CSS.escape(el.id)}"]`) : null;
+    const legend = el.closest("fieldset")?.querySelector("legend");
+    const isRadio = (el as HTMLInputElement).type === "radio";
+    const text = (isRadio
+      ? legend?.textContent || el.getAttribute("name")
+      : byFor?.textContent || el.closest("label")?.textContent || legend?.textContent || el.getAttribute("name")) ?? "";
+    return text.trim().replace(/\s*\*\s*$/, "").replace(/\s+/g, " ").slice(0, 60);
+  }
+  function onInvalid(e: React.FormEvent<HTMLFormElement>) {
+    const el = e.target as HTMLInputElement;
+    el.setAttribute("aria-invalid", "true");
+    const target = el.type === "radio" ? el.closest("fieldset")?.querySelector("input")?.id || "" : el.id || "";
+    if (!pendingMissing.current) {
+      pendingMissing.current = [];
+      setTimeout(() => { setMissing(pendingMissing.current ?? []); pendingMissing.current = null; }, 0);
+    }
+    const label = fieldLabel(el);
+    if (!pendingMissing.current.some((m) => m.label === label)) pendingMissing.current.push({ id: target, label });
+  }
+  function onFieldChange(e: React.FormEvent<HTMLFormElement>) {
+    const el = e.target as HTMLInputElement;
+    if (el.getAttribute?.("aria-invalid") === "true" && el.checkValidity?.()) {
+      const group = el.type === "radio" && el.form ? [...el.form.querySelectorAll(`input[name="${CSS.escape(el.name)}"]`)] : [el];
+      group.forEach((x) => x.removeAttribute("aria-invalid"));
+      const label = fieldLabel(el);
+      setMissing((m) => m.filter((x) => x.label !== label));
+    }
+  }
+
   function checkService(e: React.FormEvent<HTMLFormElement>) {
+    setMissing([]); // submit only fires once the browser's own check passed
     if (showPicker && svc === "") {
       e.preventDefault();
       setSvcError(true);
@@ -320,8 +355,8 @@ export function RegisterForm(props: {
   const incoming = f.direction === "incoming";
 
   return (
-    <form action={action} onSubmit={checkService} onReset={() => { clearScan(); setSvc(""); setSvcError(false); setRefNo(""); }} className="grid gap-4 lg:grid-cols-3">
-      <section className="card space-y-4 p-5 lg:col-span-1">
+    <form action={action} onSubmit={checkService} onInvalidCapture={onInvalid} onChangeCapture={onFieldChange} onReset={() => { clearScan(); setSvc(""); setSvcError(false); setRefNo(""); setMissing([]); }} className="grid gap-4 lg:grid-cols-3">
+      <section className="card space-y-4 p-5 lg:col-span-1 lg:self-start">
         <h2 className="text-lg font-bold">{t("1. Scanned copy (optional)")}</h2>
         <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-800">
           <strong>{t("No scan?")}</strong> {t("That is fine. Just fill in the form and press Save.")}
@@ -634,6 +669,17 @@ export function RegisterForm(props: {
 
         <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-lg border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
           {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{t(state.error)}</p>}
+          {missing.length > 0 && (
+            <p className="col-span-2 text-sm text-red-800 sm:mr-auto" role="alert">
+              {t("Please fill in:")}{" "}
+              {missing.map((m, i) => (
+                <span key={m.label}>
+                  {i > 0 && ", "}
+                  {m.id ? <a href={`#${m.id}`} className="font-semibold underline">{m.label}</a> : <strong>{m.label}</strong>}
+                </span>
+              ))}
+            </p>
+          )}
           <Link href="/records" className="btn-secondary"><span className="sm:hidden">{t("Cancel")}</span><span className="hidden sm:inline">{t("Cancel (nothing is saved)")}</span></Link>
           <button className="btn-primary" disabled={pending || prep.busy || prep.tooBig}>{pending ? t("Saving…") : <><span className="sm:hidden">{t("Save")}</span><span className="hidden sm:inline">{t("Save and get tracking number")}</span></>}</button>
         </div>

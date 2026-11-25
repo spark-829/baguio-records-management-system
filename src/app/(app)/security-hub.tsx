@@ -103,7 +103,7 @@ export async function SecurityHub({ me }: { me: Profile }) {
                     <tr>
                       <th scope="col" className="px-4 py-2 font-semibold sm:px-5">{t("When")}</th>
                       <th scope="col" className="px-3 py-2 font-semibold">{t("Who")}</th>
-                      <th scope="col" className="px-3 py-2 font-semibold">{t("What happened")}</th>
+                      <th scope="col" className="px-3 py-2 font-semibold whitespace-nowrap">{t("What happened")}</th>
                       <th scope="col" className="px-3 py-2 font-semibold">{t("IP address")}</th>
                     </tr>
                   </thead>

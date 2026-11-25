@@ -139,7 +139,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
         )}
         <ComplaintChannels />
         <p className="text-slate-700">
-          {t("City staff?")} <Link href="/login">{t("Sign in here")}</Link>.
+          {t("City staff?")} <Link href="/login" className="font-semibold text-brand-700 underline underline-offset-2">{t("Sign in here")}</Link>.
         </p>
       </main>
       <SiteFooter />

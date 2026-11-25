@@ -120,7 +120,7 @@ export default async function BoxPage({ params, searchParams }: { params: Promis
                 </tbody>
               </table>
             </div>
-            <p className="mt-3 text-sm"><Link href={`/records?box=${encodeURIComponent(box.code)}`}>{t("Open these in Records search")}</Link></p>
+            <p className="mt-3 text-sm"><Link href={`/records?box=${encodeURIComponent(box.code)}`} className="font-semibold text-brand-700">{t("Open these in Records search")}</Link></p>
           </>
         )}
       </section>

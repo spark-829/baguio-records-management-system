@@ -197,7 +197,15 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 export function dayMonth(day: string): string {
   const m = /^\d{4}-(\d{2})-(\d{2})$/.exec(day);
   if (!m || Number(m[1]) < 1 || Number(m[1]) > 12) return day;
-  return `${Number(m[2])} ${MONTHS[Number(m[1]) - 1]}`;
+  return `${MONTHS[Number(m[1]) - 1]} ${Number(m[2])}`;
+}
+
+/** Manila clock time (UTC+8) as "9:30 AM", the way the rest of the app shows times. */
+export function manilaClock(iso: string): string {
+  const hhmm = manilaTime(iso);
+  if (!hhmm) return "";
+  const [h, m] = hhmm.split(":").map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`;
 }
 
 /** Manila clock time (UTC+8) as HH:MM. */
@@ -207,7 +215,7 @@ export function manilaTime(iso: string): string {
   return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
 }
 
-/** "Maria Santos, 26 Nov", or a dash when nobody has received it yet. */
+/** "Maria Santos, Nov 26", or a dash when nobody has received it yet. */
 export function receivedText(row: Pick<LogbookRow, "received_by" | "received_on">): string {
   if (!row.received_by) return "—";
   return row.received_on ? `${row.received_by}, ${dayMonth(row.received_on)}` : row.received_by;

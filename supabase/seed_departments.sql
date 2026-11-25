@@ -55,9 +55,9 @@ begin
   -- Heads for the city-wide views (CMO, CAO) and the HRMO satisfaction consolidation
   for u in
     select * from (values
-      ('cmo.head@rms-demo.test', 'Head of the Mayor''s Office (Mayor''s Office Head)', 'CMO'),
-      ('cao.head@rms-demo.test', 'Head of the Administrator''s Office (Administrator''s Office Head)', 'CAO'),
-      ('hrmo.head@rms-demo.test', 'Head of Human Resource Management (HRMO Head)', 'HRMO')
+      ('cmo.head@rms-demo.test', 'Mayor''s Office Head', 'CMO'),
+      ('cao.head@rms-demo.test', 'Administrator''s Office Head', 'CAO'),
+      ('hrmo.head@rms-demo.test', 'HRMO Head', 'HRMO')
     ) as h(email, full_name, code)
   loop
     select id into v_id from auth.users where email = u.email;

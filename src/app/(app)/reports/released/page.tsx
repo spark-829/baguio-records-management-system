@@ -5,7 +5,7 @@ import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDate } from "@/lib/labels";
 import { manilaDay } from "@/lib/arta";
-import { METHOD_LABEL, isDay, manilaTime, parseLogbook, receivedText, type SendMethod } from "@/lib/dispatch";
+import { METHOD_LABEL, isDay, manilaClock, parseLogbook, receivedText, type SendMethod } from "@/lib/dispatch";
 import { hasFeature } from "@/lib/office-features";
 import { FeatureOff } from "@/components/feature-off";
 import { PrintButton } from "../../records/[id]/slip/print-button";
@@ -37,9 +37,9 @@ export default async function ReleasedLogbookPage({ searchParams }: { searchPara
         <form method="get" className="flex flex-wrap items-end gap-2">
           <div>
             <label className="label" htmlFor="log-day">{t("Date")}</label>
-            <input id="log-day" type="date" name="day" defaultValue={day} className="input" />
+            <input id="log-day" type="date" name="day" defaultValue={day} className="input min-h-12" />
           </div>
-          <button className="btn-secondary">{t("Show")}</button>
+          <button className="btn-secondary min-h-12">{t("Show")}</button>
         </form>
         <div className="flex flex-wrap gap-2">
           <a className="btn-secondary" href={`/api/reports/csv?report=released&day=${day}`}>{t("Download CSV")}</a>
@@ -69,9 +69,9 @@ export default async function ReleasedLogbookPage({ searchParams }: { searchPara
             <tbody>
               {rows.map((r) => (
                 <tr key={r.record_id} className="border-b border-slate-100 align-top">
-                  <td className="px-3 py-2 whitespace-nowrap tabular-nums">{manilaTime(r.sent_at)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap tabular-nums">{manilaClock(r.sent_at)}</td>
                   <td className="px-3 py-2"><Link href={`/records/${r.record_id}`} className="font-mono whitespace-nowrap">{r.tracking_no}</Link></td>
-                  <td className="px-3 py-2"><span className="line-clamp-2 print:line-clamp-none">{r.subject}</span></td>
+                  <td className="px-3 py-2">{r.subject}</td>
                   <td className="px-3 py-2">{r.recipient || "—"}</td>
                   <td className="px-3 py-2">
                     {t(METHOD_LABEL[r.method as SendMethod] ?? r.method)}
