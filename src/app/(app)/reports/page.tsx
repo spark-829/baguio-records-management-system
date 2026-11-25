@@ -8,6 +8,8 @@ import { STATUS_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import type { Status } from "@/lib/types";
 import { monthLabel, onTimeSummary, parseOnTime, parseSummary, reportBounds, toBars } from "@/lib/reports";
 import { PrintButton } from "../records/[id]/slip/print-button";
+import { hasFeature, isOversight } from "@/lib/office-features";
+import { CityOverview, ScopeLinks } from "../city-overview";
 
 async function Bars({ title, data }: { title: string; data: { label: string; n: number }[] }) {
   const { t } = await getT();
@@ -31,11 +33,21 @@ async function Bars({ title, data }: { title: string; data: { label: string; n: 
   );
 }
 
-export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string }> }) {
+export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string; scope?: string }> }) {
   const { t } = await getT();
   const me = await getProfile();
   if (me.role === "staff") redirect("/");
-  const { from, to } = await searchParams;
+  const { from, to, scope } = await searchParams;
+  const oversight = isOversight({ role: me.role, officeCode: me.office?.code, features: me.office?.features });
+  if (oversight && scope === "city") {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">{t("Reports")}</h1>
+        <ScopeLinks base="/reports" scope="city" />
+        <CityOverview />
+      </div>
+    );
+  }
   const supabase = await createClient();
   const b = reportBounds(from, to);
   const [{ data, error }, { data: onData, error: onErr }] = await Promise.all([
@@ -54,6 +66,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         <div>
           <p className="print-only text-xs font-semibold uppercase tracking-widest">{t("City Government of Baguio · Records Management System (demo)")}</p>
           <h1 className="text-2xl font-bold">{t("Reports")}</h1>
+          {oversight && <div className="my-2"><ScopeLinks base="/reports" scope="mine" /></div>}
           <p className="text-sm text-slate-600">
             {isCentral(me) ? t("All offices") : t("Records {office} sent or holds", { office: me.office?.name ?? t("your office") })} · {from || to ? t("{a} to {b}", { a: fmtDate(from), b: fmtDate(to) }) : t("all dates")} · {t("{n} records", { n: s.total })}
           </p>
@@ -69,9 +82,9 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       </div>
       <nav aria-label={t("More reports")} className="no-print flex flex-wrap gap-2">
         {me.role !== "viewer" && <Link href="/reports/offices" className="btn-secondary">{t("Office workload")}</Link>}
-        {(isCentral(me) || me.role === "dept_head") && <Link href="/reports/satisfaction" className="btn-secondary">{t("Client satisfaction")}</Link>}
+        {(isCentral(me) || me.role === "dept_head") && hasFeature(me, "satisfaction") && <Link href="/reports/satisfaction" className="btn-secondary">{t("Client satisfaction")}</Link>}
         {isCentral(me) && <Link href="/reports/retention" className="btn-secondary">{t("Retention schedule")}</Link>}
-        {(me.role === "records_officer" || me.role === "dept_head") && <Link href="/reports/released" className="btn-secondary">{t("Released documents logbook")}</Link>}
+        {(me.role === "records_officer" || me.role === "dept_head") && hasFeature(me, "logbook") && <Link href="/reports/released" className="btn-secondary">{t("Released documents logbook")}</Link>}
         {me.role === "records_officer" && <Link href="/reports/step-times" className="btn-secondary">{t("Standard time per step")}</Link>}
       </nav>
 

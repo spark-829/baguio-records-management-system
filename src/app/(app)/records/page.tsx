@@ -12,10 +12,16 @@ import type { Status } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
 import { ScanQrButton } from "@/components/scan-qr-button";
 import { AiSearchButton } from "./ai-search-box";
+import { isOversight } from "@/lib/office-features";
+import { maskedSubject, parseCityRows } from "@/lib/oversight";
+import { ScopeLinks } from "../city-overview";
 
 export default async function RecordsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t } = await getT();
   const sp = await searchParams;
+  const who = await getProfile();
+  const oversight = isOversight({ role: who.role, officeCode: who.office?.code, features: who.office?.features });
+  if (oversight && sp.scope === "city") return <CityRecords sp={sp} />;
   const f = filtersFromParams(sp);
   // "Open only" comes from the dashboard boxes: hide finished records
   const n = listSize(sp.n, 50, 500);
@@ -33,7 +39,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   const recordHref = (id: string) => `/records/${id}${listQs ? `?back=${encodeURIComponent(listQs)}` : ""}`;
   const aiNote = typeof sp.ai === "string" ? sp.ai : undefined;
   const officeNames = new Map((offices.data ?? []).map((o) => [o.code, o.name]));
-  const narrowed = Boolean(f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here || f.tx || f.box);
+  const narrowed = Boolean(f.at || f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here || f.tx || f.box);
   const active = Boolean(f.q || aiNote || narrowed);
 
   return (
@@ -41,6 +47,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{t("Records")}</h1>
+          {oversight && <div className="my-2"><ScopeLinks base="/records" scope="mine" /></div>}
           {f.box && (
             <p className="text-lg font-semibold">
               {t("In box {code}").split("{code}")[0]}<span className="whitespace-nowrap font-mono">{f.box}</span>{t("In box {code}").split("{code}")[1]}
@@ -77,7 +84,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         {f.tx && <input type="hidden" name="tx" value={f.tx} />}
         <div>
           <label className="label" htmlFor="q">{t("Search records")}</label>
-          <p id="q-hint" className="mb-2 text-sm text-slate-600">{t("Words, a name or a tracking number. You can also type a sentence and press Ask the assistant to find it.")}</p>
+          <p id="q-hint" className="mb-2 text-sm text-slate-600">{t("Words, a name or a tracking number. You can also type a sentence and press Ask the assistant to find it.")} {t("…or a permit, voucher or tax declaration number")}</p>
           <input className="input" id="q" name="q" defaultValue={f.q} aria-describedby="q-hint" />
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -114,6 +121,14 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           <select className="input" id="office" name="office" defaultValue={f.office ?? ""}>
             <option value="">{t("Any")}</option>
             {(offices.data ?? []).map((o) => <option key={o.code} value={o.code}>{o.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="label" htmlFor="at">{t("Received at")}</label>
+          <select className="input" id="at" name="at" defaultValue={f.at ?? ""}>
+            <option value="">{t("Any")}</option>
+            <option value="desk">{t("Records Section")}</option>
+            <option value="window">{t("An office window")}</option>
           </select>
         </div>
         {me.role === "records_officer" && (
@@ -252,6 +267,66 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           </p>
         );
       })()}
+    </div>
+  );
+}
+
+/** City-wide read-only list for the CMO and CAO heads. Confidential records show no subject and no link. */
+async function CityRecords({ sp }: { sp: Record<string, string | string[] | undefined> }) {
+  const { t } = await getT();
+  const one = (k: string) => { const v = sp[k]; const x = Array.isArray(v) ? v[0] : v; return typeof x === "string" ? x.trim().slice(0, 100) : ""; };
+  const q = one("q");
+  const office = one("office");
+  const late = one("late") === "1";
+  const supabase = await createClient();
+  const [{ data: offices }, { data, error }] = await Promise.all([
+    supabase.from("rms_offices").select("code, name").eq("is_active", true).order("code"),
+    supabase.rpc("rms_oversight_records", { p_q: q || null, p_office_code: office || null, p_late: late, p_limit: 50 }),
+  ]);
+  if (error) throw new Error("City records failed");
+  const rows = parseCityRows(data);
+  return (
+    <div className="space-y-4">
+      <h1 className="text-2xl font-bold">{t("Records")}</h1>
+      <ScopeLinks base="/records" scope="city" />
+      <p className="text-sm text-slate-600">{t("All offices, read-only. Confidential subjects are hidden.")}</p>
+      <form method="get" className="card grid gap-4 p-5 md:grid-cols-3">
+        <input type="hidden" name="scope" value="city" />
+        <div>
+          <label className="label" htmlFor="city-q">{t("Search records")}</label>
+          <input className="input" id="city-q" name="q" defaultValue={q} />
+        </div>
+        <div>
+          <label className="label" htmlFor="city-office">{t("Office")}</label>
+          <select className="input" id="city-office" name="office" defaultValue={office}>
+            <option value="">{t("Any")}</option>
+            {(offices ?? []).map((o) => <option key={o.code} value={o.code}>{o.name}</option>)}
+          </select>
+        </div>
+        <label className="flex min-h-11 cursor-pointer items-center gap-3 self-end text-base">
+          <input type="checkbox" className="checkbox" name="late" value="1" defaultChecked={late} /> {t("Late only")}
+        </label>
+        <div className="md:col-span-3"><button className="btn-primary">{t("Search")}</button></div>
+      </form>
+      {rows.length === 0 ? (
+        <p className="card p-5">{t("No records found.")}</p>
+      ) : (
+        <ul className="card divide-y divide-line">
+          {rows.map((r) => (
+            <li key={r.id} className="grid gap-1 px-4 py-3 sm:px-5">
+              {r.confidential ? (
+                <span className="font-semibold">{maskedSubject(r, t)}</span>
+              ) : (
+                <Link prefetch={false} href={`/records/${r.id}?scope=city`} className="inline-flex min-h-11 items-center font-semibold">{maskedSubject(r, t)}</Link>
+              )}
+              <span className="text-sm text-slate-600">
+                <span className="font-mono">{r.tracking_no}</span> · {r.office} · {t(STATUS_LABEL[r.status] ?? r.status)}
+                {r.due_date ? ` · ${t("Due {date}", { date: fmtDate(r.due_date) })}` : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

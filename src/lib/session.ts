@@ -12,12 +12,20 @@ export const getProfile = cache(async (): Promise<Profile> => {
   // once getUser() confirms the same user id.
   const { data: local } = await supabase.auth.getSession();
   const guessId = local.session?.user.id;
-  const profileQuery = (id: string) =>
-    supabase
+  const profileQuery = async (id: string) => {
+    const res = await supabase
+      .from("rms_profiles")
+      .select("id, full_name, role, office_id, is_active, locked_until, window_intake, office:rms_offices(code, name, features, ref_label)")
+      .eq("id", id)
+      .maybeSingle();
+    if (!res.error) return res;
+    // The app was deployed before the migrations: fall back to the old columns so nobody is signed out.
+    return supabase
       .from("rms_profiles")
       .select("id, full_name, role, office_id, is_active, locked_until, office:rms_offices(code, name)")
       .eq("id", id)
       .maybeSingle();
+  };
   const [{ data: auth }, early] = await Promise.all([supabase.auth.getUser(), guessId ? profileQuery(guessId) : Promise.resolve(null)]);
   if (!auth.user) redirect("/login");
   const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();

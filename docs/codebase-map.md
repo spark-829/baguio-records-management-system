@@ -25,8 +25,10 @@ MFA-pending users. All queries use `createClient()` from
 | `/reports`, `/reports/offices`, `/reports/retention`, `/reports/satisfaction`, `/reports/step-times` (records desk) | reports, CSV via `api/reports/csv` |
 | `/boxes`, `/boxes/new`, `/boxes/[id]`, `/boxes/[id]/edit`, `/boxes/[id]/label` (records desk; box page readable by staff) | storage boxes: `boxes/{page,box-form,actions}`, A6 label with QR; `records/[id]/paper-forms.tsx` (put in a box, record delivery), `sending-card.tsx` |
 | `/reports/released` | released documents logbook (records desk, office heads), CSV via `api/reports/csv?report=released` |
+| `/records/new` catalog, `/records/[id]` steps | `records/new/service-picker.tsx` (Charter services), `records/[id]/charter-steps.tsx` + `charter-step-button.tsx` (mark step done, undo); `reports/satisfaction/{page,actions}.ts` (HRMO consolidation, send summary to HRMO) |
 | `/map` | barangay map (`components/barangay-map.tsx`, `lib/baguio-map.ts`) |
 | `/admin/users`, `access`, `audit`, `bin`, `settings` | admin screens; `actions.ts` beside each (`users?locked=1` filters locked accounts) |
+| `/admin/offices`, `/admin/offices/[code]` | admin: which features each office sees (`office-features.ts`), `actions.ts` saves; `?scope=city` on `/`, `/reports`, `/records` and `/records/[id]` is the read-only city view for CMO and CAO heads (`city-overview.tsx`, `records/[id]/oversight-view.tsx`) |
 | `/admin/analytics` | admin flow analytics: `admin/analytics/page.tsx`, `charts.tsx` (server-only BarList, OpenLine, PairedColumns); one RPC `rms_admin_flow_analytics` |
 | `/security` | MFA setup; `/help` user help |
 
@@ -49,7 +51,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `workflow.ts` | actions, `allowedActions`, `nextStatus`, `isOverdue`, `isAlreadyReceived`, `canAttach` (mirror of `rms_can_attach`; admins get no record actions) |
 | `security-hub.ts`, `flow-analytics.ts` | pure: admin Security overview parser, attention items, finding text; System analytics parser, ranking, ticks, open-pile line, top-N-plus-other, KPI comparison, text helpers |
 | `history.ts`, `audit-text.ts` | `newestFirst`, `collapseSteps` (history order, citizen progress); `routeText` (audit routing rows) |
-| `search.ts` | record search filters → `rms_search_records_v3` (adds the box code) |
+| `search.ts` | record search filters → `rms_search_records_v4` (adds the box code, reference number, "received at") |
 | `boxes.ts`, `dispatch.ts` | pure: box codes, box form checks, history text; send methods, release and delivery form checks, `canRecordDelivery` (mirror of `rms_record_delivery`), logbook parser and CSV rows |
 | `transaction-type.ts` | G2C/G2G/G2B codes, labels, `isTxType`, `txLabel` (test `tests/transaction-type.test.ts`) |
 | `ai-gate.ts` | `runAi` (reserve budget, cache, demo fallback) |
@@ -75,6 +77,9 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `reports.ts`, `fetch-pages.ts` | report date bounds, bar merging, RPC result parsers, `onTimeSummary`; `fetchPages` (pages past the 1000-row PostgREST cap) |
 | `list-size.ts`, `map-tally.ts` | `listSize` (the `?n=` list size, steps of the default, capped); `tallyBarangays` (per-barangay counts for the map) |
 | `back-link.ts` | `listQuery`, `recordsBackHref` (record page "Back to search results" keeps the list filters; always a /records path) |
+| `office-features.ts` | pure: feature keys, labels, RECOMMENDED per office (mirror of migration 0200), `hasFeature`, `canWindowIntake`, `isOversight`, `isHrmoCss`, `parseFeatureForm` |
+| `charter.ts`, `reference-no.ts` | pure: Charter service helpers (`splitCatalog`, `prefillFromService`, `stepsView`, `canMarkStep`, `canUndoStep`); `cleanRefNo` |
+| `oversight.ts` | pure: parsers for the city-view RPCs, `maskedSubject` |
 | `settings-diff.ts` | `changedSettings` (which admin settings actually changed) |
 
 `src/components/`: alert-bell, badges, brand, nav-links, lang-toggle, idle-logout,
@@ -85,7 +90,7 @@ scan-qr-button, rich, due-calendar, barangay-map, use-upload-prep (compress + th
 Tables: rms_profiles, rms_offices, rms_document_types, rms_records,
 rms_routes, rms_attachments, rms_audit_log, rms_access_log, rms_settings,
 rms_satisfaction, rms_copy_requests, rms_boxes, rms_dispatches, rms_counters, rms_barangays, rms_track_attempts, rms_ai_usage, rms_ai_cache,
-rms_private_config, rms_audit_known_forks, rms_seed_records (seed tag,
+rms_services (Citizen's Charter catalog, read-only), rms_private_config, rms_audit_known_forks, rms_seed_records (seed tag,
 server-only).
 
 Functions are redefined in later migrations. **Latest definition** lives in:
@@ -95,7 +100,7 @@ Functions are redefined in later migrations. **Latest definition** lives in:
 | `20261120000100_rms_schema` | tables, RLS base, `rms_records_after_insert`, `rms_touch_updated_at` |
 | `20261120000200_rms_search_ai_admin` | `rms_search_records` (first version) |
 | `20261120000400_rms_security` | `rms_my_role`, `rms_my_office`, `rms_can_view`, soft delete/restore, login lockout, access log, `rms_person_access_report`, `rms_setting` |
-| `20261121000100_rms_pentest_fixes` | guard triggers (records guards moved on to 20261124000100; the attachments and routes guards moved on too), `rms_can_attach` (moved on to 20261124000300), `rms_log_event` |
+| `20261121000100_rms_pentest_fixes` | guard triggers (records guards moved on to 20261125000500; the attachments and routes guards moved on too), `rms_can_attach` (moved on to 20261124000300), `rms_log_event` |
 | `20261121000200_rms_public_tracking` | `rms_new_track_code` |
 | `20261122000200_rms_qa_wave2` | `rms_search_records`, `rms_public_track`, audit hash function, `rms_today`, `rms_record_bin_history` |
 | `20261122000300_rms_ai_budget_scan` | `rms_audit` (audit trigger), `rms_ai_cap`, `rms_ai_spend_summary`, `rms_ai_cache_get` |
@@ -105,7 +110,7 @@ Functions are redefined in later migrations. **Latest definition** lives in:
 | `20261123000400_rms_rls_speed` | `rms_my_routed_records`; latest `rms_records_select` and `rms_routes_select` policies (set-based, same visibility as `rms_can_view`) |
 | `20261123000500_rms_report_totals` | `rms_report_summary` (moved on to 20261124000400), `rms_report_offices`, `rms_report_retention`, `rms_dashboard_totals` (security invoker, totals only; used by Reports and the dashboard cards) |
 | `20261123000600_rms_attachment_compression` | attachment `sha256`, `original_sha256`, `original_size_bytes`, `thumb_path`; `rms_attachments_guard_insert` (moved on to 20261124000300), `rms_storage_is_orphan`, `rms_storage_delete_orphan` policy |
-| `20261124000100_rms_arta_replies_alerts` | `rms_records.arta_class`, `rms_records.in_reply_to`; `rms_records_guard_insert` (moved on to 20261124000300, then 20261124000500), `rms_records_guard_update` (moved on to 20261125000100); `rms_my_alerts` (bell); `rms_report_on_time` |
+| `20261124000100_rms_arta_replies_alerts` | `rms_records.arta_class`, `rms_records.in_reply_to`; `rms_records_guard_insert` (moved on to 20261124000300, then 20261125000500), `rms_records_guard_update` (moved on to 20261125000100, then 20261125000500); `rms_my_alerts` (bell); `rms_report_on_time` |
 | `20261124000200_rms_audit_check_fast` | `rms_audit_checkpoint` table, `rms_audit_row_ok`, `rms_verify_audit_chain` (latest; incremental checkpoint + rotating scrub), `rms_audit_check_info` |
 | `20261124000300_rms_admin_hub` | `rms_records_guard_insert` (moved on to 20261124000500), `rms_routes_guard_insert` (moved on to 20261124000500), `rms_attachments_guard_insert`, `rms_can_attach` (latest; admin cannot register, route or attach), `rms_after_hours`, `rms_admin_security_summary`, `rms_admin_flow_analytics` |
 | `20261124000400_rms_charter_offices` | `rms_search_records_v2` (kept for the previous app; v3 in 20261125000100; `rms_search_records` kept too), `rms_report_summary` (latest, adds `by_tx`), `rms_records.transaction_type`, the 22 charter offices upserted by code, demo Records Officer moved to CGSO |
@@ -113,11 +118,17 @@ Functions are redefined in later migrations. **Latest definition** lives in:
 | `20261124000600_rms_satisfaction` | `rms_satisfaction` (no anon access), `rms_track_attempts.kind`, `rms_survey_check`, `rms_survey_submit` (anon RPCs, rate limited), `rms_report_satisfaction`, document type Complaint |
 | `20261124000700_rms_copy_requests` | `rms_copy_requests` (insert: records desk only; no update policy), `rms_copy_requests_guard_insert` (DPO need from the source record), `rms_copy_decide` (CLO head only), `rms_copy_release`, document type Request for copy |
 | `20261124000800_rms_step_times` | settings key `step_minutes`, `rms_set_step_minutes` (moved on to 20261125000100; records officer only), `rms_settings_guard_step_minutes` (trigger: nobody else writes the key) |
-| `20261125000100_rms_boxes_dispatch` | `rms_boxes` (records desk writes, staff read, admin none), `rms_boxes_guard`, `rms_records.box_id`, `rms_set_record_box` (any status, logged in history), `rms_box_list`, `rms_search_records_v3`, `rms_dispatches` (written only by RPCs), `rms_release_record`, `rms_record_delivery`, `rms_report_released`; latest `rms_records_guard_update` (box_id, QA-049 admin edits only confidentiality) and `rms_set_step_minutes` (QA-050) |
+| `20261125000100_rms_boxes_dispatch` | `rms_boxes` (records desk writes, staff read, admin none), `rms_boxes_guard`, `rms_records.box_id`, `rms_set_record_box` (any status, logged in history), `rms_box_list`, `rms_search_records_v3` (v4 in 20261125000500), `rms_dispatches` (written only by RPCs), `rms_release_record`, `rms_record_delivery`, `rms_report_released`; `rms_records_guard_update` (moved on to 20261125000500; box_id, QA-049 admin edits only confidentiality) and latest `rms_set_step_minutes` (QA-050) |
+| `20261125000200_rms_office_features` | `rms_offices.features`, `ref_label`, `rms_profiles.window_intake`, `rms_office_has`, `rms_can_window_intake`, `rms_is_oversight`, `rms_is_hrmo_css`, document type Report |
+| `20261125000300_rms_services` | `rms_services` (RLS read for signed-in users, audit trigger) |
+| `20261125000400_rms_charter_services_data` | generated by `supabase/tools/gen_charter_services.py` from `supabase/tools/charter-services.json`: the 228 services |
+| `20261125000500_rms_office_window` | records `intake_window`, `reference_no`, `reference_label`, `service_id`, `service_steps`; window insert policy; latest `rms_records_guard_insert` and `rms_records_guard_update`; `rms_service_snapshot`, `rms_mark_charter_step` (moved on to 20261125000800), `rms_search_records_v4`, `rms_service_counts`, `rms_report_window_counts` |
+| `20261125000600_rms_city_views` | HRMO satisfaction policy, `rms_css_status`, `rms_oversight_overview`, `rms_oversight_records`, `rms_oversight_record` |
 | `20261125000700_rms_file_plan` | `rms_document_types.series_code`/`series_title` (city file plan, not NAP item numbers), "Request / Complaint" renamed "Request", `rms_seed_demo` uses the new name |
+| `20261125000800_rms_charter_step_role_fix` | latest `rms_mark_charter_step` (role check fails closed on an unassigned record) |
 
 Seeds: `seed.sql` (offices, types, demo users), `seed_more.sql`,
-`seed_batch3.sql` (generated by `tools/gen_*.py`; large, grep only).
+`seed_batch3.sql` (generated by `tools/gen_*.py`; large, grep only), `seed_departments.sql` (29 demo accounts and sample window records, batch `dept-2026-11`, run as owner after the migrations).
 `supabase/seed_volume.sql`: runner for the volume seed (owner-only, one call
 per month, with size/verify/EXPLAIN checks).
 SQL tests: `supabase/tests/{access_rules,pentest_rules}.sql`.

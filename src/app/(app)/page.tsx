@@ -9,6 +9,8 @@ import { OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
 import { sortNeedsAction } from "@/lib/needs-action";
 import { DueCalendar } from "@/components/due-calendar";
 import { SecurityHub } from "./security-hub";
+import { CityOverview, ScopeLinks } from "./city-overview";
+import { isOversight } from "@/lib/office-features";
 
 type Row = {
   id: string;
@@ -29,10 +31,21 @@ export async function generateMetadata() {
   return { title: me.role === "admin" ? "Security overview" : "Dashboard" };
 }
 
-export default async function Dashboard() {
+export default async function Dashboard({ searchParams }: { searchParams: Promise<{ scope?: string }> }) {
   const { t } = await getT();
   const me = await getProfile();
   if (me.role === "admin") return <SecurityHub me={me} />;
+  const oversight = isOversight({ role: me.role, officeCode: me.office?.code, features: me.office?.features });
+  if (oversight && (await searchParams).scope === "city") {
+    // City view: one aggregated call; the own-office queries below are skipped.
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">{t("Good day, {name}", { name: me.full_name.split(" (")[0].split(" ")[0] })}</h1>
+        <ScopeLinks base="/" scope="city" />
+        <CityOverview />
+      </div>
+    );
+  }
   const supabase = await createClient();
   const [{ data }, { data: totalsData, error: totalsError }, { data: mineData }] = await Promise.all([
     supabase
@@ -112,6 +125,7 @@ export default async function Dashboard() {
           <p className="mt-1 text-sm text-slate-600">
             {isCentral(me) ? t("You can see records across all offices.") : t("Showing records that {office} started or now holds.", { office: me.office?.name ?? t("your office") })}
           </p>
+          {oversight && <div className="mt-3"><ScopeLinks base="/" scope="mine" /></div>}
         </div>
         {me.role !== "viewer" && (
           <div className="flex flex-wrap gap-2">

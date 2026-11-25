@@ -19,7 +19,9 @@ export interface Profile {
   office_id: string | null;
   is_active: boolean;
   locked_until?: string | null;
-  office?: { code: string; name: string } | null;
+  /** Staff flagged as office window staff (null counts as false) */
+  window_intake?: boolean | null;
+  office?: { code: string; name: string; features?: string[] | null; ref_label?: string | null } | null;
 }
 
 export interface Office {
@@ -58,6 +60,8 @@ export interface SearchRow {
   recipient_name: string | null;
   recipient_org: string | null;
   transaction_type: string | null;
+  reference_no?: string | null;
+  intake_window?: boolean | null;
 }
 
 export interface SearchFilters {
@@ -78,4 +82,6 @@ export interface SearchFilters {
   tx?: TxType;
   /** Box code (rms_boxes.code) */
   box?: string;
+  /** Received at an office window, or at the Records Section */
+  at?: "window" | "desk";
 }

@@ -4,6 +4,9 @@ import { fetchPages } from "@/lib/fetch-pages";
 import { createClient } from "@/lib/supabase/server";
 import { tallyBarangays } from "@/lib/map-tally";
 import { isOverdue } from "@/lib/workflow";
+import { getProfile } from "@/lib/session";
+import { hasFeature } from "@/lib/office-features";
+import { FeatureOff } from "@/components/feature-off";
 import type { Status } from "@/lib/types";
 
 export const metadata = { title: "Barangay map" };
@@ -12,7 +15,8 @@ const DONE: Status[] = ["completed", "released", "archived"];
 
 /** Where documents come from or go to, by barangay. Only records the account may see are counted. */
 export default async function MapPage({ searchParams }: { searchParams: Promise<{ show?: string; b?: string }> }) {
-  const [{ t }, { show, b }] = await Promise.all([getT(), searchParams]);
+  const [{ t }, { show, b }, me] = await Promise.all([getT(), searchParams, getProfile()]);
+  if (!hasFeature(me, "map")) return <FeatureOff feature="map" />;
   const onlyOpen = show === "open";
   const picked = typeof b === "string" && b.trim() && b.length <= 100 ? b : null;
   const supabase = await createClient();

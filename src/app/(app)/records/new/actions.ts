@@ -11,6 +11,8 @@ import { artaDue, manilaDay } from "@/lib/arta";
 import { parseReplyTo } from "@/lib/reply-to";
 import { complaintDueDate, isComplaint } from "@/lib/complaint";
 import { isCopyType, parseCopyForm, type CopyForm } from "@/lib/copy-request";
+import { canWindowIntake, hasFeature } from "@/lib/office-features";
+import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 
 const RecordInput = z.object({
   direction: z.enum(["incoming", "outgoing"]),
@@ -34,6 +36,8 @@ const RecordInput = z.object({
   forward_to: z.string().optional(),
   content_text: z.string().max(200000).optional(),
   ai_summary: z.string().max(2000).optional(),
+  service_id: z.uuid().optional(),
+  reference_no: z.string().trim().max(40, "Keep the reference number under 40 characters.").optional(),
   barangay: z.string().refine((b) => BARANGAYS.some((x) => x.name === b), "Choose a barangay from the list").optional(),
 });
 
@@ -49,7 +53,13 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
   const parsed = RecordInput.safeParse(Object.fromEntries([...form.keys()].filter((k) => k !== "file").map((k) => [k, empty(form.get(k))])));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form" };
   const v = parsed.data;
-  if (v.direction === "incoming" && !isCentral(me)) return { error: "Only the records desk registers incoming documents." };
+  if (
+    v.direction === "incoming" &&
+    !isCentral(me) &&
+    !canWindowIntake({ role: me.role, windowFlag: me.window_intake, features: me.office?.features })
+  ) {
+    return { error: "Only the office window staff and the Records Section log documents received from outside. Ask your department head." };
+  }
   if (me.role === "admin") return { error: "Administrators do not register records. The records desk does." };
   if (!me.office_id) return { error: "Your account has no office. Ask an administrator." };
 
@@ -67,6 +77,20 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
   }
 
   const supabase = await createClient();
+  if (v.service_id) {
+    // A friendly message; the database guard is the real check.
+    const { data: svc } = await supabase.from("rms_services").select("office_id").eq("id", v.service_id).maybeSingle();
+    if (!svc) return { error: "choose a service from the Citizen's Charter list" };
+    if (!isCentral(me) && svc.office_id !== me.office_id) return { error: "choose a service of your own office" };
+  }
+  // The label of the reference number follows the office that will hold the document.
+  let refLabel: string | null = null;
+  if (v.reference_no) {
+    if (!isCentral(me) && !hasFeature(me, "refno")) return { error: "The reference number box is turned off for your office." };
+    const labelOffice = isCentral(me) && v.forward_to ? v.forward_to : me.office_id;
+    const { data: lo } = await supabase.from("rms_offices").select("ref_label").eq("id", labelOffice).maybeSingle();
+    refLabel = lo?.ref_label ?? DEFAULT_REF_LABEL;
+  }
   let replyTo: string | null = null;
   if (v.direction === "outgoing" && v.in_reply_to) {
     const tn = parseReplyTo(v.in_reply_to);
@@ -113,6 +137,8 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
       ...(v.barangay ? { barangay: v.barangay } : {}),
       ...(v.arta_class ? { arta_class: v.arta_class } : {}),
       ...(replyTo ? { in_reply_to: replyTo } : {}),
+      ...(v.service_id ? { service_id: v.service_id } : {}),
+      ...(v.reference_no ? { reference_no: v.reference_no, reference_label: refLabel } : {}),
       created_by: me.id,
       tracking_no: "pending",
     })

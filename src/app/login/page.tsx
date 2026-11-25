@@ -11,6 +11,9 @@ const DEMO = [
   { email: "engineering.staff@rms-demo.test", role: "Staff, Engineering" },
   { email: "treasury.staff@rms-demo.test", role: "Staff, Treasury" },
   { email: "viewer@rms-demo.test", role: "Viewer, Planning (read-only)" },
+  { email: "ccro.window@rms-demo.test", role: "Window clerk, Civil Registry" },
+  { email: "hrmo.head@rms-demo.test", role: "Department Head, HRMO (city-wide satisfaction)" },
+  { email: "cmo.head@rms-demo.test", role: "Department Head, Mayor's Office (city-wide view)" },
 ];
 
 const NOTICES: Record<string, string> = {

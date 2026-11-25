@@ -23,6 +23,31 @@ Shows open and overdue records, what is waiting in your office (with how many da
 
 Without a scan, fill the form by hand. Department staff can register outgoing documents from their own office.
 
+## Office window
+Some offices receive documents straight from clients at their own window (the Civil Registry, the Assessor, the Building Official and others). The office head, and staff an administrator marked as window staff (Admin, Users, "Receives documents at the office window"), can register these.
+1. Open Register. "Received or sent out?" shows "Incoming (handed in at our window)".
+2. The form says "Received at: {office} window". Log only what clients hand in there. Letters addressed to the City or the Mayor go to the Records Section.
+3. Save. The document gets a normal IN- number, a receipt with a QR code, and stays in your office. You can still pick "Send to office" to forward it.
+On the record, "Received at" shows the window or the Records Section. In Records, "Received at" in the filters narrows the list. Reports, Office workload has a column "Received at own window".
+
+## Citizen's Charter services and steps
+When an office has the Services catalog on, Register asks "What is this?" and lists that office's Citizen's Charter services (the five most used first, the rest under "Other services of ..."). "Something else (letter, memo, voucher...)" keeps the usual Kind of document list.
+- Picking a service fills in the kind of document, the transaction type, the ARTA processing time, the due date and, if the service is confidential, who may see it. You can change them. The charter fee is shown as a line.
+- The Records Section also sees "Service of the office it goes to (optional)". Picking one fills in "Send to office".
+- The record then shows **Charter steps**. Step 1 is done when the record is saved. The office presses "Mark step N done" in order; each press adds a line to the history. "Undo" works on your last step for 10 minutes. "Slow" appears when a step took longer than its standard time. Only the office holding the record can mark steps; when all are done, use Take action to mark it as done or release it.
+
+## Office features (admin)
+Admin, Offices lists the 22 offices and how many features each has on ("5 of 8"; the Mayor's and Administrator's offices have 9). "Changed" shows when an office differs from the recommended set. Open "Change features" to tick: Office window, Services catalog, Released documents logbook, Requests for copy, Boxes, Barangay map, Client satisfaction report, Reference number field. "Use the recommended features" puts the defaults back. Turning a feature off only hides it (menu, buttons, the box on Register); a page opened by its web address says it is turned off. Nothing is deleted, and every save is in the audit log. Register, Records and search, Attachments, History and remarks, Reports for heads, Assistant and Help are always on. The records desk and admin see every feature.
+
+## HRMO monthly satisfaction summary
+Each office head opens Reports, Client satisfaction and presses "Send this month's summary to HRMO". It creates an outgoing record (category CSS summary) routed to HRMO, with the numbers as text. A second visit shows "Sent on {date} as {tracking}." The HRMO head, and HRMO staff marked as window staff, see every office on that page: responses (or "0 responses"), the results, and "Summary sent" as Sent, Not sent yet or Late (after the 7th of the next month). The records desk and admin see the same list.
+
+## City-wide view (Mayor's and Administrator's offices)
+The heads of the City Mayor's Office and the City Administrator's Office have "My office" and "All offices" under the title on the dashboard, Reports and Records. "All offices" is read-only: totals of open, late, due soon and waiting records, a table by office, and the late list. Subjects of confidential records are hidden. A record opened from there shows its facts, charter steps and history without remarks, names or attachments, and says only the holding office can act on it. Every view is written to the access history.
+
+## Reference number
+If the office has the Reference number field on, Register has an optional box with the office's label (for example "Official receipt no." or "Tax declaration no."), up to 40 characters. The Records Section sees the label of the office it sends the document to. The number shows on the record, the routing slip and the receipt, and the Records search box finds it. If another record has the same number, the record says "Same reference number" with a link; saving is never blocked.
+
 ## Receipt and online tracking for the sender
 For an incoming document, open the record and click **Print receipt for the sender**. Give the receipt to the person who filed it. It shows the tracking number, a 6-character tracking code and a QR code.
 
