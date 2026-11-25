@@ -1466,6 +1466,8 @@ export const FIL: Record<string, string> = {
   "Close": "Isara",
   "Show all {n}": "Ipakita lahat ng {n}",
   "Please fill in:": "Pakipunan:",
+  "Most late records first.": "Nauuna ang may pinakamaraming huli.",
+  "Showing the {n} oldest.": "Ipinapakita ang {n} pinakaluma.",
   "Assigned to: no one yet": "Nakatalaga kay: wala pa",
   "Show {n} earlier months": "Ipakita ang {n} naunang buwan",
   "Never": "Hindi pa",

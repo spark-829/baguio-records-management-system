@@ -5,6 +5,8 @@ import { STATUS_LABEL, fmtDate } from "@/lib/labels";
 import { maskedSubject, parseOverview } from "@/lib/oversight";
 import type { Status } from "@/lib/types";
 
+const CITY_LATE_SHOWN = 10;
+
 /** "My office | All offices" switch for the CMO and CAO heads. Links wrap on a narrow screen. */
 export async function ScopeLinks({ base, scope }: { base: string; scope: "city" | "mine" }) {
   const { t } = await getT();
@@ -45,6 +47,7 @@ export async function CityOverview() {
 
       <section aria-labelledby="city-offices" className="space-y-2">
         <h2 id="city-offices" className="text-xl font-bold">{t("By office")}</h2>
+        <p className="text-sm text-slate-600">{t("Most late records first.")}</p>
         <div className="card overflow-x-auto" tabIndex={0} role="region" aria-label={t("By office")}>
           <table className="w-full text-left text-sm">
             <thead>
@@ -56,7 +59,7 @@ export async function CityOverview() {
               </tr>
             </thead>
             <tbody>
-              {o.offices.map((f) => (
+              {[...o.offices].sort((a, b) => b.late - a.late || b.open - a.open || a.name.localeCompare(b.name)).map((f) => (
                 <tr key={f.code} className="border-b border-line last:border-0">
                   <th scope="row" className="p-3 font-medium">
                     <Link prefetch={false} href={`/records?scope=city&office=${encodeURIComponent(f.code)}`} className="inline-flex min-h-11 items-center py-2 text-brand-700 hover:underline">{f.name}</Link>
@@ -77,7 +80,7 @@ export async function CityOverview() {
           <p className="card p-5">{t("Nothing is late.")}</p>
         ) : (
           <ul className="card divide-y divide-line">
-            {o.late.map((r) => (
+            {o.late.slice(0, CITY_LATE_SHOWN).map((r) => (
               <li key={r.id} className="grid gap-1 px-4 py-3 sm:px-5">
                 <span className="font-semibold">{maskedSubject(r, t)}</span>
                 <span className="text-sm text-slate-600">
@@ -89,6 +92,12 @@ export async function CityOverview() {
               </li>
             ))}
           </ul>
+        )}
+        {o.late.length > CITY_LATE_SHOWN && (
+          <p className="text-sm text-slate-600">
+            {t("Showing the {n} oldest.", { n: CITY_LATE_SHOWN })}{" "}
+            <Link prefetch={false} href="/records?scope=city&late=1" className="font-semibold text-brand-700">{t("See all late records")}</Link>
+          </p>
         )}
       </section>
     </div>

@@ -179,7 +179,6 @@ main table th {
   text-transform: none;
   letter-spacing: normal;
   color: var(--color-brand-900);
-  white-space: nowrap;
 }
 main table thead {
   background: var(--color-brand-50);

@@ -65,7 +65,7 @@ export default async function OfficeWorkloadPage() {
         <table className="w-full">
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
             <tr>
-              <th className="px-4 py-2">{t("Office")}</th>
+              <th className="min-w-[13rem] px-4 py-2">{t("Office")}</th>
               <th className="px-4 py-2 text-right">{t("Not yet received")}</th>
               <th className="px-4 py-2 text-right">{t("Being worked on")}</th>
               <th className="px-4 py-2 text-right">{t("Late")}</th>

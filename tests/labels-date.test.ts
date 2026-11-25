@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fmtDate, fmtDateTime } from "../src/lib/labels";
+import { fmtDate, fmtDateTime, greetingName } from "../src/lib/labels";
 
 describe("date formatting", () => {
   it("uses Manila time", () => {
@@ -25,5 +25,14 @@ describe("date formatting", () => {
   it("does not depend on the machine time zone", () => {
     // 16:30 UTC is already the next day in Manila (UTC+8)
     expect(fmtDateTime("2026-11-23T16:30:00Z")).toContain("Nov 24, 2026");
+  });
+});
+
+describe("greetingName", () => {
+  it("uses the first name of a person and the whole title of a role account", () => {
+    expect(greetingName("Ana Dizon (Engineering Head)")).toBe("Ana");
+    expect(greetingName("Atty. Teresa Navarro (City Legal Officer)")).toBe("Teresa");
+    expect(greetingName("Civil Registry Window Clerk")).toBe("Civil Registry Window Clerk");
+    expect(greetingName("Mayor's Office Head")).toBe("Mayor's Office Head");
   });
 });

@@ -2,7 +2,7 @@ import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { STATUS_LABEL, dueText, fmtDate } from "@/lib/labels";
+import { STATUS_LABEL, dueText, fmtDate, greetingName } from "@/lib/labels";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -40,7 +40,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     // City view: one aggregated call; the own-office queries below are skipped.
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">{t("Good day, {name}", { name: me.full_name.split(" (")[0].split(" ")[0] })}</h1>
+        <h1 className="text-2xl font-bold">{t("Good day, {name}", { name: greetingName(me.full_name) })}</h1>
         <ScopeLinks base="/" scope="city" />
         <CityOverview />
       </div>
@@ -121,7 +121,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
         <div>
-          <h1 className="text-2xl font-bold">{t("Good day, {name}", { name: me.full_name.split(" (")[0].split(" ")[0] })}</h1>
+          <h1 className="text-2xl font-bold">{t("Good day, {name}", { name: greetingName(me.full_name) })}</h1>
           <p className="mt-1 text-sm text-slate-600">
             {isCentral(me) ? t("You can see records across all offices.") : t("Showing records that {office} started or now holds.", { office: me.office?.name ?? t("your office") })}
           </p>
