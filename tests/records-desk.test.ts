@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  activeView, countText, dueAgenda, lateByOffice, loggedOn, nextStepHint, notInBox, oldestGroup, readyToSend, savedViews, viewHref,
+  activeView, countText, dueAgenda, headHint, lateByOffice, lateHere, needsDecision, windowQueue, loggedOn, nextStepHint, notInBox, oldestGroup, readyToSend, savedViews, viewHref,
   type DeskRow,
 } from "../src/lib/records-desk";
 
@@ -73,6 +73,10 @@ describe("saved views", () => {
     expect(savedViews(null).some((v) => v.key === "mine")).toBe(false);
     expect(views.map((v) => v.key)).toEqual(["all", "mine", "late", "ready", "sent"]);
   });
+  it("office roles get All, In my office and Late only", () => {
+    expect(savedViews("CCRO", false).map((v) => v.key)).toEqual(["all", "mine", "late"]);
+    expect(savedViews(null, false).map((v) => v.key)).toEqual(["all", "late"]);
+  });
   it("activeView", () => {
     expect(activeView({}, views)?.key).toBe("all");
     expect(activeView({ q: "x" }, views)?.key).toBe("all");
@@ -87,5 +91,41 @@ describe("saved views", () => {
     expect(viewHref({}, by("all"))).toBe("/records");
     expect(viewHref({ q: "deed" }, by("late"))).toBe("/records?q=deed&overdue=1&open=1");
     expect(viewHref({}, by("mine"))).toBe("/records?office=CGSO&here=1&open=1");
+  });
+});
+
+describe("window clerk and office head lists", () => {
+  const today = "2026-11-26";
+  const base = { direction: "incoming", current_office: { code: "CCRO", name: "Civil Registry" }, box_id: null };
+  it("windowQueue keeps today's records logged by me or at my office, newest first", () => {
+    const rows = [
+      { ...base, status: "registered", due_date: null, created_at: "2026-11-26T01:00:00Z", created_by: "me", origin_office_id: "x" },
+      { ...base, status: "registered", due_date: null, created_at: "2026-11-26T03:00:00Z", created_by: "other", origin_office_id: "ccro" },
+      { ...base, status: "registered", due_date: null, created_at: "2026-11-26T02:00:00Z", created_by: "other", origin_office_id: "x" },
+      { ...base, status: "registered", due_date: null, created_at: "2026-11-24T02:00:00Z", created_by: "me", origin_office_id: "ccro" },
+    ];
+    expect(windowQueue(rows, today, "me", "ccro").map((r) => r.created_at)).toEqual(["2026-11-26T03:00:00Z", "2026-11-26T01:00:00Z"]);
+    expect(windowQueue(rows, today, "me", null)).toHaveLength(1);
+  });
+  it("needsDecision keeps forwarded or unassigned open records", () => {
+    const rows = [
+      { ...base, status: "forwarded", due_date: null, created_at: "", assigned_to: "a" },
+      { ...base, status: "received", due_date: null, created_at: "", assigned_to: null },
+      { ...base, status: "under_action", due_date: null, created_at: "", assigned_to: "a" },
+      { ...base, status: "completed", due_date: null, created_at: "", assigned_to: null },
+    ];
+    expect(needsDecision(rows).map((r) => r.status)).toEqual(["forwarded", "received"]);
+    expect(headHint(rows[0])).toBe("Next: mark as received");
+    expect(headHint(rows[1])).toBe("Not assigned");
+    expect(headHint(rows[2])).toBeNull();
+  });
+  it("lateHere keeps open overdue records, oldest due first", () => {
+    const rows = [
+      { ...base, status: "received", due_date: "2026-11-20", created_at: "" },
+      { ...base, status: "received", due_date: "2026-11-10", created_at: "" },
+      { ...base, status: "received", due_date: "2026-11-26", created_at: "" },
+      { ...base, status: "completed", due_date: "2026-11-01", created_at: "" },
+    ];
+    expect(lateHere(rows, today).map((r) => r.due_date)).toEqual(["2026-11-10", "2026-11-20"]);
   });
 });

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  canWindowIntake, countOn, differsFromRecommended, featuresOff, hasFeature, isHrmoCss, isOversight, isRecordsDesk, optionalFeaturesFor,
+  canWindowIntake, countOn, differsFromRecommended, featuresOff, hasFeature, isHrmoCss, isOversight, isRecordsDesk, optionalFeaturesFor, startScreen,
   parseFeatureForm, parseFeatures, RECOMMENDED,
 } from "../src/lib/office-features";
 
@@ -89,13 +89,26 @@ describe("RECOMMENDED matches migration 20261125000200", () => {
 });
 
 describe("isRecordsDesk", () => {
-  it("is true only for a records officer at CGSO", () => {
-    expect(isRecordsDesk({ role: "records_officer", office: { code: "CGSO" } })).toBe(true);
-    expect(isRecordsDesk({ role: "records_officer", office: { code: "HRMO" } })).toBe(false);
-    expect(isRecordsDesk({ role: "records_officer", office: null })).toBe(false);
-    expect(isRecordsDesk({ role: "records_officer" })).toBe(false);
-    for (const role of ["dept_head", "staff", "admin"] as const) {
-      expect(isRecordsDesk({ role, office: { code: "CGSO" } })).toBe(false);
+  it("is true for a records officer at any office", () => {
+    expect(isRecordsDesk({ role: "records_officer" })).toBe(true);
+    for (const role of ["dept_head", "staff", "admin", "viewer"] as const) {
+      expect(isRecordsDesk({ role })).toBe(false);
     }
+  });
+});
+
+describe("startScreen", () => {
+  const win = { features: ["window"] };
+  it("picks the start screen by role", () => {
+    expect(startScreen({ role: "admin" })).toBe("security");
+    expect(startScreen({ role: "records_officer" })).toBe("desk");
+    expect(startScreen({ role: "viewer" })).toBe("viewer");
+    expect(startScreen({ role: "dept_head", office: win })).toBe("head");
+    expect(startScreen({ role: "dept_head", office: { features: [] } })).toBe("head");
+  });
+  it("gives window staff the window screen only when the office has the window on", () => {
+    expect(startScreen({ role: "staff", window_intake: true, office: win })).toBe("window");
+    expect(startScreen({ role: "staff", window_intake: true, office: { features: [] } })).toBe("staff");
+    expect(startScreen({ role: "staff", window_intake: false, office: win })).toBe("staff");
   });
 });

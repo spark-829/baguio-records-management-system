@@ -1,7 +1,7 @@
 import type { SearchFilters } from "./types";
 import { filtersToParams } from "./search";
 
-/** Pure helpers for the CGSO records desk start screen and saved views. Labels are English keys; callers wrap them in t(). */
+/** Pure helpers for the start screens (records desk, window clerk, office head) and saved views. Labels are English keys; callers wrap them in t(). */
 export type DeskRow = {
   status: string;
   direction: string;
@@ -50,6 +50,34 @@ export function dueAgenda<T extends DeskRow>(rows: T[], today: string): { today:
   };
 }
 
+/** Window clerk: incoming records this window logged today (by me, or at my office), newest first. */
+export function windowQueue<T extends DeskRow & { created_by?: string | null; origin_office_id?: string | null }>(
+  rows: T[], today: string, meId: string, officeId: string | null,
+): T[] {
+  return rows
+    .filter((r) => r.direction === "incoming" && manilaDay(r.created_at) === today && (r.created_by === meId || (!!officeId && r.origin_office_id === officeId)))
+    .sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
+/** Office head: open records in the office that still need the head (not yet received, or nobody assigned). */
+export function needsDecision<T extends DeskRow & { assigned_to?: string | null }>(inbox: T[]): T[] {
+  return inbox.filter((r) => !CLOSED.has(r.status) && (r.status === "forwarded" || !r.assigned_to));
+}
+
+/** Late records held here, oldest due date first. */
+export function lateHere<T extends DeskRow>(inbox: T[], today: string): T[] {
+  return inbox
+    .filter((r) => !CLOSED.has(r.status) && r.due_date && r.due_date.slice(0, 10) < today)
+    .sort((a, b) => a.due_date!.slice(0, 10).localeCompare(b.due_date!.slice(0, 10)));
+}
+
+/** Next-step hint for the office head's decision list. */
+export function headHint(r: { status: string; assigned_to?: string | null }): string | null {
+  if (r.status === "forwarded") return "Next: mark as received";
+  if (!r.assigned_to) return "Not assigned";
+  return null;
+}
+
 export function readyToSend<T extends DeskRow>(rows: T[]): T[] {
   return rows.filter((r) => r.direction === "outgoing" && r.status === "completed");
 }
@@ -79,13 +107,15 @@ export type SavedView = {
   empty: string;
 };
 
-export function savedViews(officeCode?: string | null): SavedView[] {
+/** Records list tabs. Every role gets All, In my office and Late; the records desk also gets the send-out views. */
+export function savedViews(officeCode?: string | null, recordsDesk = true): SavedView[] {
   const views: SavedView[] = [{ key: "all", label: "All", filters: {}, empty: "No records match. Try fewer filters." }];
   if (officeCode) {
     views.push({ key: "mine", label: "In my office", filters: { office: officeCode, here: true, open: true }, empty: "Nothing is waiting in your office." });
   }
+  views.push({ key: "late", label: "Late", filters: { overdue: true, open: true }, empty: "Nothing is late." });
+  if (!recordsDesk) return views;
   views.push(
-    { key: "late", label: "Late", filters: { overdue: true, open: true }, empty: "Nothing is late." },
     { key: "ready", label: "Ready to send out", filters: { direction: "outgoing", status: "completed" }, empty: "Nothing is ready to send out." },
     { key: "sent", label: "Sent out (logbook)", filters: { direction: "outgoing", status: "released" }, empty: "No records match. Try fewer filters." },
   );
