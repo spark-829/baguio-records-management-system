@@ -33,6 +33,8 @@ time. Exit code 1 when anything is found.
 | D-TARGET-2 | Phone controls and menu links ≥44px | Auto | §5 |
 | D-TYPE-1 | Form fields ≥16px text | Auto | §4 |
 | D-TYPE-2 | No text under 15px | Auto | §5 |
+| D-CAPS-1 | Sentence case: no CSS uppercase, no all-caps labels or headings (codes like CGSO, ARTA, IN-2026-0001 are fine; printed letterheads excepted) | Auto | §6, §7 |
+| D-NUM-1 | Numbers in tables right aligned with tabular figures | Auto | §3 |
 | D-STRUCT-1/2 | One `h1`; heading levels not skipped | Auto | §2, §4 |
 | D-ZOOM-1 | Zoom not blocked | Auto | §2 1.4.4 |
 | D-TITLE-1 | Page `<title>` set | Auto | §4 |

@@ -8,7 +8,7 @@ import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import type { Status } from "@/lib/types";
-import { monthLabel, onTimeSummary, parseOnTime, parseSummary, reportBounds, toBars } from "@/lib/reports";
+import { monthLabel, onTimeSummary, parseOnTime, parseSummary, reportBounds, statusBars, toBars } from "@/lib/reports";
 import { PrintButton } from "../records/[id]/slip/print-button";
 import { isOversight } from "@/lib/office-features";
 import { CityOverview, ScopeLinks } from "../city-overview";
@@ -95,7 +95,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       <ReportsNav me={me} current="/reports" />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="print-only text-xs font-semibold uppercase tracking-widest">{t("City Government of Baguio · Records Management System (demo)")}</p>
+          <p className="print-only text-xs font-semibold">{t("City Government of Baguio · Records Management System (demo)")}</p>
           <h1 className="text-2xl font-bold">{t("Reports")}</h1>
           {oversight && <div className="my-2"><ScopeLinks base="/reports" scope="mine" /></div>}
           <p className="text-sm text-slate-600">
@@ -123,7 +123,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
       />
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Bars title={t("By status")} data={toBars(s.by_status, (k) => t(STATUS_LABEL[k as Status] ?? k))} />
+        <Bars title={t("By status")} data={statusBars(s.by_status, (k) => t(STATUS_LABEL[k as Status] ?? k))} />
         <Bars title={t("By current office")} data={toBars(s.by_office, (k) => k)} limit={8} />
         <Bars title={t("By document type")} data={toBars(s.by_type, (k) => k)} />
         <Bars title={t("By transaction type")} data={toBars(s.by_tx, (k) => t(txLabel(k)))} />

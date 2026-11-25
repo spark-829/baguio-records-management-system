@@ -271,11 +271,11 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
                       <thead className="bg-slate-50 text-left text-slate-600">
                         <tr>
                           <th scope="col" className={`${th} sticky left-0 min-w-[12rem] bg-slate-50`}>{t("Office")}</th>
-                          <th scope="col" className={th}>{t("Share of all waiting")}</th>
+                          <th scope="col" className={`${th} text-right`}>{t("Share of all waiting")}</th>
                           <th scope="col" className={th}>{t("Usual wait")}</th>
                           <th scope="col" className={th}>{t("9 in 10 leave within")}</th>
                           <th scope="col" className={th}>{t("Usually takes to receive")}</th>
-                          <th scope="col" className={th}>{t("Records that passed through")}</th>
+                          <th scope="col" className={`${th} text-right`}>{t("Records that passed through")}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-line">
@@ -288,11 +288,11 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
                               <td colSpan={5} className="px-3 py-2 text-slate-600">{t("No records in this period")}</td>
                             ) : (
                               <>
-                                <td className="px-3 py-2 font-semibold tabular-nums">{Math.round(o.share)}%</td>
+                                <td className="px-3 py-2 text-right font-semibold tabular-nums">{Math.round(o.share)}%</td>
                                 <td className="px-3 py-2">{dt(o.medianWait)}</td>
                                 <td className="px-3 py-2">{dt(o.p90Wait)}</td>
                                 <td className="px-3 py-2">{dt(o.medianHandoff)}</td>
-                                <td className="px-3 py-2 tabular-nums">{o.records}</td>
+                                <td className="px-3 py-2 text-right tabular-nums">{o.records}</td>
                               </>
                             )}
                           </tr>
@@ -380,8 +380,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
                       <thead className="bg-slate-50 text-left text-slate-600">
                         <tr>
                           <th scope="col" className={`${th} min-w-[12rem]`}>{t("Office")}</th>
-                          {BUCKETS.map((b) => <th key={b.key} scope="col" className={th}>{t(b.label)}</th>)}
-                          <th scope="col" className={th}>{t("Overdue")}</th>
+                          {BUCKETS.map((b) => <th key={b.key} scope="col" className={`${th} text-right`}>{t(b.label)}</th>)}
+                          <th scope="col" className={`${th} text-right`}>{t("Overdue")}</th>
                           <th scope="col" className={th}>{t("Oldest")}</th>
                         </tr>
                       </thead>
@@ -391,8 +391,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
                           return (
                             <tr key={o.id}>
                               <th scope="row" className="px-3 py-2 text-left font-normal">{o.name}</th>
-                              {BUCKETS.map((b) => <td key={b.key} className="px-3 py-2 tabular-nums">{r?.[b.key] ?? 0}</td>)}
-                              <td className={`px-3 py-2 tabular-nums ${r && r.pastDue > 0 ? "font-semibold text-red-700" : ""}`}>{r?.pastDue ?? 0}</td>
+                              {BUCKETS.map((b) => <td key={b.key} className="px-3 py-2 text-right tabular-nums">{r?.[b.key] ?? 0}</td>)}
+                              <td className={`px-3 py-2 text-right tabular-nums ${r && r.pastDue > 0 ? "font-semibold text-red-700" : ""}`}>{r?.pastDue ?? 0}</td>
                               <td className="px-3 py-2">
                                 {r?.oldest ? (
                                   <>
@@ -446,20 +446,20 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
                       <thead className="bg-slate-50 text-left text-slate-600">
                         <tr>
                           <th scope="col" className={th}>{t("Period")}</th>
-                          <th scope="col" className={th}>{t("Logged")}</th>
-                          <th scope="col" className={th}>{t("Finished")}</th>
-                          <th scope="col" className={th}>{t("Difference")}</th>
-                          <th scope="col" className={th}>{t("Open at the end")}</th>
+                          <th scope="col" className={`${th} text-right`}>{t("Logged")}</th>
+                          <th scope="col" className={`${th} text-right`}>{t("Finished")}</th>
+                          <th scope="col" className={`${th} text-right`}>{t("Difference")}</th>
+                          <th scope="col" className={`${th} text-right`}>{t("Open at the end")}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-line">
                         {trend.map((p, i) => (
                           <tr key={p.start}>
                             <th scope="row" className="px-3 py-2 text-left font-normal">{bucketLabel(p.start, data.grain)}</th>
-                            <td className="px-3 py-2 tabular-nums">{p.logged}</td>
-                            <td className="px-3 py-2 tabular-nums">{p.finished}</td>
-                            <td className="px-3 py-2 tabular-nums">{p.logged - p.finished > 0 ? "+" : ""}{p.logged - p.finished}</td>
-                            <td className="px-3 py-2 tabular-nums">{pile[i + offset + 1]}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{p.logged}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{p.finished}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{p.logged - p.finished > 0 ? "+" : ""}{p.logged - p.finished}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{pile[i + offset + 1]}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -508,7 +508,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
                         <tr>
                           <th scope="col" className={`${th} min-w-[10rem]`}>{t("From")}</th>
                           <th scope="col" className={`${th} min-w-[10rem]`}>{t("To")}</th>
-                          <th scope="col" className={th}>{t("Records sent")}</th>
+                          <th scope="col" className={`${th} text-right`}>{t("Records sent")}</th>
                           <th scope="col" className={th}>{t("Usually received in")}</th>
                         </tr>
                       </thead>
@@ -517,7 +517,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
                           <tr key={`${h.from}|${h.to}`}>
                             <th scope="row" className="px-3 py-2 text-left font-normal">{oName(h.from)}</th>
                             <td className="px-3 py-2">{oName(h.to)}</td>
-                            <td className="px-3 py-2 tabular-nums">{h.sent}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{h.sent}</td>
                             <td className="px-3 py-2">{dt(h.medianDays)}</td>
                           </tr>
                         ))}

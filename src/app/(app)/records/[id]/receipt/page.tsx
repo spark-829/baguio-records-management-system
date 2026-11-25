@@ -40,7 +40,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
     <div className="mx-auto max-w-md">
       <div className="no-print mb-4 flex justify-end"><PrintButton label="Print receipt" /></div>
       <div className="border-2 border-dashed border-slate-900 bg-white p-5 text-slate-900">
-        <p className="text-center text-xs font-semibold uppercase tracking-widest">{t("Baguio RMS · Demo")}</p>
+        <p data-letterhead className="text-center text-xs font-semibold uppercase tracking-widest">{t("Baguio RMS · Demo")}</p>
         <h1 className="text-center text-xl font-bold">{t("Acknowledgment Receipt")}</h1>
         <p className="mt-1 text-center text-sm">{t("Keep this receipt. You need it to follow up your document.")}</p>
         <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">

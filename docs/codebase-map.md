@@ -47,7 +47,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | --- | --- |
 | `doc-types.ts` | `matchDocType` (old type names such as "Request / Complaint" map to "Request"), `seriesLabel` (file plan code and series) |
 | `session.ts` | `getProfile`, `isCentral`, `getSettings` |
-| `types.ts`, `labels.ts` | Role/Status/Profile types; labels, `maskName`, dates |
+| `types.ts`, `labels.ts` | Role/Status/Profile types; labels, `STATUS_ORDER`, `maskName`, dates |
 | `workflow.ts` | actions, `allowedActions`, `nextStatus`, `isOverdue`, `isAlreadyReceived`, `primaryAction`, `actionButtons`, `BUTTON_LABEL`, `canAttach` (mirror of `rms_can_attach`; admins get no record actions) |
 | `security-hub.ts`, `flow-analytics.ts` | pure: admin Security overview parser, attention items, finding text; System analytics parser, ranking, ticks, open-pile line, top-N-plus-other, KPI comparison, text helpers |
 | `history.ts`, `audit-text.ts` | `newestFirst`, `collapseSteps`, `foldMiddle` (history order, citizen progress); `routeText` (audit routing rows) |
@@ -87,7 +87,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `settings-diff.ts` | `changedSettings` (which admin settings actually changed) |
 | `user-list.ts`, `demo-accounts.ts` | admin user list filters and status; the sign-in page demo accounts by office (`?email=` prefill) |
 
-`src/components/`: alert-bell, badges, brand, nav-links, stat-strip (summary numbers), reports-nav (links between report pages), lang-toggle, idle-logout,
+`src/components/`: alert-bell, badges, brand, nav-links, stat-strip (summary numbers), reports-nav (links between report pages), tab-nav (one tab style), lang-toggle, idle-logout,
 scan-qr-button, rich, due-calendar, barangay-map, use-upload-prep (compress + thumbnail hook).
 
 ## Database: `supabase/`

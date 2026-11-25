@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { TabNav } from "@/components/tab-nav";
 import { getT } from "@/lib/i18n/server";
 import { isCentral, type getProfile } from "@/lib/session";
 import { hasFeature } from "@/lib/office-features";
@@ -18,24 +18,6 @@ export async function ReportsNav({ me, current }: { me: Me; current: string }) {
     { href: "/reports/step-times", label: t("Standard time per step"), show: me.role === "records_officer" },
   ].filter((l) => l.show);
   return (
-    <nav aria-label={t("Reports")} className="no-print border-b border-line">
-      <ul className="flex flex-wrap gap-x-1">
-        {links.map((l) => {
-          const active = l.href === current;
-          return (
-            <li key={l.href}>
-              <Link
-                prefetch={false}
-                href={l.href}
-                aria-current={active ? "page" : undefined}
-                className={`flex min-h-11 items-center border-b-4 px-3 no-underline ${active ? "border-brand-700 font-bold text-brand-900" : "border-transparent font-semibold text-brand-700 hover:border-slate-400"}`}
-              >
-                {l.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <TabNav className="no-print" label={t("Reports")} items={links.map((l) => ({ href: l.href, label: l.label, current: l.href === current }))} />
   );
 }
