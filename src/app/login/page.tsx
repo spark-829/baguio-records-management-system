@@ -3,18 +3,8 @@ import { safeNextPath } from "@/lib/safe-next";
 import { LoginForm } from "./login-form";
 import { BrandLockup, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
+import { DEMO_OFFICES, DEMO_START, demoAccountCount, demoEmailParam, demoHref } from "@/lib/demo-accounts";
 
-const DEMO = [
-  { email: "records@rms-demo.test", role: "Records Officer (City General Services Office)" },
-  { email: "admin@rms-demo.test", role: "Administrator" },
-  { email: "engineering.head@rms-demo.test", role: "Department Head, Engineering" },
-  { email: "engineering.staff@rms-demo.test", role: "Staff, Engineering" },
-  { email: "treasury.staff@rms-demo.test", role: "Staff, Treasury" },
-  { email: "viewer@rms-demo.test", role: "Viewer, Planning (read-only)" },
-  { email: "ccro.window@rms-demo.test", role: "Window clerk, Civil Registry" },
-  { email: "hrmo.head@rms-demo.test", role: "Department Head, HRMO (city-wide satisfaction)" },
-  { email: "cmo.head@rms-demo.test", role: "Department Head, Mayor's Office (city-wide view)" },
-];
 
 const NOTICES: Record<string, string> = {
   "no-access": "This account has no active RMS profile. Ask an administrator for access.",
@@ -23,9 +13,11 @@ const NOTICES: Record<string, string> = {
   "signed-out": "You have signed out safely.",
 };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string; email?: string }> }) {
   const { t } = await getT();
-  const { error, next } = await searchParams;
+  const { error, next, email } = await searchParams;
+  const nextPath = safeNextPath(next) ?? "";
+  const prefill = demoEmailParam(email);
   return (
     <div className="flex min-h-screen flex-col">
       <header className="on-dark border-b-4 border-gold-500 bg-brand-800 text-white">
@@ -41,21 +33,40 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             {error && NOTICES[error] && (
               <p role="status" className={`mt-3 rounded-lg border p-3 text-sm ${error === "signed-out" ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-amber-300 bg-amber-50 text-amber-900"}`}>{t(NOTICES[error])}</p>
             )}
-            <LoginForm next={safeNextPath(next) ?? ""} />
+            <LoginForm next={nextPath} email={prefill} />
           </div>
           <div>
             <p className="text-lg text-slate-700">{t("Register incoming and outgoing documents, route them between offices, see where each one is, and find it again in seconds.")}</p>
-            <div className="card mt-6 p-5">
-              <h2 className="text-lg font-bold">{t("Demo accounts (password: Demo@2026)")}</h2>
-              <dl className="mt-3 space-y-3">
-                {DEMO.map((d) => (
-                  <div key={d.email}>
-                    <dt className="font-mono text-sm break-words text-ink">{d.email}</dt>
-                    <dd className="text-sm text-slate-600">{t(d.role)}</dd>
-                  </div>
+            <section className="card mt-6 p-5" aria-labelledby="demo-accounts">
+              <h2 id="demo-accounts" className="text-lg font-bold">{t("Demo accounts (password: Demo@2026)")}</h2>
+              <p className="mt-1 text-sm text-slate-600">{t("Choose an email to fill it in, then type the password.")}</p>
+              <ul className="mt-4 divide-y divide-slate-200 border-y border-slate-200">
+                {DEMO_START.map((d) => (
+                  <li key={d.email} className="py-2.5">
+                    <a href={demoHref(d.email, nextPath)} className="font-mono text-sm break-words text-brand-700 underline underline-offset-2">{d.email}</a>
+                    <p className="text-sm text-slate-600">{t(d.role)}</p>
+                  </li>
                 ))}
-              </dl>
-            </div>
+              </ul>
+              <details className="mt-4">
+                <summary className="cursor-pointer py-1 font-semibold text-brand-800">{t("All {n} accounts, by office", { n: demoAccountCount() })}</summary>
+                <div className="mt-3 space-y-4">
+                  {DEMO_OFFICES.map((o) => (
+                    <div key={o.office}>
+                      <h3 className="text-sm font-semibold text-ink">{t(o.office)}</h3>
+                      <ul className="mt-1 space-y-1">
+                        {o.accounts.map((a) => (
+                          <li key={a.email} className="flex flex-wrap items-baseline gap-x-2">
+                            <a href={demoHref(a.email, nextPath)} className="font-mono text-sm break-all text-brand-700 underline underline-offset-2">{a.email}</a>
+                            <span className="text-sm text-slate-600">{t(a.role)}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            </section>
             <p className="mt-4 text-sm text-slate-600">
               {t("Portfolio demo built by")}{" "}
               <a href="/developer" className="font-semibold text-brand-700 underline">Vicson Yaris</a>.{" "}

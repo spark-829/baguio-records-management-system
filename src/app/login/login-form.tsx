@@ -6,7 +6,7 @@ import { useT } from "@/lib/i18n/client";
 import { useActionState, useEffect } from "react";
 import { signIn } from "./actions";
 
-export function LoginForm({ next = "" }: { next?: string }) {
+export function LoginForm({ next = "", email = "" }: { next?: string; email?: string }) {
   const t = useT();
   useEffect(() => {
     wipeAllChats();
@@ -17,11 +17,11 @@ export function LoginForm({ next = "" }: { next?: string }) {
       <input type="hidden" name="next" value={next} />
       <div>
         <label className="label" htmlFor="email">{t("Email")}</label>
-        <input key={state?.email ?? "default"} className="input" id="email" name="email" type="email" autoComplete="username" defaultValue={state?.email ?? ""} placeholder="e.g. records@rms-demo.test" required />
+        <input key={state?.email ?? (email || "default")} className="input" id="email" name="email" type="email" autoComplete="username" defaultValue={state?.email ?? email} placeholder="e.g. records@rms-demo.test" required />
       </div>
       <div>
         <label className="label" htmlFor="password">{t("Password")}</label>
-        <input className="input" id="password" name="password" type="password" autoComplete="current-password" required />
+        <input className="input" id="password" name="password" type="password" autoComplete="current-password" autoFocus={Boolean(email) && !state} required />
       </div>
       <details open className="rounded-lg border border-slate-300 bg-slate-50 px-4 py-2 text-sm text-slate-700">
         <summary className="cursor-pointer font-semibold text-brand-800">{t("Privacy notice (Data Privacy Act of 2012)")}</summary>
