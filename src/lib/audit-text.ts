@@ -1,5 +1,5 @@
-import { STATUS_LABEL } from "./labels";
-import type { Status } from "./types";
+import { ROLE_LABEL, STATUS_LABEL } from "./labels";
+import type { Role, Status } from "./types";
 
 export type RouteLookups = { tracking: Map<string, string>; offices: Map<string, string> };
 
@@ -45,18 +45,11 @@ export function routeText(d: Record<string, unknown>, lk: RouteLookups): string 
 }
 
 const SIGN_IN_KEYS = new Set(["last_login_at", "failed_attempts", "locked_until", "updated_at"]);
-const ROLE_WORD: Record<string, string> = {
-  admin: "Administrator",
-  records_officer: "Records Officer",
-  dept_head: "Department Head",
-  staff: "Department Staff",
-  viewer: "Viewer (read-only)",
-};
 
 /** Audit "Details" for a user account row: says what changed instead of repeating the name and role. */
 export function profileText(action: string, data: Record<string, unknown> | null, old: Record<string, unknown> | null, offices: Map<string, string>): string {
   const d = data ?? old ?? {};
-  const role = (r: unknown) => ROLE_WORD[String(r)] ?? String(r ?? "");
+  const role = (r: unknown) => ROLE_LABEL[String(r) as Role] ?? String(r ?? "");
   if (action !== "UPDATE" || !data || !old) return `${d.full_name ?? ""} · ${role(d.role)}${d.is_active === false ? " · deactivated" : ""}`;
   const changed = Object.keys(data).filter((k) => JSON.stringify(data[k]) !== JSON.stringify(old[k]));
   if (changed.every((k) => SIGN_IN_KEYS.has(k))) {

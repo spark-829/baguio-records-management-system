@@ -153,7 +153,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                     <input type="hidden" name="back" value={listHref} />
                     <div>
                       <label className="label" htmlFor="eu-role">{t("Role")}</label>
-                      <select id="eu-role" name="role" defaultValue={editing.role} className="input">
+                      <select id="eu-role" name="role" defaultValue={editing.role} className="input" disabled={self}>
                         {(Object.keys(ROLE_LABEL) as Role[]).map((r) => <option key={r} value={r}>{t(ROLE_LABEL[r])}</option>)}
                       </select>
                     </div>
@@ -182,6 +182,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                     {self && (
                       <>
                         <input type="hidden" name="is_active" value="on" />
+                        <input type="hidden" name="role" value="admin" />
                         <p className="text-slate-600">{t("You cannot turn off or demote your own account.")}</p>
                       </>
                     )}
