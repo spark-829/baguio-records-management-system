@@ -103,9 +103,9 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
                 <tr className="border-b border-line">
                   <th scope="col" className="min-w-[12rem] p-3 align-bottom">{t("Office")}</th>
                   <th scope="col" className="p-3 align-bottom">{t("Responses")}</th>
-                  <th scope="col" className="min-w-[7rem] p-3 align-bottom whitespace-normal">{t("Satisfied")} %</th>
-                  {ITEMS.slice(1).map((i) => <th key={i.key} scope="col" className="min-w-[8rem] p-3 align-bottom whitespace-normal">{t(i.label)} %</th>)}
-                  <th scope="col" className="min-w-[7rem] p-3 align-bottom whitespace-normal">{t("Saw the Charter")} %</th>
+                  <th scope="col" className="min-w-[7rem] p-3 text-right align-bottom whitespace-normal">{t("Satisfied")} %</th>
+                  {ITEMS.slice(1).map((i) => <th key={i.key} scope="col" className="min-w-[8rem] p-3 text-right align-bottom whitespace-normal">{t(i.label)} %</th>)}
+                  <th scope="col" className="min-w-[7rem] p-3 text-right align-bottom whitespace-normal">{t("Saw the Charter")} %</th>
                   {consolidated && <th scope="col" className="p-3 align-bottom">{t("Summary sent")}</th>}
                 </tr>
               </thead>
@@ -114,12 +114,12 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
                   <tr key={o.office_id} className={`border-b border-line last:border-0 ${o.responses === 0 ? "text-slate-600" : ""}`}>
                     <th scope="row" className="p-3 font-medium">{o.office}</th>
                     <td className="p-3 whitespace-nowrap">{t(o.responses === 1 ? "{n} response" : "{n} responses", { n: o.responses })}</td>
-                    <td className="p-3">{P(o.sat_yes, o.sat_n)}</td>
-                    <td className="p-3">{P(o.time_yes, o.time_n)}</td>
-                    <td className="p-3">{P(o.steps_yes, o.steps_n)}</td>
-                    <td className="p-3">{P(o.fair_yes, o.fair_n)}</td>
-                    <td className="p-3">{P(o.staff_yes, o.staff_n)}</td>
-                    <td className="p-3">{P(o.charter_yes, o.charter_n)}</td>
+                    <td className="p-3 text-right tabular-nums">{P(o.sat_yes, o.sat_n)}</td>
+                    <td className="p-3 text-right tabular-nums">{P(o.time_yes, o.time_n)}</td>
+                    <td className="p-3 text-right tabular-nums">{P(o.steps_yes, o.steps_n)}</td>
+                    <td className="p-3 text-right tabular-nums">{P(o.fair_yes, o.fair_n)}</td>
+                    <td className="p-3 text-right tabular-nums">{P(o.staff_yes, o.staff_n)}</td>
+                    <td className="p-3 text-right tabular-nums">{P(o.charter_yes, o.charter_n)}</td>
                     {consolidated && (
                       <td className="p-3">
                         {o.state === "sent" && o.css ? (

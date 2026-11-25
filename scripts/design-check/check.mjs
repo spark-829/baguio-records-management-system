@@ -110,6 +110,40 @@ function houseChecks(viewportName) {
   }
   if (tinyText.size) out.push({ id: "D-TYPE-2", msg: `${tinyText.size} text runs under 15px`, where: [...tinyText].slice(0, 4).join("; ") });
 
+  // D-CAPS-1: sentence case. No CSS uppercase, no all-caps labels or headings
+  // (short codes like CGSO or IN-2026-0001 are fine; printed letterheads are skipped).
+  const caps = new Set();
+  const CODE = /^(?:[\p{Lu}\d]{1,6}|[\p{Lu}\d]+(?:[-\/][\p{Lu}\d]+)+)$/u;
+  const capsWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  while (capsWalker.nextNode()) {
+    const text = capsWalker.currentNode.textContent.trim();
+    const el = capsWalker.currentNode.parentElement;
+    if (!text || !/\p{L}/u.test(text) || !el || !visible(el)) continue;
+    if (el.closest("svg, .print-only, .sr-only, [aria-hidden=true], code, kbd, pre, .font-mono, [data-letterhead]")) continue;
+    if (getComputedStyle(el).textTransform === "uppercase") { caps.add(text.slice(0, 30)); continue; }
+    if (!el.closest("h2,h3,h4,h5,h6,label,legend,thead th,button,summary,dt,nav,.badge")) continue;
+    const words = text.match(/[\p{L}\d][\p{L}\d\-\/]*/gu) ?? [];
+    const lettered = words.filter((w) => /\p{L}/u.test(w));
+    if (lettered.some((w) => w !== w.toUpperCase())) continue;
+    // A short all-caps word counts as a code (CGSO, ARTA) only when it stands alone; anything with a digit,
+    // dash or slash is a code (IN-2026-0001, G2C). A lone short word such as "STATUS" cannot be told apart
+    // from an office code without a list, so it passes; "NEW RECORD" does not.
+    const isCode = (w) => /[\d\-\/]/.test(w) || (lettered.length === 1 && CODE.test(w));
+    const loud = lettered.filter((w) => !isCode(w));
+    if (loud.join("").replace(/[^\p{L}]/gu, "").length >= 4) caps.add(text.slice(0, 30));
+  }
+  if (caps.size) out.push({ id: "D-CAPS-1", msg: `${caps.size} all-caps text runs (use sentence case)`, where: [...caps].slice(0, 4).join("; ") });
+
+  // D-NUM-1: numbers in table cells are right aligned
+  const NUM = /^[+\-−]?\d[\d,]*(\.\d+)?%?\+?$/;
+  const numCells = [...document.querySelectorAll("td, th")].filter((el) => {
+    if (!visible(el)) return false;
+    const txt = el.textContent.trim().replace(/\s+/g, "");
+    if (!NUM.test(txt) || /^(19|20)\d\d$/.test(txt)) return false;
+    return !/right|end/.test(getComputedStyle(el).textAlign);
+  });
+  if (numCells.length) out.push({ id: "D-NUM-1", msg: `${numCells.length} number cells not right aligned`, where: numCells.slice(0, 6).map(label).join("; ") });
+
   // D-STRUCT-1: exactly one h1, no skipped heading levels
   const hs = [...document.querySelectorAll("h1,h2,h3,h4,h5,h6")].filter(visible);
   const h1s = hs.filter((h) => h.tagName === "H1").length;

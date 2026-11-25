@@ -1,3 +1,4 @@
+import { STATUS_ORDER } from "./labels";
 import type { RetentionState } from "./retention";
 
 export type Count = { key: string; n: number };
@@ -61,6 +62,14 @@ export function toBars(items: Count[], label: (key: string) => string) {
     m.set(l, (m.get(l) ?? 0) + it.n);
   }
   return [...m].map(([l, n]) => ({ label: l, n })).sort((a, b) => b.n - a.n);
+}
+
+/** Status bars in workflow order (STATUS_ORDER). Statuses with no data are left out; unknown keys follow, biggest first. */
+export function statusBars(items: Count[], label: (key: string) => string) {
+  const sums = new Map<string, number>();
+  for (const it of items) sums.set(it.key, (sums.get(it.key) ?? 0) + it.n);
+  const known = STATUS_ORDER.filter((s) => sums.has(s)).map((s) => ({ label: label(s), n: sums.get(s)! }));
+  return [...known, ...toBars(items.filter((i) => !(STATUS_ORDER as readonly string[]).includes(i.key)), label)];
 }
 
 const num = (x: unknown) => Number(x) || 0;

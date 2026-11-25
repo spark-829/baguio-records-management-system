@@ -84,7 +84,7 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
       <div className="border-2 border-slate-900 bg-white p-6 text-slate-900">
         <div className="flex items-start justify-between gap-6 border-b-2 border-slate-900 pb-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest">{t("City Government of Baguio · Demo")}</p>
+            <p data-letterhead className="text-xs font-semibold uppercase tracking-widest">{t("City Government of Baguio · Demo")}</p>
             <h1 className="text-xl font-bold">{t("Document Routing Slip")}</h1>
             <p className="mt-2 font-mono text-2xl font-bold">{r.tracking_no}</p>
             <p className="text-sm">{t(r.direction === "incoming" ? "Incoming" : "Outgoing")} · {r.doc_type?.name} · {t(PRIORITY_LABEL[r.priority])} · {t(CONF_LABEL[r.confidentiality])}</p>

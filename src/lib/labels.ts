@@ -23,6 +23,9 @@ export const STATUS_LABEL: Record<Status, string> = {
   archived: "Archived",
 };
 
+/** The one status order for every list, filter and chart: the order a record moves through. */
+export const STATUS_ORDER: readonly Status[] = ["registered", "forwarded", "received", "under_action", "completed", "released", "archived"];
+
 export const ROLE_LABEL: Record<Role, string> = {
   admin: "Administrator",
   records_officer: "Records Officer",

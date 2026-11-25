@@ -55,7 +55,7 @@ export default function DeveloperPage() {
 
       <main className="mx-auto w-full max-w-4xl flex-1 space-y-6 px-4 py-8">
         <section className="card border-t-4 border-t-gold-500 p-6 sm:p-8">
-          <p className="text-sm font-semibold uppercase tracking-widest text-gold-800">Built by</p>
+          <p className="text-sm font-semibold text-gold-800">Built by</p>
           <h1 className="mt-1 text-3xl font-bold">Vicson Yaris</h1>
           <p className="mt-1 text-lg text-slate-700">Computer Engineering graduate · Baguio City, Philippines</p>
           <p className="mt-4 text-lg">

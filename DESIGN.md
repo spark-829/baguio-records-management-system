@@ -141,3 +141,32 @@ shadows, no glass.
 - Cards: `card` only to group related content.
 - Focus: 3px brand-700 outline, gold on dark backgrounds.
 - Callouts: tinted, 1px border all round, never a side stripe.
+
+## Component kit
+Use these patterns; do not invent a new one for the same job.
+
+- Summary numbers: `StatStrip`. Label above, big tabular number below. The
+  label is a link only when it has an `href`. Red only for late items.
+- Tables: inside a scroll box. Sentence-case headers
+  (`text-sm font-semibold text-slate-600`). Numbers are `text-right
+  tabular-nums`, header included. One link per row. Mono only for tracking
+  numbers.
+- Tabs: `TabNav` (`src/components/tab-nav.tsx`). `aria-current="page"` on the
+  current tab, 2px brand-700 underline, scrolls sideways in its own box on
+  phones. The URL holds the state. Used by the records saved views and
+  `ReportsNav`.
+- File picker: an `sr-only` peer input plus a `label.btn-secondary`. When
+  there are several, name the peers (`peer/x`). Focus shows on the label with
+  `peer-focus-visible` outline-3, outline-offset-2, outline-brand-700. Use
+  outline, not ring: the `.btn-*` box-shadow beats ring utilities. Show the
+  chosen name and size, and a hint for allowed type and size. Examples:
+  `AttachForm` in `src/app/(app)/records/[id]/forms.tsx`, the drop zone in
+  `src/app/(app)/records/new/register-form.tsx`.
+- Status order: `STATUS_ORDER` in `src/lib/labels.ts` drives every status list,
+  filter and chart, for all roles. Reports no longer sort status by count.
+- Records desk layouts (PRs #83-#85: desk dashboard, saved views, record page
+  panel, register desk): gated by `isRecordsDesk(me)` in
+  `src/lib/office-features.ts`. CGSO records officer only.
+- Guards: `npm run design-check` enforces D-CAPS-1 (sentence case) and D-NUM-1
+  (numbers right aligned). Printed letterheads marked `data-letterhead` may
+  use caps.

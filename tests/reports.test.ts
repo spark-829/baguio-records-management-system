@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { monthLabel, onTimeSummary, parseOnTime, parseRetention, parseSummary, percent, reportBounds, toBars } from "../src/lib/reports";
+import { monthLabel, onTimeSummary, parseOnTime, parseRetention, parseSummary, percent, reportBounds, statusBars, toBars } from "../src/lib/reports";
 import { fetchPages } from "../src/lib/fetch-pages";
 
 describe("reportBounds", () => {
@@ -96,5 +96,25 @@ describe("on-time report", () => {
     ]);
     expect(s).toMatchObject({ finished: 8, on_time: 5, pct: 63 });
     expect(s.offices.map((o) => o.name)).toEqual(["Alpha", "Zeta"]);
+  });
+});
+
+describe("statusBars", () => {
+  const id = (k: string) => k;
+  it("uses workflow order, not count order", () => {
+    expect(statusBars([{ key: "archived", n: 9 }, { key: "registered", n: 1 }, { key: "under_action", n: 5 }], id)).toEqual([
+      { label: "registered", n: 1 },
+      { label: "under_action", n: 5 },
+      { label: "archived", n: 9 },
+    ]);
+  });
+  it("sums duplicates", () => {
+    expect(statusBars([{ key: "received", n: 2 }, { key: "received", n: 3 }], id)).toEqual([{ label: "received", n: 5 }]);
+  });
+  it("puts unknown keys after known ones", () => {
+    expect(statusBars([{ key: "weird", n: 4 }, { key: "completed", n: 1 }], id)).toEqual([{ label: "completed", n: 1 }, { label: "weird", n: 4 }]);
+  });
+  it("leaves out statuses with no data and applies the label function", () => {
+    expect(statusBars([{ key: "released", n: 2 }], (k) => k.toUpperCase())).toEqual([{ label: "RELEASED", n: 2 }]);
   });
 });

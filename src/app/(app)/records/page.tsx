@@ -4,13 +4,13 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/session";
 import { filtersFromParams, filtersToParams, searchRecordsPage } from "@/lib/search";
-import { STATUS_LABEL, fmtDate, partyLabel } from "@/lib/labels";
+import { STATUS_LABEL, STATUS_ORDER, fmtDate, partyLabel } from "@/lib/labels";
 import { foundText, listSize } from "@/lib/list-size";
 import { listQuery } from "@/lib/back-link";
 import { TX_CHIP_LABEL, TX_TYPES, type TxType } from "@/lib/transaction-type";
 import { isOverdue } from "@/lib/workflow";
-import type { Status } from "@/lib/types";
 import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
+import { TabNav } from "@/components/tab-nav";
 import { ScanQrButton } from "@/components/scan-qr-button";
 import { AiSearchButton } from "./ai-search-box";
 import { isOversight, isRecordsDesk } from "@/lib/office-features";
@@ -73,26 +73,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </p>
       </div>
 
-      {views && (
-        <div className="overflow-x-auto">
-          <nav aria-label={t("Saved views")} className="flex min-w-max gap-1 border-b border-line">
-            {views.map((v) => {
-              const on = view?.key === v.key;
-              return (
-                <Link
-                  key={v.key}
-                  prefetch={false}
-                  href={viewHref(f, v)}
-                  aria-current={on ? "page" : undefined}
-                  className={`focus-inset -mb-px inline-flex min-h-11 items-center whitespace-nowrap border-b-2 px-3 no-underline ${on ? "border-brand-700 font-semibold text-ink" : "border-transparent text-slate-700 hover:text-ink"}`}
-                >
-                  {t(v.label)}
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-      )}
+      {views && <TabNav label={t("Saved views")} items={views.map((v) => ({ key: v.key, href: viewHref(f, v), label: t(v.label), current: view?.key === v.key }))} />}
 
       {typeof sp.deleted === "string" && (
         <p role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-emerald-900">
@@ -131,7 +112,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           <label className="label" htmlFor="status">{t("Status")}</label>
           <select className="input" id="status" name="status" defaultValue={f.status ?? ""}>
             <option value="">{t("Any")}</option>
-            {(Object.keys(STATUS_LABEL) as Status[]).map((s) => <option key={s} value={s}>{t(STATUS_LABEL[s])}</option>)}
+            {STATUS_ORDER.map((s) => <option key={s} value={s}>{t(STATUS_LABEL[s])}</option>)}
           </select>
         </div>
         <div>

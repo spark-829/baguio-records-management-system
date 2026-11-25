@@ -2,7 +2,7 @@ import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
-import { STATUS_LABEL, dueText, fmtDate, greetingName } from "@/lib/labels";
+import { STATUS_ORDER, dueText, fmtDate, greetingName } from "@/lib/labels";
 import { isOverdue } from "@/lib/workflow";
 import type { Status } from "@/lib/types";
 import { OverdueBadge, PriorityBadge, StatusBadge } from "@/components/badges";
@@ -88,7 +88,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   // First day of this month in Manila time, whatever the server's clock zone is
   const monthFrom = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date()).slice(0, 8) + "01";
 
-  const counts = (Object.keys(STATUS_LABEL) as Status[]).map((s) => ({ s, n: Number(totals.by_status?.[s]) || 0 }));
+  const counts = STATUS_ORDER.map((s) => ({ s, n: Number(totals.by_status?.[s]) || 0 }));
 
   const stats = [
     { label: t("Open records"), value: Number(totals.open) || 0, href: "/records?open=1", alert: false },

@@ -664,16 +664,19 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           {rec.category === "CSS summary" && rec.content_text && (() => {
             const [head, ...body] = parseCsv(rec.content_text);
             if (!head) return null;
+            // A column is numeric when every filled cell is a number: right align it (D-NUM-1).
+            const numCol = head.map((_, j) => body.some((r) => (r[j] ?? "").trim() !== "") && body.every((r) => { const c = (r[j] ?? "").trim(); return c === "" || /^[+\-]?\d[\d,]*(\.\d+)?%?$/.test(c); }));
+            const align = (j: number) => (numCol[j] ? "p-2 text-right tabular-nums" : "p-2");
             return (
               <section className="card min-w-0 p-4" aria-labelledby="css-h">
                 <h2 id="css-h" className="mb-2 font-semibold">{t("Satisfaction summary")}</h2>
                 <p className="mb-2 text-sm text-slate-600">{t("The numbers are kept in the record itself. There is no file to download.")}</p>
                 <div className="overflow-x-auto" tabIndex={0} role="region" aria-label={t("Satisfaction summary")}>
                   <table className="w-full min-w-[32rem] text-left text-sm">
-                    <thead><tr className="border-b border-line">{head.map((h) => <th key={h} scope="col" className="p-2">{t(h)}</th>)}</tr></thead>
+                    <thead><tr className="border-b border-line">{head.map((h, j) => <th key={h} scope="col" className={align(j)}>{t(h)}</th>)}</tr></thead>
                     <tbody>
                       {body.map((r, i) => (
-                        <tr key={i} className="border-b border-line last:border-0">{r.map((c, j) => <td key={j} className="p-2">{c.trim() === "" ? "—" : c}</td>)}</tr>
+                        <tr key={i} className="border-b border-line last:border-0">{r.map((c, j) => <td key={j} className={align(j)}>{c.trim() === "" ? "—" : c}</td>)}</tr>
                       ))}
                     </tbody>
                   </table>
