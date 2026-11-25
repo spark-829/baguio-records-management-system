@@ -165,9 +165,15 @@ Use these patterns; do not invent a new one for the same job.
   `src/app/(app)/records/new/register-form.tsx`.
 - Status order: `STATUS_ORDER` in `src/lib/labels.ts` drives every status list,
   filter and chart, for all roles. Reports no longer sort status by count.
-- Records desk layouts (PRs #83-#85: desk dashboard, saved views, record page
-  panel, register desk): gated by `isRecordsDesk(me)` in
-  `src/lib/office-features.ts`. CGSO records officer only.
+- One layout for every role (since 2026-11-26): record page with the Actions
+  sidebar and named buttons, Register drop zone form, saved-view tabs on
+  Records. Start screens by role come from `startScreen(me)` in
+  `src/lib/office-features.ts`: records desk, office window (window clerk),
+  office head ("Needs your decision" and the office's late list), plain
+  dashboard for other staff and read-only accounts, Security overview for the
+  Administrator. The month calendar sits below, behind "Show month calendar".
+  `isRecordsDesk` (any records officer) only changes desk wording and the
+  desk's extra tabs and service picker order.
 - Guards: `npm run design-check` enforces D-CAPS-1 (sentence case) and D-NUM-1
   (numbers right aligned). Printed letterheads marked `data-letterhead` may
   use caps.

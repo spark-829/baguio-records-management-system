@@ -43,14 +43,10 @@ export default async function NewRecordPage({ searchParams }: { searchParams: Pr
   const myOffice = (offices ?? []).find((o) => o.id === me.office_id);
   const refLabel = !central && !hasFeature(me, "refno") ? null : (myOffice?.ref_label ?? DEFAULT_REF_LABEL);
   return (
-    <div className={desk ? "max-w-3xl space-y-4" : "space-y-4"}>
+    <div className="max-w-3xl space-y-4">
       <div>
         <h1 className="text-2xl font-bold">{t("Register a record")}</h1>
-        <p className="text-sm text-slate-600">
-          {desk
-            ? t("Add the file if you have one, answer the questions, then save to get a tracking number.")
-            : t("Fill in the boxes below. If you have a scanned copy, the assistant can fill them in for you. Check every box, then press Save to get a tracking number.")}
-        </p>
+        <p className="text-sm text-slate-600">{t("Add the file if you have one, answer the questions, then save to get a tracking number.")}</p>
       </div>
       <RegisterForm types={(types ?? []).filter((x) => x.name !== COPY_TYPE || me.role === "records_officer")} offices={offices ?? []} incomingMode={incomingMode} myOfficeId={me.office_id} myOfficeName={me.office?.name ?? ""} refLabel={refLabel} services={services} otherServices={otherServices} counts={counts} desk={desk} replyTo={replyTo} barangays={barangayCheck.error ? null : BARANGAYS.map((b) => b.name)} />
     </div>

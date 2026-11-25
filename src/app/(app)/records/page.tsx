@@ -13,7 +13,7 @@ import { ConfBadge, OverdueBadge, PriorityBadge, StatusBadge } from "@/component
 import { TabNav } from "@/components/tab-nav";
 import { ScanQrButton } from "@/components/scan-qr-button";
 import { AiSearchButton } from "./ai-search-box";
-import { isOversight, isRecordsDesk } from "@/lib/office-features";
+import { isOversight } from "@/lib/office-features";
 import { maskedSubject, parseCityRows } from "@/lib/oversight";
 import { activeView, savedViews, viewHref } from "@/lib/records-desk";
 import { ScopeLinks } from "../city-overview";
@@ -43,8 +43,8 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
   const officeNames = new Map((offices.data ?? []).map((o) => [o.code, o.name]));
   const narrowed = Boolean(f.at || f.person || f.status || f.direction || f.office || f.docType || f.from || f.to || f.overdue || f.open || f.priority || f.here || f.tx || f.box);
   const active = Boolean(f.q || aiNote || narrowed);
-  const views = isRecordsDesk(me) ? savedViews(me.office?.code) : null;
-  const view = views ? activeView(f, views) : null;
+  const views = savedViews(me.office?.code, me.role === "records_officer");
+  const view = activeView(f, views);
   const emptyText = t(view?.empty ?? "No records match. Try fewer filters.");
 
   return (
@@ -73,7 +73,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </p>
       </div>
 
-      {views && <TabNav label={t("Saved views")} items={views.map((v) => ({ key: v.key, href: viewHref(f, v), label: t(v.label), current: view?.key === v.key }))} />}
+      <TabNav label={t("Saved views")} items={views.map((v) => ({ key: v.key, href: viewHref(f, v), label: t(v.label), current: view?.key === v.key }))} />
 
       {typeof sp.deleted === "string" && (
         <p role="status" className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-emerald-900">

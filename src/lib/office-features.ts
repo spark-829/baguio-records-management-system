@@ -100,9 +100,19 @@ export function isHrmoCss(p: { role: Role; officeCode?: string | null; windowFla
   return p.officeCode === "HRMO" && (p.role === "dept_head" || (p.role === "staff" && !!p.windowFlag));
 }
 
-/** CGSO records desk: records officer whose office is CGSO. Gates the desk start screen and saved views. */
-export function isRecordsDesk(me: { role: Role; office?: { code?: string | null } | null }): boolean {
-  return me.role === "records_officer" && me.office?.code === "CGSO";
+/** Records desk: any records officer (General Services in the demo). Gates the desk start screen and desk wording. */
+export function isRecordsDesk(me: { role: Role }): boolean {
+  return me.role === "records_officer";
+}
+
+/** Which start screen a signed-in person gets. Mirrors the roles; the city view stays a separate scope link. */
+export type StartScreen = "security" | "desk" | "window" | "head" | "staff" | "viewer";
+export function startScreen(me: { role: Role; window_intake?: boolean | null; office?: { features?: string[] | null } | null }): StartScreen {
+  if (me.role === "admin") return "security";
+  if (me.role === "records_officer") return "desk";
+  if (me.role === "viewer") return "viewer";
+  if (me.role === "dept_head") return "head";
+  return canWindowIntake({ role: me.role, windowFlag: me.window_intake, features: me.office?.features }) ? "window" : "staff";
 }
 
 /** Features ticked in the admin form, limited to the ones that office may have. */

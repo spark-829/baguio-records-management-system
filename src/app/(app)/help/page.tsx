@@ -44,8 +44,8 @@ export default async function HelpPage() {
       {central && (
         <Topic id="log" title={t("Log a letter that just arrived")}>
           {S("Click [[Register]] at the top of the screen.")}
-          {S("No scan? Skip part 1. Go straight to the form.")}
-          {S("Got it as an email? Save the email as a .eml file, then drop it under _Or register an email (.eml file)_. The boxes fill in for you. Check them.")}
+          {S("No file? Skip the box at the top and answer the questions.")}
+          {S("Got a scan, a PDF or an email saved as .eml? Drop it in the box at the top or press [[Choose a file]]. Press [[Fill the form from this file]] and check what it filled in.")}
           {S("Fill in every box unless it says (optional).")}
           {S("Choose the _Transaction type_: citizen, government office or business.")}
           {S("Choose the _ARTA processing time_. The due date fills in by itself, counting only working days. You can still change it.")}
@@ -79,18 +79,18 @@ export default async function HelpPage() {
       <Topic id="where" title={t("See where a document is now")}>
         {S("Open the document.")}
         {S("The box at the top says _Now with_ (the office that has it), _What needs to be done_, and the _Due_ date.")}
-        {S("The _History_ list shows every office that had it, with names, dates and notes. The newest is on top.")}
+        {S("The _History and notes_ list shows every office that had it, with names, dates and notes. The oldest is on top; a long list folds the middle steps.")}
       </Topic>
 
       {me.role !== "viewer" && (
         <Topic id="act" title={t("Add a note or send it to another office")}>
           {S("Open the document.")}
-          {S("Press [[Add a note or send to another office]] on the right.")}
-          {S("Choose what you want to do. To return it to the office that sent it, choose _Send back to …_.")}
+          {S("The _Actions_ box has one button for each thing you can do, such as [[Mark as received]], [[Send to another office]] or [[Mark as done]]. Less common ones are under _More actions_.")}
+          {S("Press the button for what you want to do. To return it to the office that sent it, press _Send back to …_. To add a note only, type it under _History and notes_ and press [[Add note]].")}
           {S("Write a short note if needed.")}
           {S("Press [[Save]]. The system asks you to confirm. Press [[Yes, save it]], or [[No, go back]].")}
-          {S("For a document your office sends out, choose _Mark as sent out_, then choose how it was sent. For registered mail or a courier, type the tracking number from the receipt. When it arrives, press [[Record delivery]] on the _Sending_ card and type who received it.")}
-          {S("Office heads: to give the work to a staff member, open _Assign a person_ in the _Take action_ box, choose the person and press [[Assign]]. Staff see it under _Assigned to me_ on the Dashboard.")}
+          {S("For a document your office sends out, press [[Mark as sent out]], then choose how it was sent. For registered mail or a courier, type the tracking number from the receipt. When it arrives, press [[Record delivery]] on the _Sending_ card and type who received it.")}
+          {S("Office heads: to give the work to a staff member, open _Assign a person_ in the _Actions_ box, choose the person and press [[Assign]]. Staff see it under _Assigned to me_ on the Dashboard.")}
         </Topic>
       )}
 
@@ -143,7 +143,7 @@ export default async function HelpPage() {
         {S("Click [[Assistant]].")}
         {S("Type your question in English or Taglish, for example “Nasaan na po yung voucher para sa drainage?”, then press [[Send]].")}
         {S("It only looks at documents you are allowed to see. Click a tracking number in the answer to open that document.")}
-        {S("For this demo, the assistant and [[Read scan with AI]] use DeepSeek, an AI service outside the Philippines. Confidential records are kept out of it. For a sensitive scan, tick [[Sensitive document: do not send it to the AI]].")}
+        {S("For this demo, the assistant and [[Fill the form from this file]] use DeepSeek, an AI service outside the Philippines. Confidential records are kept out of it. For a sensitive scan, tick [[Sensitive document: do not send it to the AI]].")}
         {S("For real use in the City, this would switch to Claude or to an open-weight model run on the City's own servers.")}
       </Topic>
 

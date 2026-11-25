@@ -62,7 +62,7 @@ export function RegisterForm(props: {
   counts: Record<string, number>;
   barangays?: string[] | null;
   replyTo?: string | null;
-  /** CGSO records desk layout (isRecordsDesk). */
+  /** Records desk (records officer): "Something else" first and preselected, top 3 services, "Keep at the Records Section". */
   desk?: boolean;
 }) {
   const t = useT();
@@ -124,7 +124,7 @@ export function RegisterForm(props: {
   useEffect(() => {
     if (state && !fileRef.current?.files?.length) clearScan();
     if (state && !extraRef.current?.files?.length) setEml(null);
-    if (desk && state?.error) {
+    if (state?.error) {
       const id = serverErrorField(state.error);
       const d = id ? document.getElementById(id)?.closest("details") : null;
       if (d) d.open = true;
@@ -137,18 +137,6 @@ export function RegisterForm(props: {
     setPreview(file && file.type.startsWith("image/") ? file : null);
     setScanName(file?.name ?? null);
     setScanSize(file?.size ?? 0);
-  }
-
-  // The scan input copies its image into the main file input (memory only, never saved to the device), so the original is saved as the attachment.
-  function takeScan(e: React.ChangeEvent<HTMLInputElement>) {
-    const scan = e.target.files?.[0];
-    if (!scan || !fileRef.current) return;
-    const dt = new DataTransfer();
-    dt.items.add(scan);
-    fileRef.current.files = dt.files;
-    e.target.value = "";
-    showPreview(scan);
-    void prep.prepare(scan);
   }
 
   function clearScan() {
@@ -217,7 +205,7 @@ export function RegisterForm(props: {
     setEmlErr("");
   }
 
-  // Records desk: one routed entry for drop and "Choose a file". Emails go to the reader, scans and PDFs to the attachment.
+  // One routed entry for drop and "Choose a file". Emails go to the reader, scans and PDFs to the attachment.
   function takeAny(file: File | undefined) {
     setDropErr("");
     if (!file) return;
@@ -376,7 +364,7 @@ export function RegisterForm(props: {
       setTimeout(() => {
         setMissing(pendingMissing.current ?? []);
         pendingMissing.current = null;
-        if (desk) requestAnimationFrame(() => summaryRef.current?.focus());
+        requestAnimationFrame(() => summaryRef.current?.focus());
       }, 0);
     }
     const label = fieldLabel(el);
@@ -423,11 +411,11 @@ export function RegisterForm(props: {
   const incoming = f.direction === "incoming";
 
   const filledNote = (k: keyof Fields) =>
-    desk && filledFrom === "file" && aiFilled.has(k) ? <p className="mt-1 text-sm text-brand-900">{t("Filled from the file: check it.")}</p> : null;
+    filledFrom === "file" && aiFilled.has(k) ? <p className="mt-1 text-sm text-brand-900">{t("Filled from the file: check it.")}</p> : null;
   const filingFilled = (["priority", "confidentiality", "mode", "arta_class", "category", "keywords", "document_date", "description", "in_reply_to"] as (keyof Fields)[]).some((k) => aiFilled.has(k));
-  const items = desk ? errorItems(missing, state?.error) : [];
+  const items = errorItems(missing, state?.error);
 
-  const scanInput = <input id="scan" ref={captureRef} type="file" accept="image/*" capture="environment" className={desk ? "peer/scan sr-only" : "sr-only"} onChange={desk ? (e) => { takeAny(e.target.files?.[0]); e.target.value = ""; } : takeScan} />;
+  const scanInput = <input id="scan" ref={captureRef} type="file" accept="image/*" capture="environment" className="peer/scan sr-only" onChange={(e) => { takeAny(e.target.files?.[0]); e.target.value = ""; }} />;
   const emlStatus = (
     <>
       {emlBusy && <p role="status" className="mt-2 text-sm text-slate-700">{t("Reading the email…")}</p>}
@@ -459,7 +447,7 @@ export function RegisterForm(props: {
   );
   const aiButton = (
     <button type="button" onClick={readWithAi} className="btn-secondary w-full" disabled={aiState === "reading" || noAi}>
-      {aiState === "reading" ? t("Reading…") : desk ? t("Fill the form from this file") : t("Read scan with AI")}
+      {aiState === "reading" ? t("Reading…") : t("Fill the form from this file")}
     </button>
   );
   const aiNote = aiMsg ? (
@@ -600,12 +588,12 @@ export function RegisterForm(props: {
   const senderFields = (
     <>
       <div>
-        <label className="label" htmlFor="f-sender_name">{desk ? t("Name (optional)") : t("Name of sender (optional)")}</label>
+        <label className="label" htmlFor="f-sender_name">{t("Name (optional)")}</label>
         <input id="f-sender_name" name="sender_name" className={`input ${hl("sender_name")}`} value={f.sender_name} onChange={(e) => set("sender_name", e.target.value)} />
         {filledNote("sender_name")}
       </div>
       <div>
-        <label className="label" htmlFor="f-sender_org">{desk ? t("Office, barangay or company (optional)") : t("Sender's office, barangay or company (optional)")}</label>
+        <label className="label" htmlFor="f-sender_org">{t("Office, barangay or company (optional)")}</label>
         <input id="f-sender_org" name="sender_org" className={`input ${hl("sender_org")}`} value={f.sender_org} onChange={(e) => set("sender_org", e.target.value)} />
         {filledNote("sender_org")}
       </div>
@@ -614,12 +602,12 @@ export function RegisterForm(props: {
   const recipientFields = (
     <>
       <div>
-        <label className="label" htmlFor="f-recipient_name">{desk ? t("Name (optional)") : t("Name of recipient (optional)")}</label>
+        <label className="label" htmlFor="f-recipient_name">{t("Name (optional)")}</label>
         <input id="f-recipient_name" name="recipient_name" className={`input ${hl("recipient_name")}`} value={f.recipient_name} onChange={(e) => set("recipient_name", e.target.value)} />
         {filledNote("recipient_name")}
       </div>
       <div>
-        <label className="label" htmlFor="f-recipient_org">{desk ? t("Office, barangay or company (optional)") : t("Recipient's office, barangay or company (optional)")}</label>
+        <label className="label" htmlFor="f-recipient_org">{t("Office, barangay or company (optional)")}</label>
         <input id="f-recipient_org" name="recipient_org" className={`input ${hl("recipient_org")}`} value={f.recipient_org} onChange={(e) => set("recipient_org", e.target.value)} />
         {filledNote("recipient_org")}
       </div>
@@ -738,114 +726,6 @@ export function RegisterForm(props: {
     </>
   );
 
-  const classicBody = (
-    <>
-      <section className="card space-y-4 p-5 lg:col-span-1 lg:self-start">
-        <h2 className="text-lg font-bold">{t("1. Scanned copy (optional)")}</h2>
-        <p className="rounded-lg bg-slate-50 p-2 text-sm text-slate-800">
-          <strong>{t("No scan?")}</strong> {t("That is fine. Just fill in the form and press Save.")}
-        </p>
-        <label htmlFor="scan" className="btn-primary flex w-full cursor-pointer items-center justify-center text-center">{t("Scan document")}</label>
-        {scanInput}
-        <p className="text-sm text-slate-600">{t("Scans go straight to the secure record and aren't kept on this device.")}</p>
-        <label htmlFor="file" className="label">{t("Or upload a file from the office scanner")}</label>
-        <input id="file" ref={fileRef} name="file" type="file" accept="application/pdf,image/png,image/jpeg,image/webp" className="file-input" onChange={(e) => { const f = e.target.files?.[0]; showPreview(f); void prep.prepare(f); }} />
-        {prep.controls}
-        {prep.fields}
-        <p className="text-sm text-slate-600">{t("PDF, JPG or PNG from a scanner, up to 10 MB. The file is kept with the record.")}</p>
-        <div>
-          <label htmlFor="eml" className="label">{t("Or register an email (.eml file)")}</label>
-          <p className="mb-2 text-sm text-slate-600">{t("Gmail: open the email, More, Download message. Outlook: File, Save as.")}</p>
-          <div
-            className="rounded-lg border-2 border-dashed border-slate-300 p-3 text-sm text-slate-700"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => { e.preventDefault(); void takeEml(e.dataTransfer.files?.[0]); }}
-          >
-            <p className="mb-2">{t("Drop the email file here, or choose it")}</p>
-            <input id="eml" type="file" accept=".eml,message/rfc822" className="file-input" onChange={(e) => { void takeEml(e.target.files?.[0]); e.target.value = ""; }} />
-          </div>
-          {emlStatus}
-          {extraInput}
-        </div>
-        {noAiBox}
-        {aiButton}
-        {aiNote}
-        {scanName && (
-          <div className="space-y-2">
-            {preview ? (
-              <ScanPreview image={preview} label={t("Preview of the scanned page")} />
-            ) : (
-              <p className="truncate text-sm text-slate-700">{scanName}</p>
-            )}
-            <button type="button" onClick={retake} className="btn-secondary w-full" disabled={aiState === "reading"}>{t("Retake")}</button>
-          </div>
-        )}
-        {fromScanInput}
-        {contentDetails}
-        {textInputs}
-      </section>
-
-      <section className="card grid gap-4 p-5 md:grid-cols-2 lg:col-span-2">
-        <h2 className="text-lg font-bold md:col-span-2">{t("2. About the document")}</h2>
-        <p className="text-sm text-slate-600 md:col-span-2">{t("Fill in every box unless it says (optional).")}</p>
-        <div>
-          <label className="label" htmlFor="f-direction">{t("Received or sent out?")}</label>
-          <select id="f-direction" name="direction" className={`input ${hl("direction")}`} value={f.direction} onChange={(e) => pickDirection(e.target.value as Fields["direction"])}>
-            {canIncoming && <option value="incoming">{t(props.incomingMode === "window" ? "Incoming (handed in at our window)" : "Incoming (received by the City)")}</option>}
-            <option value="outgoing">{t("Outgoing (sent by the City or your office)")}</option>
-          </select>
-          {!canIncoming && (
-            <p className="mt-1 text-sm text-slate-600">{t("Letters that arrive from outside are logged by the Records Section. Memos to another City office are logged here as outgoing.")}</p>
-          )}
-          {props.incomingMode === "window" && incoming && (
-            <>
-              <p className="mt-1 text-sm text-slate-600">{t("Received at: {office} window", { office: props.myOfficeName })}</p>
-              <p className="mt-1 text-sm text-slate-600">{t("Log only what clients hand in here. Letters addressed to the City or the Mayor go to the Records Section.")}</p>
-            </>
-          )}
-        </div>
-        {pickerBlock}
-        {refBlock}
-        {svcHidden}
-        {kindBlock}
-        {txBlock}
-        {copyBlock}
-        {subjectBlock}
-        {descBlock}
-        {incoming ? senderFields : <>{recipientFields}{replyBlock}</>}
-        {barangayBlock}
-        {docDateBlock}
-        {modeBlock}
-
-        <h2 className="mt-4 border-t border-slate-200 pt-4 text-lg font-bold md:col-span-2">{t("3. Filing and where it goes next")}</h2>
-        {categoryBlock}
-        {keywordsBlock}
-        {priorityBlock}
-        {confBlock}
-        {forwardBlock}
-        {artaBlock}
-        {dueBlock}
-        {feeLine}
-
-        <div data-sticky-actions className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-lg border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
-          {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{t(state.error)}</p>}
-          {missing.length > 0 && (
-            <p className="col-span-2 text-sm text-red-800 sm:mr-auto" role="alert">
-              {t("Please fill in:")}{" "}
-              {missing.map((m, i) => (
-                <span key={m.label}>
-                  {i > 0 && ", "}
-                  {m.id ? <a href={`#${m.id}`} className="font-semibold underline">{m.label}</a> : <strong>{m.label}</strong>}
-                </span>
-              ))}
-            </p>
-          )}
-          {cancelSave}
-        </div>
-      </section>
-    </>
-  );
-
   const deskBody = (
     <>
       {items.length > 0 && (
@@ -903,13 +783,13 @@ export function RegisterForm(props: {
       {textInputs}
 
       <section className="card grid gap-4 p-5 md:grid-cols-2">
-        <h2 className="text-lg font-bold md:col-span-2">{t("What arrived")}</h2>
+        <h2 className="text-lg font-bold md:col-span-2">{t(incoming ? "What arrived" : "What is being sent")}</h2>
         <fieldset className={`md:col-span-2 min-w-0 rounded-md border-2 p-1 ${hl("direction") || "border-transparent"}`}>
           <legend className="label">{t("Received or sent out?")}</legend>
           {canIncoming && (
             <label className="flex min-h-11 items-center gap-3">
               <input type="radio" name="direction" id="f-direction-incoming" value="incoming" checked={incoming} onChange={() => pickDirection("incoming")} />
-              <span>{t("Received by the City")}</span>
+              <span>{t(props.incomingMode === "window" ? "Incoming (handed in at our window)" : "Received by the City")}</span>
             </label>
           )}
           <label className="flex min-h-11 items-center gap-3">
@@ -917,6 +797,15 @@ export function RegisterForm(props: {
             <span>{t("Sent out by the City")}</span>
           </label>
         </fieldset>
+        {props.incomingMode === "window" && incoming && (
+          <div className="text-sm text-slate-600 md:col-span-2">
+            <p className="font-semibold text-slate-700">{t("Received at: {office} window", { office: props.myOfficeName })}</p>
+            <p>{t("Log only what clients hand in here. Letters addressed to the City or the Mayor go to the Records Section.")}</p>
+          </div>
+        )}
+        {!canIncoming && (
+          <p className="text-sm text-slate-600 md:col-span-2">{t("Letters that arrive from outside are logged by the Records Section. Memos to another City office are logged here as outgoing.")}</p>
+        )}
         {subjectBlock}
         <fieldset className="md:col-span-2 grid gap-4 md:grid-cols-2">
           <legend className="label">{incoming ? t("Who sent it") : t("Who it goes to")}</legend>
@@ -963,8 +852,8 @@ export function RegisterForm(props: {
   );
 
   return (
-    <form action={action} onSubmit={checkService} onInvalidCapture={onInvalid} onChangeCapture={onFieldChange} onReset={() => { clearScan(); setSvc(svcDefault); setSvcError(false); setRefNo(""); setMissing([]); }} className={desk ? "space-y-4" : "grid gap-4 lg:grid-cols-3"}>
-      {desk ? deskBody : classicBody}
+    <form action={action} onSubmit={checkService} onInvalidCapture={onInvalid} onChangeCapture={onFieldChange} onReset={() => { clearScan(); setSvc(svcDefault); setSvcError(false); setRefNo(""); setMissing([]); }} className="space-y-4">
+      {deskBody}
     </form>
   );
 }

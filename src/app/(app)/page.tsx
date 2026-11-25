@@ -10,9 +10,9 @@ import { sortNeedsAction } from "@/lib/needs-action";
 import { DueCalendar } from "@/components/due-calendar";
 import { SecurityHub } from "./security-hub";
 import { CityOverview, ScopeLinks } from "./city-overview";
-import { isOversight, isRecordsDesk } from "@/lib/office-features";
+import { isOversight, startScreen } from "@/lib/office-features";
 import { ScanQrButton } from "@/components/scan-qr-button";
-import { countText, dueAgenda, lateByOffice, loggedOn, nextStepHint, notInBox, oldestGroup, readyToSend } from "@/lib/records-desk";
+import { countText, dueAgenda, headHint, lateByOffice, lateHere, loggedOn, needsDecision, nextStepHint, notInBox, oldestGroup, readyToSend, windowQueue } from "@/lib/records-desk";
 import { StatStrip } from "@/components/stat-strip";
 
 type Row = {
@@ -27,6 +27,8 @@ type Row = {
   current_office_id: string;
   assigned_to?: string | null;
   box_id?: string | null;
+  created_by?: string | null;
+  origin_office_id?: string | null;
   current_office: { code: string; name: string } | null;
 };
 
@@ -52,10 +54,14 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     );
   }
   const supabase = await createClient();
-  const [{ data }, { data: totalsData, error: totalsError }, { data: mineData }] = await Promise.all([
+  const screen = startScreen(me);
+  const COLS = "id, tracking_no, subject, status, priority, direction, due_date, created_at, current_office_id, assigned_to, box_id, created_by, origin_office_id, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)";
+  const dayStart = `${new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(new Date())}T00:00:00+08:00`;
+  const OFFICE_CAP = 300;
+  const [{ data }, { data: totalsData, error: totalsError }, { data: mineData }, { data: officeData }, { data: todayData }] = await Promise.all([
     supabase
     .from("rms_records")
-    .select("id, tracking_no, subject, status, priority, direction, due_date, created_at, current_office_id, assigned_to, box_id, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)")
+    .select(COLS)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(500),
@@ -70,6 +76,17 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           .is("deleted_at", null)
           .in("status", ["registered", "received", "under_action"])
           .limit(20),
+    // Window and head screens: every open record held by my office (the 500 latest above can miss older ones).
+    (screen === "window" || screen === "head") && me.office_id
+      ? supabase.from("rms_records").select(COLS).eq("current_office_id", me.office_id).is("deleted_at", null)
+          .in("status", ["registered", "forwarded", "received", "under_action"]).order("created_at", { ascending: false }).limit(OFFICE_CAP)
+      : Promise.resolve({ data: null }),
+    // Window screen: incoming records logged today by me or at my office.
+    screen === "window"
+      ? supabase.from("rms_records").select(COLS).is("deleted_at", null).eq("direction", "incoming").gte("created_at", dayStart)
+          .or(me.office_id ? `created_by.eq.${me.id},origin_office_id.eq.${me.office_id}` : `created_by.eq.${me.id}`)
+          .order("created_at", { ascending: false }).limit(OFFICE_CAP)
+      : Promise.resolve({ data: null }),
   ]);
   if (totalsError) console.error("rms_dashboard_totals failed", totalsError.message);
   const rows = (data ?? []) as unknown as Row[];
@@ -79,7 +96,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const open = rows.filter((r) => !["completed", "released", "archived"].includes(r.status));
   const overdueTotal = Number(totals.overdue) || 0;
   const officeTotal = Number(totals.in_my_office) || 0;
-  const inbox = rows.filter(
+  const officeRows = (officeData ?? null) as unknown as Row[] | null;
+  const officeCapped = (officeRows?.length ?? 0) >= OFFICE_CAP;
+  const inbox = officeRows ?? rows.filter(
     (r) => r.current_office_id === me.office_id && ["registered", "forwarded", "received", "under_action"].includes(r.status),
   );
   const needsAction = sortNeedsAction(inbox, today).slice(0, 8);
@@ -126,8 +145,43 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     );
   };
 
-  if (isRecordsDesk(me)) {
-    const capped = rows.length >= 500;
+  const DeskList = ({ id, title, count, list, empty, hint, more, className }: {
+    id: string; title: string; count?: string; list: Row[]; empty: string; hint?: (r: Row) => string | null;
+    more?: { href: string; n: string } | null; className: string;
+  }) => (
+    <section className={`card min-w-0 lg:self-start ${className}`} aria-labelledby={id}>
+      <h2 id={id} className="border-b border-line px-4 py-3 text-lg font-bold sm:px-5">
+        {title}
+        {count !== undefined && <> <span className="font-normal text-slate-600">({count})</span></>}
+      </h2>
+      {list.length === 0 ? (
+        <p className="px-4 py-6 text-sm text-slate-600 sm:px-5">{empty}</p>
+      ) : (
+        <ul className="divide-y divide-line">
+          {list.map((r) => <RecordRow key={r.id} r={r} hint={hint?.(r) ?? null} />)}
+        </ul>
+      )}
+      {more && (
+        <p className="border-t border-line px-4 py-3 sm:px-5">
+          <Link prefetch={false} href={more.href} className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">{t("See all {n}", { n: more.n })}</Link>
+        </p>
+      )}
+    </section>
+  );
+
+  const capped = rows.length >= 500;
+  const showCal = sp.cal === "month";
+  const name = greetingName(me.full_name);
+  const calendarBlock = (
+    <div className="min-w-0 space-y-4">
+      <Link prefetch={false} href={showCal ? "/" : "/?cal=month"} className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline underline-offset-4">
+        {t(showCal ? "Hide month calendar" : "Show month calendar")}
+      </Link>
+      {showCal && <DueCalendar today={today} lateTotal={overdueTotal} items={calItems} />}
+    </div>
+  );
+
+  if (screen === "desk") {
     const lateGroups = lateByOffice(rows, today);
     const oldest = oldestGroup(lateGroups);
     const sampleLate = lateGroups.reduce((n, g) => n + g.count, 0);
@@ -140,8 +194,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     const waiting = sortNeedsAction(inbox, today).slice(0, 5);
     const waitingNum = totalsError ? inbox.length : officeTotal;
     const waitingText = totalsError ? countText(inbox.length, capped) : String(officeTotal);
-    const showCal = sp.cal === "month";
-    const name = greetingName(me.full_name);
     const readyHref = "/records?direction=outgoing&status=completed";
     let fact: string;
     if (lateNum === 0) fact = `${t("Good day, {name}.", { name })} ${t("No records are late.")}`;
@@ -156,30 +208,6 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
       { label: t("Ready to send out"), value: countText(ready.length, capped), href: readyHref, alert: false },
       { label: t("Logged today"), value: countText(logged, capped && logged === rows.length), href: `/records?from=${today}`, alert: false },
     ];
-
-    const DeskList = ({ id, title, count, list, empty, hint, more, className }: {
-      id: string; title: string; count?: string; list: Row[]; empty: string; hint?: (r: Row) => string | null;
-      more?: { href: string; n: string } | null; className: string;
-    }) => (
-      <section className={`card min-w-0 lg:self-start ${className}`} aria-labelledby={id}>
-        <h2 id={id} className="border-b border-line px-4 py-3 text-lg font-bold sm:px-5">
-          {title}
-          {count !== undefined && <> <span className="font-normal text-slate-600">({count})</span></>}
-        </h2>
-        {list.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-slate-600 sm:px-5">{empty}</p>
-        ) : (
-          <ul className="divide-y divide-line">
-            {list.map((r) => <RecordRow key={r.id} r={r} hint={hint?.(r) ?? null} />)}
-          </ul>
-        )}
-        {more && (
-          <p className="border-t border-line px-4 py-3 sm:px-5">
-            <Link prefetch={false} href={more.href} className="inline-flex min-h-11 items-center font-semibold text-brand-700 underline">{t("See all {n}", { n: more.n })}</Link>
-          </p>
-        )}
-      </section>
-    );
 
     return (
       <div className="space-y-6">
@@ -278,6 +306,147 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     );
   }
 
+  const code = me.office?.code ? encodeURIComponent(me.office.code) : null;
+  const lateHereHref = code ? `/records?office=${code}&here=1&overdue=1&open=1` : "/records?overdue=1&open=1";
+  const assignedBlock = mine.length > 0 && (
+    <DeskList id="start-mine" title={t("Assigned to me")} count={String(mine.length)} list={mine.slice(0, 5)} empty="" className="" />
+  );
+
+  if (screen === "window") {
+    const todayRows = (todayData ?? []) as unknown as Row[];
+    const queue = windowQueue(todayRows, today, me.id, me.office_id);
+    const waiting = sortNeedsAction(inbox, today);
+    const queueText = countText(queue.length, todayRows.length >= OFFICE_CAP);
+    const waitingText = totalsError ? countText(inbox.length, officeCapped) : String(officeTotal);
+    const todayHref = `/records?from=${today}`;
+    const windowStats = [
+      { label: t("Received here today"), value: queueText, href: todayHref, alert: false },
+      { label: t("Waiting in my office"), value: waitingText, href: officeHref ?? undefined, alert: false },
+      { label: t("Overdue (all you can see)"), value: totalsError ? "—" : overdueTotal, href: "/records?overdue=1&open=1", alert: !totalsError && overdueTotal > 0 },
+      { label: t("Assigned to me"), value: mine.length, href: undefined, alert: false },
+    ];
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold">{t("Office window")}</h1>
+            <p className="mt-1 max-w-3xl break-words text-slate-700">
+              {t("Good day, {name}. Received at this window today: {n}. Waiting in your office: {m}.", { name, n: queueText, m: waitingText })}
+            </p>
+            {me.office && <p className="text-sm text-slate-600">{me.office.name}</p>}
+          </div>
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Link prefetch={false} href="/records/new" className="btn-primary flex-1 sm:flex-none">{t("Receive a walk-in")}</Link>
+            <div className="sm:order-first"><ScanQrButton /></div>
+          </div>
+        </div>
+
+        <StatStrip label={t("Summary")} items={windowStats} />
+        {totalsError && <p role="status" className="text-sm text-slate-700">{t("Totals did not load. The lists below are current.")}</p>}
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <DeskList
+            id="window-queue"
+            title={t("Today's queue")}
+            count={queueText}
+            list={queue.slice(0, 8)}
+            hint={(r) => { const h = nextStepHint(r.status); return h ? t(h) : null; }}
+            empty={t("Nothing received at this window today.")}
+            more={queue.length > 8 ? { href: todayHref, n: queueText } : null}
+            className="lg:col-span-2"
+          />
+          <div className="min-w-0 space-y-6 lg:self-start">
+            <DeskList
+              id="window-waiting"
+              title={t("Waiting in my office")}
+              list={waiting.slice(0, 5)}
+              hint={(r) => { const h = nextStepHint(r.status); return h ? t(h) : null; }}
+              empty={t("Nothing waiting in your office.")}
+              more={officeHref && waiting.length > 5 ? { href: officeHref, n: waitingText } : null}
+              className=""
+            />
+            {assignedBlock}
+          </div>
+        </div>
+        {calendarBlock}
+      </div>
+    );
+  }
+
+  if (screen === "head") {
+    const decide = sortNeedsAction(needsDecision(inbox), today);
+    const late = lateHere(inbox, today);
+    const decideText = countText(decide.length, officeCapped);
+    const lateText = countText(late.length, officeCapped);
+    const headStats = [
+      { label: t("Needs your decision"), value: decideText, href: officeHref ?? undefined, alert: false },
+      { label: t("Late in my office"), value: lateText, href: lateHereHref, alert: late.length > 0 },
+      { label: t("In my office"), value: totalsError ? "—" : officeTotal, href: officeHref ?? undefined, alert: false },
+      { label: t("Logged this month"), value: totalsError ? "—" : Number(totals.this_month) || 0, href: `/records?from=${monthFrom}`, alert: false },
+    ];
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold">{t("Good day, {name}", { name })}</h1>
+            <p className="mt-1 max-w-3xl break-words text-slate-700">
+              {decide.length === 0 && late.length === 0
+                ? t("Nothing needs your decision and nothing is late in your office.")
+                : t("Needs your decision: {n}. Late in your office: {m}.", { n: decideText, m: lateText })}
+            </p>
+            {me.office && <p className="text-sm text-slate-600">{me.office.name}</p>}
+            {oversight && <div className="mt-3"><ScopeLinks base="/" scope="mine" /></div>}
+          </div>
+          <Link prefetch={false} href="/records/new" className="btn-primary w-full sm:w-auto">{t("Register a record")}</Link>
+        </div>
+
+        <StatStrip label={t("Summary")} items={headStats} />
+        {totalsError && <p role="status" className="text-sm text-slate-700">{t("Totals did not load. The lists below are current.")}</p>}
+
+        <div className="grid gap-6 lg:grid-cols-3">
+          <div className="min-w-0 space-y-6 lg:col-span-2">
+            <DeskList
+              id="head-decide"
+              title={t("Needs your decision")}
+              count={decideText}
+              list={decide.slice(0, 8)}
+              hint={(r) => { const h = headHint(r); return h ? t(h) : null; }}
+              empty={t("Nothing needs your decision.")}
+              more={officeHref && decide.length > 8 ? { href: officeHref, n: decideText } : null}
+              className=""
+            />
+            <DeskList
+              id="head-late"
+              title={t("Late in my office")}
+              count={lateText}
+              list={late.slice(0, 6)}
+              empty={t("Nothing is late in your office.")}
+              more={late.length > 6 ? { href: lateHereHref, n: lateText } : null}
+              className=""
+            />
+          </div>
+          <div className="min-w-0 space-y-6 lg:self-start">
+            {assignedBlock}
+            <section className="card" aria-labelledby="head-status">
+              <h2 id="head-status" className="border-b border-line px-4 py-3 text-lg font-bold">{t("By status")}</h2>
+              <ul className="divide-y divide-line">
+                {counts.map(({ s, n }) => (
+                  <li key={s}>
+                    <Link prefetch={false} href={`/records?status=${s}`} className="flex min-h-12 items-center justify-between px-4 py-2 hover:bg-brand-50">
+                      <StatusBadge status={s} />
+                      <span className="font-semibold tabular-nums">{n}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        </div>
+        {calendarBlock}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
@@ -350,11 +519,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         </section>
       </div>
 
-      <DueCalendar
-        today={today}
-        lateTotal={overdueTotal}
-        items={calItems}
-      />
+      {calendarBlock}
     </div>
   );
 }

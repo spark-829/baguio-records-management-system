@@ -15,10 +15,10 @@ MFA-pending users. All queries use `createClient()` from
 
 | Route | Files |
 | --- | --- |
-| `/` dashboard | `page.tsx` (+ `components/due-calendar.tsx`); admins get the Security overview, `security-hub.tsx`; CGSO records desk (`isRecordsDesk`) gets the Records Section start screen (`?cal=month` shows the calendar) |
-| `/records` list, search | `records/page.tsx`, `records/ai-search-box.tsx`; saved-view tabs for the records desk |
+| `/` dashboard | `page.tsx` (+ `components/due-calendar.tsx`); admins get the Security overview, `security-hub.tsx`; start screen by role from `startScreen()`: records desk, office window, office head, plain (`?cal=month` shows the calendar) |
+| `/records` list, search | `records/page.tsx`, `records/ai-search-box.tsx`; saved-view tabs for everyone (records desk adds Ready to send out and Sent out) |
 | `/records/new` register | `records/new/{page,register-form,actions}.tsx` (scan to prefill; `?reply_to=IN-...` starts a reply) |
-| `/records/[id]` detail | `records/[id]/page.tsx`, `forms.tsx` (take action, attach), `actions.ts`, `summary-box.tsx`; records desk (`isRecordsDesk`) gets the A2 layout: Actions sidebar with named buttons, note box (`NoteForm`) |
+| `/records/[id]` detail | `records/[id]/page.tsx`, `forms.tsx` (Actions panel with named buttons, attach, `NoteForm`), `actions.ts`, `summary-box.tsx`; one layout for every role |
 | `/records/[id]/slip`, `/receipt` | routing slip with QR, QR receipt |
 | `/r/[tracking]` | QR scan landing, `receive-form.tsx` (receive by QR) |
 | `/assistant` | `assistant/chat.tsx` (records chat, also used in the right-hand panel of `components/assistant-launcher.tsx`) |
@@ -79,8 +79,8 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `reports.ts`, `fetch-pages.ts` | report date bounds, bar merging, RPC result parsers, `onTimeSummary`; `fetchPages` (pages past the 1000-row PostgREST cap) |
 | `list-size.ts`, `map-tally.ts` | `listSize` (the `?n=` list size, steps of the default, capped); `tallyBarangays` (per-barangay counts for the map) |
 | `back-link.ts` | `listQuery`, `recordsBackHref` (record page "Back to search results" keeps the list filters; always a /records path) |
-| `office-features.ts` | pure: feature keys, labels, RECOMMENDED per office (mirror of migration 0200), `hasFeature`, `canWindowIntake`, `isOversight`, `isRecordsDesk`, `isHrmoCss`, `parseFeatureForm` |
-| `records-desk.ts` | pure: desk start screen buckets (late by office, due today/this week, ready to send out, not in a box), `countText`, saved views and tab matching |
+| `office-features.ts` | pure: feature keys, labels, RECOMMENDED per office (mirror of migration 0200), `hasFeature`, `canWindowIntake`, `isOversight`, `isRecordsDesk`, `startScreen`, `isHrmoCss`, `parseFeatureForm` |
+| `records-desk.ts` | pure: start screen buckets (desk: late by office, due today/this week, ready to send out, not in a box; window: `windowQueue`; head: `needsDecision`, `lateHere`, `headHint`), `countText`, saved views and tab matching |
 | `charter.ts`, `reference-no.ts` | pure: Charter service helpers (`splitCatalog`, `topServices`, `prefillFromService`, `stepsView`, `canMarkStep`, `canUndoStep`); `cleanRefNo` |
 | `register-desk.ts` | pure: records desk register form (`routeFile`, `filingSummary`, `errorItems`, `serverErrorField`) |
 | `oversight.ts` | pure: parsers for the city-view RPCs, `maskedSubject` |
