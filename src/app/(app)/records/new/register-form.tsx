@@ -667,7 +667,7 @@ export function RegisterForm(props: {
           </p>
         )}
 
-        <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-lg border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 md:col-span-2">
+        <div className="sticky bottom-0 -mx-5 -mb-5 grid grid-cols-[auto_1fr] items-center gap-2 rounded-b-lg border-t border-slate-300 bg-white px-5 py-2 sm:flex sm:justify-end sm:gap-3 sm:py-3 sm:pr-56 md:col-span-2">
           {state?.error && <p className="col-span-2 text-sm text-red-700 sm:mr-auto" role="alert">{t(state.error)}</p>}
           {missing.length > 0 && (
             <p className="col-span-2 text-sm text-red-800 sm:mr-auto" role="alert">

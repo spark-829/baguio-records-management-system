@@ -9,6 +9,8 @@ import { BrandLockup, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
 import { getT } from "@/lib/i18n/server";
 import { AlertBell } from "@/components/alert-bell";
+import { assistantContext } from "@/lib/chat-prompts";
+import { isAiDemo } from "@/lib/ai-demo";
 import { hasFeature, isHrmoCss } from "@/lib/office-features";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -32,18 +34,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         ...(me.role !== "viewer" ? [{ href: "/records/new", label: t("Register") }] : []),
         ...(me.role === "records_officer" ? [{ href: "/boxes", label: t("Boxes") }] : []),
         ...(hasFeature(me, "map") ? [{ href: "/map", label: t("Map") }] : []),
-        { href: "/assistant", label: t("Assistant") },
         { href: "/help", label: t("Help") },
         ...(me.role !== "staff" ? [{ href: "/reports", label: t("Reports") }] : []),
         ...(me.role === "staff" && isHrmoCss({ role: me.role, officeCode: me.office?.code, windowFlag: me.window_intake })
           ? [{ href: "/reports/satisfaction", label: t("Client satisfaction") }]
           : []),
       ];
+  const ctx = assistantContext(me);
   const roleLabel = ROLE_LABEL[me.role];
   const showRole = !me.full_name.includes(roleLabel);
   const line2 = [showRole ? t(roleLabel) : null, me.office?.name ?? null].filter(Boolean).join(" · ");
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="app-shell flex min-h-screen flex-col">
       <a href="#main" className="sr-only z-50 rounded-lg bg-white px-4 py-3 font-semibold text-brand-800 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         {t("Skip to main content")}
       </a>
@@ -55,7 +57,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <div className="relative ml-auto flex min-w-0 flex-wrap items-center justify-end lg:flex-nowrap gap-2 text-sm sm:gap-3">
             <LangToggle dark />
             {me.office_id && me.role !== "admin" && <AlertBell officeCode={me.office?.code ?? null} />}
-            <div className="hidden min-w-0 max-w-[12rem] leading-tight sm:block sm:text-right xl:max-w-[18rem]" title={line2 ? `${me.full_name} · ${line2}` : me.full_name}>
+            <div className="shell-who hidden min-w-0 max-w-[12rem] leading-tight sm:block sm:text-right xl:max-w-[18rem]" title={line2 ? `${me.full_name} · ${line2}` : me.full_name}>
               <div className="truncate font-semibold">{me.full_name}</div>
               <div className="truncate text-xs text-brand-100">{line2}</div>
             </div>
@@ -67,15 +69,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
       <div className="no-print border-b border-slate-300 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-start gap-2 px-4">
-          <div className="min-w-0 flex-1">
-            <NavLinks links={links} phoneOnly={[{ href: "/security", label: t("My account") }]} />
-          </div>
-          <AssistantLauncher userId={me.id} />
+        <div className="mx-auto max-w-7xl px-4">
+          <NavLinks links={links} phoneOnly={[{ href: "/security", label: t("My account") }]} />
         </div>
       </div>
       <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:py-8">{children}</main>
-      <SiteFooter className="mt-12" />
+      <SiteFooter className="mt-12 pb-24" />
+      <AssistantLauncher userId={me.id} greeting={ctx.greeting} scope={ctx.scope} office={ctx.office} prompts={ctx.prompts} demo={isAiDemo()} />
       <IdleLogout minutes={settings.idleTimeoutMinutes} />
     </div>
   );

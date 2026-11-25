@@ -73,6 +73,10 @@ html {
   scroll-padding-bottom: 6rem;
   -webkit-text-size-adjust: 100%;
 }
+/* the full assistant page's sticky composer (textarea plus note) is taller */
+html:has(#ask) {
+  scroll-padding-bottom: 10rem;
+}
 
 body {
   background: var(--color-page);
@@ -258,4 +262,10 @@ main table tbody tr:hover {
 /* Larger tick boxes that are easy to see and click. */
 @utility checkbox {
   @apply h-6 w-6 shrink-0 cursor-pointer accent-brand-700;
+}
+
+/* The assistant panel docks on the right and pushes the page on wide screens. */
+@media (min-width: 80rem) {
+  html[data-assistant="open"] .app-shell { padding-right: 26rem; }
+  html[data-assistant="open"] .shell-who { display: none; }
 }
