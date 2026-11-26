@@ -30,7 +30,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   const f = parseUserFilters(sp);
   const supabase = await createClient();
   const [{ data: users }, { data: offices }] = await Promise.all([
-    supabase.from("rms_profiles").select("id, full_name, role, office_id, is_active, created_at, locked_until, window_intake").order("full_name"),
+    supabase.from("rms_profiles").select("id, full_name, role, office_id, is_active, created_at, locked_until, window_intake, is_auditor").order("full_name"),
     supabase.from("rms_offices").select("id, code, name, features").order("name"),
   ]);
   // Last sign-in times are for administrators only (QA-077), so they come from an admin-only function.
@@ -121,6 +121,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                     <td className="px-3">
                       <span className="whitespace-nowrap">{t(ROLE_LABEL[u.role as Role] ?? u.role)}</span>
                       {window && <span className="block text-slate-600">{t("At the window")}</span>}
+                      {u.role === "viewer" && u.is_auditor && <span className="block text-slate-600">{t("Auditor: reads the audit log")}</span>}
                     </td>
                     <td className="px-3">{office?.name ?? "—"}</td>
                     <td className="px-3 whitespace-nowrap">{u.last_login_at ? fmtDateTime(u.last_login_at, lang) : t("Never")}</td>
@@ -168,6 +169,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                     <div>
                       <label className="label" htmlFor="eu-office">{t("Office")}</label>
                       <select id="eu-office" name="office_id" defaultValue={editing.office_id ?? ""} className="input">
+                        <option value="">{t("No office (auditor or administrator)")}</option>
                         {(offices ?? []).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
                       </select>
                     </div>
@@ -183,6 +185,16 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                           : t("Turn on Office window for {office} first.", { office: off?.name ?? "" })}
                       </p>
                     </div>
+                    {editing.role === "viewer" && (
+                      <div>
+                        <label className="flex min-h-11 items-start gap-3">
+                          <input type="checkbox" name="is_auditor" className="checkbox mt-1" defaultChecked={!!editing.is_auditor} aria-describedby="eu-auditor-hint" />
+                          <span>{t("Auditor: may read the audit log and access history")}</span>
+                        </label>
+                        <input type="hidden" name="auditor_shown" value="1" />
+                        <p id="eu-auditor-hint" className="mt-1 text-slate-600">{t("For an independent auditor such as the COA resident auditor. Leave the office empty so they see the audit trail only, not the records of an office.")}</p>
+                      </div>
+                    )}
                     <label className="flex min-h-11 items-center gap-3">
                       <input type="checkbox" name="is_active" className="checkbox" defaultChecked={editing.is_active} disabled={self} />
                       <span>{t("Can sign in (active)")}</span>

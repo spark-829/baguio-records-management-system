@@ -1,5 +1,6 @@
 "use server";
 
+import { auditorFlag, officeFromForm } from "@/lib/role-scope";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -41,12 +42,14 @@ export async function updateUser(form: FormData) {
   if (me.role !== "admin") return;
   const id = String(form.get("id"));
   const role = String(form.get("role"));
-  const office_id = String(form.get("office_id"));
+  const office_id = officeFromForm(form.get("office_id"));
   const is_active = form.get("is_active") === "on";
   if (id === me.id && (!is_active || role !== "admin")) return; // never lock yourself out
   if (!["admin", "records_officer", "dept_head", "staff", "viewer"].includes(role)) return;
   const supabase = await createClient();
-  const patch: { role: string; office_id: string; is_active: boolean; window_intake?: boolean } = { role, office_id, is_active };
+  const patch: { role: string; office_id: string | null; is_active: boolean; window_intake?: boolean; is_auditor?: boolean } = { role, office_id, is_active };
+  // Only Viewer accounts can be auditors; changing the role away from Viewer clears the flag (the database refuses it otherwise).
+  if (form.get("auditor_shown") === "1" || role !== "viewer") patch.is_auditor = auditorFlag(role, form.get("is_auditor") === "on");
   // The checkbox is only on the form when the office has the Office window feature on.
   if (form.get("window_shown") === "1") patch.window_intake = form.get("window_intake") === "on";
   const { error } = await supabase.from("rms_profiles").update(patch).eq("id", id);
