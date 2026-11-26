@@ -12,6 +12,7 @@ const NOTICES: Record<string, string> = {
   locked: "This account is locked. Try again later or ask an administrator to unlock it.",
   idle: "You were signed out because the computer was not used for a while. This keeps records safe. Please sign in again.",
   "signed-out": "You have signed out safely.",
+  expired: "Your sign-in has ended. Please sign in again.",
 };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string; email?: string }> }) {
@@ -38,6 +39,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
           <div>
             <p className="text-lg text-slate-700">{t("Register incoming and outgoing documents, route them between offices, see where each one is, and find it again in seconds.")}</p>
+            {/* The demo account list is for this portfolio demo only; RMS_PRODUCTION=1 hides it (QA-102). */}
+            {process.env.RMS_PRODUCTION !== "1" && (
             <section className="card mt-6 p-5" aria-labelledby="demo-accounts">
               <h2 id="demo-accounts" className="text-lg font-bold">{t("Demo accounts (password: Demo@2026)")}</h2>
               <p className="mt-1 text-sm text-slate-600">{t("Choose an email to fill in the sign-in form.")}</p>
@@ -51,6 +54,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               </ul>
               <AllAccounts next={nextPath} />
             </section>
+            )}
             <p className="mt-4 text-sm text-slate-600">
               {t("Portfolio demo built by")}{" "}
               <a href="/developer" className="font-semibold text-brand-700 underline">Vicson Yaris</a>.{" "}

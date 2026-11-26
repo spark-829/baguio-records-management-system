@@ -33,7 +33,9 @@ export function LoginForm({ next = "", email = "" }: { next?: string; email?: st
           <p>
             {t("Every sign-in, record you open and file you download is logged with your name, date, time and IP address. Use the records only for your official work. Do not copy, share or disclose them outside the office.")}
           </p>
-          <p>{t("Questions or requests about personal data go to the City's Data Protection Officer.")}</p>
+          <p>{t("Records are kept for the period in the National Archives retention schedule; access logs and the audit trail are kept for audit. You may ask to see or correct your own data.")}</p>
+          <p>{t("In this demo, some AI features use DeepSeek, an AI service outside the Philippines. Names and contact details are removed before a record is summarized, and confidential records are never sent.")}</p>
+          <p>{t("Questions or requests about personal data go to the City's Data Protection Officer: {contact}.", { contact: "dpo@rms-demo.test" })}</p>
         </div>
       </details>
       <label className="flex min-h-11 cursor-pointer items-start gap-3 text-base">

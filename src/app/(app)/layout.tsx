@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getProfile, getSettings } from "@/lib/session";
+import { canAudit, getProfile, getSettings } from "@/lib/session";
 import { IdleLogout } from "@/components/idle-logout";
 import { AssistantLauncher } from "@/components/assistant-launcher";
 import { ROLE_LABEL } from "@/lib/labels";
@@ -32,6 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         { href: "/", label: t("Dashboard") },
         { href: "/records", label: t("Records") },
         ...(me.role !== "viewer" ? [{ href: "/records/new", label: t("Register") }] : []),
+        ...(canAudit(me) ? [{ href: "/admin/access", label: t("Access history") }, { href: "/admin/audit", label: t("Audit log") }] : []),
         ...(me.role === "records_officer" ? [{ href: "/boxes", label: t("Boxes") }] : []),
         ...(hasFeature(me, "map") ? [{ href: "/map", label: t("Map") }] : []),
         ...(me.role !== "staff" ? [{ href: "/reports", label: t("Reports") }] : []),

@@ -3,8 +3,7 @@
 import { useT } from "@/lib/i18n/client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { mfaVerified } from "./actions";
+import { verifyMfa } from "./actions";
 
 export function MfaChallenge({ next }: { next?: string }) {
   const t = useT();
@@ -16,24 +15,15 @@ export function MfaChallenge({ next }: { next?: string }) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const supabase = createClient();
-    const { data: factors } = await supabase.auth.mfa.listFactors();
-    const factor = factors?.totp.find((f) => f.status === "verified");
-    if (!factor) {
-      setError("No authenticator is set up for this account.");
+    const res = await verifyMfa(code.trim(), next);
+    if (res?.error) {
+      setError(res.error);
       setBusy(false);
-      return;
     }
-    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: code.trim() });
-    if (error) {
-      setError("That code did not work. Check the time on your phone and try again.");
-      setBusy(false);
-      return;
-    }
-    await mfaVerified(next);
   }
 
   return (
+    <>
     <form onSubmit={verify} className="mt-4 space-y-3">
       <input
         className="input text-center font-mono text-lg tracking-[0.4em]"
@@ -48,7 +38,10 @@ export function MfaChallenge({ next }: { next?: string }) {
       />
       {error && <p className="text-sm text-red-700">{t(error)}</p>}
       <button className="btn-primary w-full" disabled={busy || code.length !== 6}>{t(busy ? "Checking…" : "Verify")}</button>
-      <a href="/api/auth/signout" className="block text-center text-xs text-slate-500 hover:underline">{t("Cancel and sign out")}</a>
     </form>
+    <form method="post" action="/api/auth/signout" className="mt-3 text-center">
+      <button type="submit" className="text-xs text-slate-500 hover:underline">{t("Cancel and sign out")}</button>
+    </form>
+    </>
   );
 }

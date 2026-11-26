@@ -10,7 +10,7 @@ import { checkUpload } from "@/lib/upload-policy";
 import { artaDue, manilaDay } from "@/lib/arta";
 import { parseReplyTo } from "@/lib/reply-to";
 import { complaintDueDate, isComplaint } from "@/lib/complaint";
-import { isCopyType, parseCopyForm, type CopyForm } from "@/lib/copy-request";
+import { isCopyType, isPrivacyRequest, parseCopyForm, type CopyForm } from "@/lib/copy-request";
 import { canWindowIntake, hasFeature } from "@/lib/office-features";
 import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 
@@ -102,6 +102,8 @@ export async function registerRecord(_prev: RegisterState, form: FormData): Prom
   let dueDate = v.due_date ?? (v.arta_class ? artaDue(v.arta_class, manilaDay()) : null);
   const { data: dt } = await supabase.from("rms_document_types").select("name").eq("id", v.document_type_id).maybeSingle();
   if (!v.due_date && isComplaint(dt?.name)) dueDate = complaintDueDate(new Date().toISOString());
+  // Requests for a copy and data privacy requests (access, correction, objection) always get a due date (QA-098).
+  if (!dueDate && (isCopyType(dt?.name) || isPrivacyRequest(dt?.name))) dueDate = artaDue("complex", manilaDay());
   let copy: CopyForm | null = null;
   if (isCopyType(dt?.name)) {
     if (!isCentral(me)) return { error: "Only the records desk registers a request for copy." };

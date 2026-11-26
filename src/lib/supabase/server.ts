@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies, headers } from "next/headers";
+import { hardenCookie } from "@/lib/session-cookie";
 
 /** The caller's IP and browser, passed to the database so audit and access logs can record them. */
 export async function requestMeta() {
@@ -25,7 +26,8 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
+            // HttpOnly, Secure, SameSite=Lax and at most 12 hours, instead of readable by scripts for 400 days (QA-089).
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, hardenCookie(options, process.env.NODE_ENV === "production")));
           } catch {
             // Called from a Server Component; the middleware refreshes the session instead.
           }

@@ -55,6 +55,8 @@ export async function GET(req: Request) {
       r.due_date,
   ]);
   await ctx.supabase.rpc("rms_log_event", { p_table: "export_csv", p_row_id: "records", p_data: { filters: sp, rows: rows.length } });
+  // One access-log line per exported record, so the person-access report shows the export (QA-100).
+  if (rows.length) await ctx.supabase.rpc("rms_log_access_many", { p_via: "export", p_record_ids: rows.map((r) => r.id), p_detail: { report: "records_csv" } });
   return new Response(csvDocument(header, lines), {
     headers: {
       "content-type": "text/csv; charset=utf-8",

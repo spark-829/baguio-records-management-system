@@ -1,5 +1,5 @@
 import type { createClient } from "@/lib/supabase/server";
-import { checkUpload, duplicateOf, isSha256Hex, isValidThumb, parseOriginalSize, thumbPath, toHex } from "@/lib/upload-policy";
+import { checkUpload, duplicateOf, isSha256Hex, isValidThumb, matchesMagic, parseOriginalSize, thumbPath, toHex } from "@/lib/upload-policy";
 
 export const NO_ATTACH = "Only the office holding this record, the office that sent it, or the records desk can add files.";
 
@@ -22,6 +22,7 @@ export async function saveAttachment(
   const { recordId, file } = o;
   const bad = checkUpload(file.type, file.size);
   if (bad) return { error: bad };
+  if (!matchesMagic(file.type, new Uint8Array(await file.slice(0, 12).arrayBuffer()))) return { error: "This file is not a real PDF, PNG, JPG or WEBP. Save it again in one of those formats." };
 
   const sha = toHex(await crypto.subtle.digest("SHA-256", await file.arrayBuffer()));
   const hint = isSha256Hex(o.originalShaHint) ? o.originalShaHint : null;

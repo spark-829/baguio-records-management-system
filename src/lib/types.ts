@@ -21,6 +21,8 @@ export interface Profile {
   locked_until?: string | null;
   /** Staff flagged as office window staff (null counts as false) */
   window_intake?: boolean | null;
+  /** Viewer account that may read the audit trail and access history (QA-097) */
+  is_auditor?: boolean | null;
   office?: { code: string; name: string; features?: string[] | null; ref_label?: string | null } | null;
 }
 

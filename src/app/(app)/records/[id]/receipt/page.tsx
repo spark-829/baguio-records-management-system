@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDateTime } from "@/lib/labels";
 import { PrintButton } from "../slip/print-button";
+import { PrivacyNotice } from "@/components/privacy-notice";
 import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 
 /**
@@ -67,6 +68,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
             {t("Scan the code, or go to")} <strong className="[overflow-wrap:anywhere]">{origin.replace(/^https?:\/\//, "")}/track</strong> {t("and type the tracking number and code to see where your document is.")}
           </p>
         </div>
+        <PrivacyNotice where="receipt" />
       </div>
     </div>
   );

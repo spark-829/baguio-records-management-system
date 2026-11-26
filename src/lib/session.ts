@@ -33,8 +33,19 @@ export const getProfile = cache(async (): Promise<Profile> => {
   const { data } = early && guessId === auth.user.id ? early : await profileQuery(auth.user.id);
   if (!data || !data.is_active) redirect("/api/auth/signout?reason=no-access");
   if (data.locked_until && new Date(data.locked_until) > new Date()) redirect("/api/auth/signout?reason=locked");
-  return data as unknown as Profile;
+  const profile = data as unknown as Profile;
+  // Only Viewer accounts can be auditors (QA-097). Read separately so a database without the column still works.
+  if (profile.role === "viewer") {
+    const { data: aud } = await supabase.from("rms_profiles").select("is_auditor").eq("id", profile.id).maybeSingle();
+    profile.is_auditor = (aud as { is_auditor?: boolean } | null)?.is_auditor === true;
+  }
+  return profile;
 });
+
+/** Administrators, and Viewer accounts flagged as auditors, may read the audit trail and access history (QA-097). */
+export function canAudit(p: Profile) {
+  return p.role === "admin" || (p.role === "viewer" && p.is_auditor === true);
+}
 
 export function isCentral(p: Profile) {
   return p.role === "admin" || p.role === "records_officer";
@@ -50,7 +61,8 @@ export const getSettings = cache(async () => {
     lockoutMinutes: Number(map.lockout_minutes ?? 15),
     idleTimeoutMinutes: Number(map.idle_timeout_minutes ?? 15),
     watermarkDownloads: map.watermark_downloads !== false,
-    aiExcludeConfidential: map.ai_exclude_confidential !== false,
+    // Always on (QA-099): confidential records never go to the outside AI service, whatever the old setting says.
+    aiExcludeConfidential: true,
     stepMinutes: parseStepMinutes(map.step_minutes),
   };
 });

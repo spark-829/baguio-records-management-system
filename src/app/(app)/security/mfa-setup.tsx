@@ -4,9 +4,7 @@ import { useLang, useT } from "@/lib/i18n/client";
 import { fmtDate } from "@/lib/labels";
 
 import { useCallback, useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-
-type Factor = { id: string; status: string; friendly_name?: string; created_at: string };
+import { confirmMfa, listMfa, removeMfa, startMfa, type MfaFactor as Factor } from "./actions";
 
 export function MfaSetup() {
   const t = useT();
@@ -17,8 +15,7 @@ export function MfaSetup() {
   const [msg, setMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const { data } = await createClient().auth.mfa.listFactors();
-    setFactors((data?.all ?? []).filter((f) => f.factor_type === "totp") as Factor[]);
+    setFactors(await listMfa());
   }, []);
   useEffect(() => {
     load();
@@ -26,19 +23,16 @@ export function MfaSetup() {
 
   async function start() {
     setMsg(null);
-    const supabase = createClient();
-    // Clear any half-finished setup first
-    for (const f of factors ?? []) if (f.status !== "verified") await supabase.auth.mfa.unenroll({ factorId: f.id });
-    const { data, error } = await supabase.auth.mfa.enroll({ factorType: "totp", friendlyName: `RMS ${new Date().toISOString().slice(0, 10)}` });
-    if (error || !data) return setMsg(error?.message ?? "Could not start setup");
-    setEnroll({ id: data.id, qr: data.totp.qr_code, secret: data.totp.secret });
+    const res = await startMfa();
+    if ("error" in res) return setMsg(res.error);
+    setEnroll(res);
   }
 
   async function confirm(e: React.FormEvent) {
     e.preventDefault();
     if (!enroll) return;
-    const { error } = await createClient().auth.mfa.challengeAndVerify({ factorId: enroll.id, code: code.trim() });
-    if (error) return setMsg("That code did not work. Try the newest code.");
+    const { error } = await confirmMfa(enroll.id, code.trim());
+    if (error) return setMsg(error);
     setEnroll(null);
     setCode("");
     setMsg("Two-step sign-in is on.");
@@ -46,8 +40,8 @@ export function MfaSetup() {
   }
 
   async function remove(id: string) {
-    const { error } = await createClient().auth.mfa.unenroll({ factorId: id });
-    if (error) return setMsg(error.message);
+    const { error } = await removeMfa(id);
+    if (error) return setMsg(error);
     setMsg("Two-step sign-in is off.");
     load();
   }
