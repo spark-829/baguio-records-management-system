@@ -45,7 +45,9 @@ Rules:
 - Look before you judge: for a live page, take a screenshot with Playwright
   (`require('playwright')`, phone 375×812 and desktop 1280×800,
   deviceScaleFactor 1) in your scratch folder and read it. Demo sign-in is
-  on the login page. Keep it to the pages in scope.
+  on the login page. Keep it to the pages in scope. Run
+  `npm run design-check` (text PASS/FAIL) before screenshots, and screenshot
+  only what needs eyes; each image costs more than a page of text.
 - Keep pages light (Cloudflare free plan CPU limit): CSS before client
   JavaScript, no new UI libraries, web fonts or large images.
 - Reuse existing tokens and utilities (`btn-primary`, `btn-secondary`,

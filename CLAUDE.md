@@ -27,9 +27,21 @@ do not need to explore the tree.
 - Pipe noisy commands through `tail -n 40` or `grep`; show only failures.
 - Keep replies short: the result, what changed, anything left. No replaying
   of tool output.
-- Thread hygiene: one big thread at a time. A thread past about 2 days or
-  40 turns is carrying heavy history: finish it, write the lasting facts to
-  `docs/` or project memory, and tell Vic to start a fresh thread.
+- Text over screenshots: ask Vic for pasted error text, not screenshots. For
+  pages, use page text or `npm run design-check` output first; screenshot
+  only what must be judged by eye (deviceScaleFactor 1, only that area).
+- When Vic has to click through something, give all the steps at once with
+  a check after each and ask for one reply at the end. If it is many clicks
+  or repeated tool calls, write a script instead.
+- Loops over many items (QA cases, records, pages): read the instructions
+  once, no commentary between items, one result line per item in a log file.
+- Load skills and tool schemas once per thread.
+- Keep this file short: rules only. Detail goes in `docs/`.
+- Thread hygiene: one topic per thread, one big thread at a time. A thread
+  past about 2 days or 40 turns is carrying heavy history: finish it, write
+  the lasting facts to `docs/` or project memory, and tell Vic to start a
+  fresh thread with a ready-to-paste opener. How-to: the `lean-session`
+  skill (`.claude/skills/lean-session/`).
 - Scheduled and QA runs: check first, stop early (`no_reply_needed`) when
   there is nothing to do. Use Sonnet for routine checks and testers, Opus
   only for planning and review. Never fire more than needed per day.
