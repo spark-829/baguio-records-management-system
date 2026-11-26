@@ -69,8 +69,9 @@ html {
   font-size: 100%;
   /* keeps a focused field above the register form's sticky Save bar */
   scroll-padding-bottom: 6rem;
-  /* keeps a focused field below the sticky header (WCAG 2.4.11); 8rem also covers the name strip under xl */
-  scroll-padding-top: 8rem;
+  /* keeps a focused field below the sticky header (WCAG 2.4.11); 10rem covers the name strip under xl
+     (measured 146px at 320px wide, longer office names in Filipino can add a line) */
+  scroll-padding-top: 10rem;
   -webkit-text-size-adjust: 100%;
 }
 @media (min-width: 80rem) {
@@ -283,7 +284,7 @@ main table tbody tr:hover {
   html[data-assistant="open"] .shell-nav-inline { display: none; }
   html[data-assistant="open"] .shell-menu { display: inline-flex; }
   html[data-assistant="open"] .shell-sheet { display: block; }
-  html[data-assistant="open"] { scroll-padding-top: 8rem; }
+  html[data-assistant="open"] { scroll-padding-top: 6rem; }
 }
 
 /* Phones held sideways (QA-109): the screen is short, so the header keeps to one slim row (no name strip, and it
