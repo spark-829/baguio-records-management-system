@@ -2,7 +2,28 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { safeNextPath } from "@/lib/safe-next";
 
+// The public tracking and developer pages are open to citizens without an account.
+const PUBLIC_PATHS = ["/track", "/survey", "/developer", "/api/health"];
+
+function toLogin(request: NextRequest) {
+  const url = request.nextUrl.clone();
+  const { pathname, search } = request.nextUrl;
+  url.pathname = "/login";
+  url.search = "";
+  if (request.method === "GET" && pathname !== "/" && !pathname.startsWith("/api/")) {
+    const next = safeNextPath(pathname + search);
+    if (next) url.searchParams.set("next", next);
+  }
+  return NextResponse.redirect(url);
+}
+
 export async function middleware(request: NextRequest) {
+  const isLogin = request.nextUrl.pathname.startsWith("/login");
+  const isPublic = PUBLIC_PATHS.includes(request.nextUrl.pathname);
+  // No Supabase sign-in cookie means nobody is signed in: skip building the auth client (QA-076, CPU per request).
+  const hasSession = request.cookies.getAll().some((c) => c.name.startsWith("sb-") && c.name.includes("-auth-token"));
+  if (!hasSession) return isLogin || isPublic ? NextResponse.next({ request }) : toLogin(request);
+
   let response = NextResponse.next({ request });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,20 +43,7 @@ export async function middleware(request: NextRequest) {
   );
 
   const { data } = await supabase.auth.getUser();
-  const isLogin = request.nextUrl.pathname.startsWith("/login");
-  // The public tracking and developer pages are open to citizens without an account.
-  const isPublic = ["/track", "/survey", "/developer", "/api/health"].includes(request.nextUrl.pathname);
-  if (!data.user && !isLogin && !isPublic) {
-    const url = request.nextUrl.clone();
-    const { pathname, search } = request.nextUrl;
-    url.pathname = "/login";
-    url.search = "";
-    if (request.method === "GET" && pathname !== "/" && !pathname.startsWith("/api/")) {
-      const next = safeNextPath(pathname + search);
-      if (next) url.searchParams.set("next", next);
-    }
-    return NextResponse.redirect(url);
-  }
+  if (!data.user && !isLogin && !isPublic) return toLogin(request);
   if (data.user && isLogin && !request.nextUrl.searchParams.has("error")) {
     const next = safeNextPath(request.nextUrl.searchParams.get("next")) ?? "/";
     return NextResponse.redirect(new URL(next, request.url));
