@@ -40,7 +40,9 @@ const loadPlaywright = () => {
     for (const name of ["playwright", "playwright-core"]) {
       try {
         return req(name);
-      } catch {}
+      } catch (e) {
+        if (e?.code !== "MODULE_NOT_FOUND") throw e;
+      }
     }
   }
   console.error(

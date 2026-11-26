@@ -91,7 +91,8 @@ Things to know:
   baguio-rms > Deployments.
 - Every other branch (each PR) gets a **preview version** at
   `https://<branch-name>-baguio-rms.vicsonyaris29.workers.dev` (slashes in the
-  branch name become dashes). Production is not changed until the merge,
+  branch name become dashes; Cloudflare may also lowercase or shorten a long
+  name, so copy the exact URL from the check run). Production is not changed until the merge,
   even though the build page's URL says "production".
 - **The preview URL is in the check run, not the PR comment.** Cloudflare's PR
   comment can say "In progress" long after the build has finished. Read the
