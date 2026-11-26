@@ -8,7 +8,7 @@ import { ROLE_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import type { Role } from "@/lib/types";
 import { canWindowIntake } from "@/lib/office-features";
 import { USER_STATUSES, filterUsers, hasUserFilters, parseUserFilters, userStatus, usersHref, type UserStatus } from "@/lib/user-list";
-import { unlockUser, updateUser } from "./actions";
+import { markPasswordHelpDone, unlockUser, updateUser } from "./actions";
 import { NewUserForm } from "./new-user-form";
 
 const STATUS_LABEL: Record<UserStatus, string> = { active: "Active", locked: "Locked", inactive: "Inactive" };
@@ -29,10 +29,13 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   const sp = await searchParams;
   const f = parseUserFilters(sp);
   const supabase = await createClient();
-  const [{ data: users }, { data: offices }] = await Promise.all([
+  const [{ data: users }, { data: offices }, { data: helpRows }] = await Promise.all([
     supabase.from("rms_profiles").select("id, full_name, role, office_id, is_active, created_at, locked_until, window_intake, is_auditor").order("full_name"),
     supabase.from("rms_offices").select("id, code, name, features").order("name"),
+    // "Forgot password?" requests from the sign-in page (migration 20261126000500); an error just hides the panel.
+    supabase.from("rms_password_help").select("id, email, user_id, ip, created_at").is("handled_at", null).order("created_at", { ascending: false }).limit(20),
   ]);
+  const help = (helpRows ?? []) as { id: number; email: string; user_id: string | null; ip: string | null; created_at: string }[];
   // Last sign-in times are for administrators only (QA-077), so they come from an admin-only function.
   // Fallback for the short time before that database update runs: read the column directly.
   let signins = await supabase.rpc("rms_admin_user_signins");
@@ -56,6 +59,37 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
         </div>
         {!adding && <Link href={`${usersHref(f, { add: "1" })}#add-user`} className="btn-primary">{t("Add a user")}</Link>}
       </div>
+
+      {help.length > 0 && (
+        <section aria-labelledby="pw-help-h" className="card border-amber-300 bg-amber-50 p-4">
+          <h2 id="pw-help-h" className="text-lg font-bold">{t("Password help requests ({n})", { n: help.length })}</h2>
+          <p className="text-sm text-slate-700">{t("Sent from Forgot password? on the sign-in page. Check who is asking through their office before you help, then mark the request handled.")}</p>
+          <ul className="mt-3 divide-y divide-amber-200">
+            {help.map((h) => {
+              const who = h.user_id ? all.find((u) => u.id === h.user_id) : null;
+              return (
+                <li key={h.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-mono text-sm break-all">{h.email}</div>
+                    <div className="text-sm text-slate-700">
+                      {who ? (
+                        <Link href={`${usersHref(f, { edit: who.id })}#edit-user`} className="underline">{who.full_name}</Link>
+                      ) : (
+                        t("No account uses this email")
+                      )}
+                      {" · "}{fmtDateTime(h.created_at, lang)}{h.ip ? ` · ${h.ip}` : ""}
+                    </div>
+                  </div>
+                  <form action={markPasswordHelpDone}>
+                    <input type="hidden" name="id" value={h.id} />
+                    <button className="btn-secondary min-h-11 px-4 text-sm">{t("Mark handled")}</button>
+                  </form>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <Form action="/admin/users" prefetch={false} className="card flex flex-wrap items-end gap-3 p-4">
         <div className="w-full sm:w-56">

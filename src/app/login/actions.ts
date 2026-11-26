@@ -6,6 +6,7 @@ import { SEEN_COOKIE, hardenCookie, signSeen } from "@/lib/session-cookie";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import { safeNextPath } from "@/lib/safe-next";
+import { SIGNIN_NOTE_COOKIE, SIGNIN_NOTE_SECONDS, buildSigninNote, encodeSigninNote, type SigninInfo } from "@/lib/signin-extras";
 
 type LoginState = { error?: string; email?: string } | undefined;
 
@@ -34,6 +35,18 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   if (!ok) {
     await supabase.auth.signOut();
     return { email, error: "This account is locked or has no active RMS access. Ask an administrator." };
+  }
+
+  // "Last signed in" note for the first page (like bank and GitHub sign-in alerts). Best effort: never blocks sign-in.
+  const { data: info } = await supabase.rpc("rms_my_signin_info");
+  const note = buildSigninNote(info as SigninInfo | null);
+  if (note) {
+    (await cookies()).set(SIGNIN_NOTE_COOKIE, encodeSigninNote(note), {
+      path: "/",
+      maxAge: SIGNIN_NOTE_SECONDS,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+    });
   }
 
   // Start the server-side idle clock (QA-089); the middleware renews it on each page the user opens.

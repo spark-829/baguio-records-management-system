@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SigninNote } from "@/components/signin-note";
 import { canAudit, getProfile, getSettings, isAuditOnly } from "@/lib/session";
 import { IdleLogout } from "@/components/idle-logout";
 import { AssistantLauncher } from "@/components/assistant-launcher";
@@ -101,7 +102,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </header>
-      <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-20 sm:pt-8">{children}</main>
+      <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-20 sm:pt-8"><SigninNote />{children}</main>
       <SiteFooter className="mt-12 pb-24" help />
       {!auditOnly && <AssistantLauncher userId={me.id} greeting={ctx.greeting} scope={ctx.scope} office={ctx.office} prompts={ctx.prompts} demo={isAiDemo()} />}
       <IdleLogout minutes={settings.idleTimeoutMinutes} />

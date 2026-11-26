@@ -3,7 +3,7 @@
 import { wipeAllChats } from "@/lib/chat-store";
 import { useT } from "@/lib/i18n/client";
 
-import { Fragment, useActionState, useEffect } from "react";
+import { Fragment, useActionState, useEffect, useState, type KeyboardEvent } from "react";
 import { signIn } from "./actions";
 import { DEMO_PASSWORD } from "@/lib/demo-accounts";
 
@@ -13,16 +13,52 @@ export function LoginForm({ next = "", email = "" }: { next?: string; email?: st
     wipeAllChats();
   }, []);
   const [state, action, pending] = useActionState(signIn, undefined);
+  const [showPw, setShowPw] = useState(false);
+  const [caps, setCaps] = useState(false);
+  // Caps Lock warning, as on Windows and macOS sign-in: read the key state on every key in the password box.
+  const readCaps = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (typeof e.getModifierState === "function") setCaps(e.getModifierState("CapsLock"));
+  };
   return (
-    <form action={action} className="mt-5 space-y-5">
+    <form id="login-form" action={action} className="mt-5 space-y-5">
       <input type="hidden" name="next" value={next} />
       <div>
         <label className="label" htmlFor="email">{t("Email")}</label>
         <input key={state?.email ?? (email || "default")} className="input" id="email" name="email" type="email" autoComplete="username" defaultValue={state?.email ?? email} placeholder="e.g. records@rms-demo.test" required />
       </div>
       <div>
-        <label className="label" htmlFor="password">{t("Password")}</label>
-        <input className="input" id="password" name="password" type="password" autoComplete="current-password" defaultValue={email ? DEMO_PASSWORD : undefined} required />
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+          <label className="label" htmlFor="password">{t("Password")}</label>
+          <a href="/login/forgot" className="tap-link text-sm font-semibold text-brand-700 underline">{t("Forgot password?")}</a>
+        </div>
+        <div className="relative">
+          <input
+            className="input pr-24"
+            id="password"
+            name="password"
+            type={showPw ? "text" : "password"}
+            autoComplete="current-password"
+            defaultValue={email ? DEMO_PASSWORD : undefined}
+            aria-describedby={caps ? "caps-warning" : undefined}
+            onKeyDown={readCaps}
+            onKeyUp={readCaps}
+            onBlur={() => setCaps(false)}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPw((v) => !v)}
+            aria-controls="password"
+            aria-pressed={showPw}
+            className="absolute inset-y-0 right-0 min-h-11 min-w-20 rounded-r-lg px-3 text-sm font-semibold text-brand-800 underline underline-offset-2 hover:bg-brand-50"
+          >
+            {showPw ? t("Hide") : t("Show")}
+            <span className="sr-only"> {t("password")}</span>
+          </button>
+        </div>
+        <p id="caps-warning" role="status" className={caps ? "mt-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900" : "sr-only"}>
+          {caps ? t("Caps Lock is on. Passwords are case-sensitive.") : ""}
+        </p>
       </div>
       <p className="text-sm text-slate-700">
         {t("Every sign-in, record you open and file you download is logged with your name, date, time and IP address.")}
