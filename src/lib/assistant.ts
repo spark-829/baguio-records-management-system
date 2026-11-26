@@ -4,6 +4,7 @@ import { chatAnswerRequest } from "./ai";
 import type { ChatSource } from "./chat-refs";
 import { getSearchFilters, runAi, type AiOutcome } from "./ai-gate";
 import { partyLabel } from "./labels";
+import { redactRecordForAi, redactText } from "./ai-redact";
 import { searchRecords } from "./search";
 import type { Profile } from "./types";
 
@@ -57,7 +58,10 @@ export async function askAssistant(
     current_office: r.current_office,
     party: r.direction === "incoming" ? partyLabel(r.sender_name, r.sender_org) : partyLabel(r.recipient_name, r.recipient_org),
     due_date: r.due_date,
-    summary: r.ai_summary?.slice(0, 200) ?? null,
+    summary: redactText(r.ai_summary?.slice(0, 200), [
+      { name: r.sender_name, label: "[sender]" },
+      { name: r.recipient_name, label: "[recipient]" },
+    ]),
   }));
 
   const asked = question.match(/\b(IN|OUT)-\d{4}-\d{4}\b/i);
@@ -65,28 +69,34 @@ export async function askAssistant(
     const { data: rec } = await supabase
       .from("rms_records")
       .select(
-        "id, tracking_no, direction, subject, description, status, due_date, confidentiality, ai_summary, content_text, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)",
+        "id, tracking_no, direction, subject, description, sender_name, recipient_name, status, due_date, confidentiality, ai_summary, content_text, current_office:rms_offices!rms_records_current_office_id_fkey(code, name)",
       )
       .eq("tracking_no", asked[0].toUpperCase())
       .is("deleted_at", null)
       .maybeSingle();
-    if (rec && !(excludeConfidential && rec.confidentiality === "confidential")) {
+    if (rec && rec.confidentiality !== "confidential") {
       const { data: routes } = await supabase
         .from("rms_routes")
         .select("status, action_taken, remarks, created_at, to_office:rms_offices!rms_routes_to_office_id_fkey(code)")
         .eq("record_id", rec.id)
         .order("created_at");
       used.set(rec.id, rec.tracking_no);
+      // Names, contact details and ID numbers are removed before anything leaves (QA-099).
+      const safe = redactRecordForAi(rec);
+      const people = [
+        { name: rec.sender_name, label: "[sender]" },
+        { name: rec.recipient_name, label: "[recipient]" },
+      ];
       context.unshift({
         tracking_no: rec.tracking_no,
-        subject: rec.subject,
-        description: rec.description,
+        subject: safe.subject,
+        description: safe.description,
         status: rec.status,
         current_office: rec.current_office,
         due_date: rec.due_date,
-        summary: rec.ai_summary?.slice(0, 200) ?? null,
-        content_text: rec.content_text ? String(rec.content_text).slice(0, 1500) : null,
-        history: routes,
+        summary: safe.ai_summary?.slice(0, 200) ?? null,
+        content_text: safe.content_text ? String(safe.content_text).slice(0, 1500) : null,
+        history: (routes ?? []).map((r) => ({ ...r, action_taken: redactText(r.action_taken, people), remarks: redactText(r.remarks, people) })),
       });
     }
   }

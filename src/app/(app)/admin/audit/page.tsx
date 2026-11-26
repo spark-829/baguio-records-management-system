@@ -2,7 +2,7 @@ import Form from "next/form";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getProfile } from "@/lib/session";
+import { getProfile, canAudit } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABEL, fmtDateTime } from "@/lib/labels";
 import { integrityErrorText, profileText, routeText, checkCoverageText, type CheckInfo, type RouteLookups } from "@/lib/audit-text";
@@ -61,7 +61,7 @@ function describe(table: string, action: string, data: Record<string, unknown> |
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<{ t?: string; table?: string; more?: string }> }) {
   const me = await getProfile();
-  if (me.role !== "admin") redirect("/");
+  if (!canAudit(me)) redirect("/");
   const sp = await searchParams;
   const table = sp.table ?? sp.t;
   const more = sp.more;

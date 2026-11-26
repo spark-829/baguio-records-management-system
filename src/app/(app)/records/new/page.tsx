@@ -9,6 +9,7 @@ import { canWindowIntake, hasFeature, isRecordsDesk } from "@/lib/office-feature
 import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 import type { ServiceOpt } from "@/lib/charter";
 import { RegisterForm } from "./register-form";
+import { PrivacyNotice } from "@/components/privacy-notice";
 
 export default async function NewRecordPage({ searchParams }: { searchParams: Promise<{ reply_to?: string }> }) {
   const { t } = await getT();
@@ -49,6 +50,7 @@ export default async function NewRecordPage({ searchParams }: { searchParams: Pr
         <p className="text-sm text-slate-600">{t("Add the file if you have one, answer the questions, then save to get a tracking number.")}</p>
       </div>
       <RegisterForm types={(types ?? []).filter((x) => x.name !== COPY_TYPE || me.role === "records_officer")} offices={offices ?? []} incomingMode={incomingMode} myOfficeId={me.office_id} myOfficeName={me.office?.name ?? ""} refLabel={refLabel} services={services} otherServices={otherServices} counts={counts} desk={desk} replyTo={replyTo} barangays={barangayCheck.error ? null : BARANGAYS.map((b) => b.name)} />
+      <PrivacyNotice where="register" />
     </div>
   );
 }

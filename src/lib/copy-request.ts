@@ -13,6 +13,9 @@ export type CopyForm = {
 };
 
 export const isCopyType = (name: string | null | undefined) => name === COPY_TYPE;
+/** Data subject requests under the Data Privacy Act: to correct, object to, block or erase personal data (QA-098). */
+export const PRIVACY_REQUEST_TYPE = "Data privacy request (correction or objection)";
+export const isPrivacyRequest = (name: string | null | undefined) => name === PRIVACY_REQUEST_TYPE;
 
 const val = (e: Record<string, FormDataEntryValue | null | undefined>, k: string) => {
   const v = e[k];

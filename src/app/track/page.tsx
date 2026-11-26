@@ -7,6 +7,7 @@ import { LangToggle } from "@/components/lang-toggle";
 import { Rich } from "@/components/rich";
 import { fmtDate, fmtDateTime } from "@/lib/labels";
 import { ComplaintChannels } from "@/components/complaint-channels";
+import { PrivacyNotice } from "@/components/privacy-notice";
 import { COMPLAINT_TYPE, replyDueAt } from "@/lib/complaint";
 import { collapseSteps } from "@/lib/history";
 import type { Status } from "@/lib/types";
@@ -139,6 +140,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
           </section>
         )}
         <ComplaintChannels />
+        <PrivacyNotice where="track" />
         <p className="text-slate-700">
           {t("City staff?")} <Link href="/login" className="font-semibold text-brand-700 underline underline-offset-2">{t("Sign in here")}</Link>.
         </p>
