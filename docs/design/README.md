@@ -29,7 +29,8 @@ Who does what:
 - **designer** agent (`.claude/agents/designer.md`): writes a short design
   spec for UI work, citing the principle and the proven app pattern, before
   the planner plans it. Also does design reviews of live pages.
-- **reviewer** agent: runs the checklist on any diff that touches `.tsx` or
-  CSS.
-- **QA design checker**: runs `npm run design-check` against the live site
-  and reviews screenshots against the checklist in the nightly rotation.
+- **reviewer** agent: the diff-only checklist items (`t()` strings, tokens,
+  D-WEIGHT-1) on any diff that touches `.tsx` or CSS.
+- **QA**: nightly regression runs `npm run design-check` on the live site
+  (smoke pages plus changed pages); the design checker only eyeballs the
+  non-auto items. Who owns each check: `../qa-checks.md`.

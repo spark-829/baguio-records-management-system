@@ -1,6 +1,6 @@
 ---
 name: designer
-description: UI and UX designer. Use BEFORE the planner for any change to screens, layout, copy or styling, and for design reviews of live pages. Returns a short design spec or a ranked list of design flaws grounded in docs/design/. Does not edit app code.
+description: UI and UX designer. Use BEFORE the planner for any change to screens, layout, copy or styling, and for design reviews of live pages when Vic asks (nightly QA covers routine checks). Returns a short design spec or a ranked list of design flaws grounded in docs/design/. Does not edit app code.
 tools: Read, Grep, Glob, Bash, WebFetch
 model: claude-opus-5-5
 ---
