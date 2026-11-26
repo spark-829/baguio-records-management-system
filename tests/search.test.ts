@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filtersFromParams, filtersToParams, searchRecordsPage } from "../src/lib/search";
+import { cleanParam, filtersFromParams, filtersToParams, searchRecordsPage } from "../src/lib/search";
 
 describe("searchRecordsPage", () => {
   it("reports more when the database page was full but filters dropped every row", async () => {
@@ -47,5 +47,24 @@ describe("received-at filter", () => {
     expect(filtersFromParams({}).at).toBeUndefined();
     expect(filtersToParams({ at: "window" }).get("at")).toBe("window");
     expect(filtersToParams({}).has("at")).toBe(false);
+  });
+});
+
+describe("filtersFromParams input cleaning (QA-092)", () => {
+  it("drops control characters, bad dates and unknown statuses", () => {
+    const f = filtersFromParams({ q: "abc\u0000def", from: "2026-13-45", to: "nope", status: "bogus", direction: "sideways" });
+    expect(f.q).toBe("abc def");
+    expect(f.from).toBeUndefined();
+    expect(f.to).toBeUndefined();
+    expect(f.status).toBeUndefined();
+    expect(f.direction).toBeUndefined();
+  });
+  it("keeps good values and caps long text", () => {
+    const f = filtersFromParams({ q: "x".repeat(500), from: "2026-11-01", status: "received", direction: "incoming" });
+    expect(f.q).toHaveLength(200);
+    expect(f.from).toBe("2026-11-01");
+    expect(f.status).toBe("received");
+    expect(f.direction).toBe("incoming");
+    expect(cleanParam("\u0000")).toBeUndefined();
   });
 });

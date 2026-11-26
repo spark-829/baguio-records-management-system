@@ -2,6 +2,21 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SearchFilters, SearchRow } from "./types";
 import { isTxType, type TxType } from "./transaction-type";
 import { isBoxCode, normalizeBoxCode } from "./boxes";
+import { STATUS_ORDER } from "./labels";
+
+/** One search box value: no control characters, trimmed, at most 200 characters; empty means not set. */
+export function cleanParam(v: string | undefined): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const s = v.replace(/[\u0000-\u001f\u007f]+/g, " ").trim().slice(0, 200);
+  return s || undefined;
+}
+
+/** A real calendar day written YYYY-MM-DD. */
+export function isIsoDay(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
+}
 
 const MANILA = "Asia/Manila";
 const manilaDay = (iso: string) => new Intl.DateTimeFormat("en-CA", { timeZone: MANILA }).format(new Date(iso));
@@ -79,19 +94,27 @@ export async function searchRecords(supabase: SupabaseClient, f: SearchFilters, 
 }
 
 export function filtersFromParams(sp: Record<string, string | string[] | undefined>): SearchFilters {
+  // Text from the address bar is cleaned before it reaches the database: control characters such as %00
+  // and impossible dates or statuses used to end in an unhandled error page (QA-092).
   const one = (k: string) => {
     const v = sp[k];
-    return (Array.isArray(v) ? v[0] : v) || undefined;
+    return cleanParam(Array.isArray(v) ? v[0] : v);
   };
+  const day = (k: string) => {
+    const v = one(k);
+    return v && isIsoDay(v) ? v : undefined;
+  };
+  const direction = one("direction");
+  const status = one("status");
   return {
     q: one("q"),
     person: one("person"),
-    direction: one("direction") as SearchFilters["direction"],
-    status: one("status") as SearchFilters["status"],
+    direction: direction === "incoming" || direction === "outgoing" ? direction : undefined,
+    status: status && (STATUS_ORDER as readonly string[]).includes(status) ? (status as SearchFilters["status"]) : undefined,
     office: one("office"),
     docType: one("type"),
-    from: one("from"),
-    to: one("to"),
+    from: day("from"),
+    to: day("to"),
     overdue: one("overdue") === "1",
     here: one("here") === "1",
     open: one("open") === "1",

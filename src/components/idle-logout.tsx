@@ -9,6 +9,23 @@ const KEY = "rms-last-activity";
 const EVENTS = ["mousedown", "keydown", "touchstart"] as const;
 const WARN_MS = 60_000;
 
+let leaving = false;
+/** Sign-out is POST only (QA-091), so the timeout submits a small form instead of following a link. */
+function signOutIdle() {
+  if (leaving) return;
+  leaving = true;
+  const form = document.createElement("form");
+  form.method = "post";
+  form.action = "/api/auth/signout";
+  const input = document.createElement("input");
+  input.type = "hidden";
+  input.name = "reason";
+  input.value = "idle";
+  form.append(input);
+  document.body.append(form);
+  form.submit();
+}
+
 /**
  * Signs the user out after a period without activity (shared across tabs).
  * A minute before, a large message with a countdown asks "Are you still there?" with one clear button.
@@ -60,7 +77,7 @@ export function IdleLogout({ minutes }: { minutes: number }) {
         shared = Math.max(shared, Number(localStorage.getItem(KEY)) || 0);
       } catch {}
       const idle = Date.now() - shared;
-      if (idle >= limit) window.location.href = "/api/auth/signout?reason=idle";
+      if (idle >= limit) signOutIdle();
       else if (idle >= limit - WARN_MS) setLeft(Math.ceil((limit - idle) / 1000));
       else setLeft(null);
     };

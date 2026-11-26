@@ -68,6 +68,26 @@ export function thumbPath(recordId: string, uuid: string): string {
   return `${recordId}/thumbs/${uuid}.jpg`;
 }
 
+/**
+ * The file's first bytes must match the type the browser claimed (QA-093), so a page or script renamed
+ * to .pdf or .png is refused. Needs at least the first 12 bytes.
+ */
+export function matchesMagic(type: string, head: Uint8Array): boolean {
+  const at = (i: number, bytes: number[]) => bytes.every((b, k) => head[i + k] === b);
+  switch (type) {
+    case "application/pdf":
+      return at(0, [0x25, 0x50, 0x44, 0x46, 0x2d]); // %PDF-
+    case "image/png":
+      return at(0, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+    case "image/jpeg":
+      return at(0, [0xff, 0xd8, 0xff]);
+    case "image/webp":
+      return at(0, [0x52, 0x49, 0x46, 0x46]) && at(8, [0x57, 0x45, 0x42, 0x50]); // RIFF....WEBP
+    default:
+      return false;
+  }
+}
+
 export function isValidThumb(type: string, size: number, head: Uint8Array): boolean {
   return type === "image/jpeg" && size > 0 && size <= THUMB_MAX_BYTES && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff;
 }
