@@ -76,6 +76,7 @@ export const TERMS: LegalDoc = {
       paras: [
         "After {tries} wrong passwords, the account locks for {lockMinutes} minutes. An administrator can unlock it sooner.",
         "If the computer is not used for {idleMinutes} minutes, the system signs you out by itself and warns you a minute before. A sign-in lasts at most {maxHours} hours.",
+        "After you sign in, the system shows when and with which browser you last signed in, and tells you when this sign-in comes from a new device or network.",
         "You can turn on two-step sign-in with an authenticator app under My account. Always sign out when you leave your desk.",
         "These are the standard settings; the administrator can change them.",
       ],
@@ -106,7 +107,7 @@ export const TERMS: LegalDoc = {
       id: "help",
       heading: "Help and changes",
       paras: [
-        "For help with your account, a locked account or a forgotten password, contact the administrator of the system.",
+        "For help with your account or a locked account, contact the administrator of the system. For a forgotten password, use Forgot password? on the sign-in page: the request goes to the administrator.",
         "How personal data is handled is explained in the privacy notice.",
       ],
     },
@@ -128,6 +129,7 @@ export const PRIVACY: LegalDoc = {
         "About people who file or receive documents: name, organization, address or barangay, contact details, and the document itself.",
         "About employees who use the system: name, office, role, email, sign-in times, failed sign-ins, IP address, and the records and files they opened.",
         "On the public tracking page: the tracking number entered, with the time and network address, to stop misuse.",
+        "When someone asks for password help: the email typed, with the time, network address and browser, so the administrator can check the request.",
         "The client satisfaction survey is anonymous unless the person chooses to write a name or contact details.",
       ],
     },

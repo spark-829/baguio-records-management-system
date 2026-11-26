@@ -65,3 +65,14 @@ export async function unlockUser(form: FormData) {
   await supabase.rpc("rms_admin_unlock", { p_user_id: String(form.get("id")) });
   revalidatePath("/admin/users");
 }
+
+/** Marks a "Forgot password?" request from the sign-in page as handled (administrators only, checked in the database too). */
+export async function markPasswordHelpDone(form: FormData) {
+  const me = await getProfile();
+  if (me.role !== "admin") return;
+  const id = Number(form.get("id"));
+  if (!Number.isSafeInteger(id) || id <= 0) return;
+  const supabase = await createClient();
+  await supabase.rpc("rms_password_help_done", { p_id: id });
+  revalidatePath("/admin/users");
+}
