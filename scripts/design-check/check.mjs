@@ -180,12 +180,26 @@ async function checkPage(page, path, vp) {
       runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"] },
       resultTypes: ["violations"],
     });
-    return r.violations.map((v) => ({
-      id: `axe:${v.id}`,
-      impact: v.impact,
-      msg: `${v.help} (${v.nodes.length})`,
-      where: v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join("; "),
-    }));
+    // axe judges the page at one scroll position, so a full-size field that happens to sit under a sticky
+    // Save bar ([data-sticky-actions]) reads as "obscured". Scrolling moves it clear, and html's
+    // scroll-padding-bottom keeps a focused field above the bar, so drop only those nodes (QA-110).
+    // A target that is itself under 24px is still reported.
+    const bars = [...document.querySelectorAll("[data-sticky-actions]")].map((e) => e.getBoundingClientRect());
+    const underBarOnly = (sel) => {
+      const el = document.querySelector(sel);
+      if (!el || !bars.length) return false;
+      const r = el.getBoundingClientRect();
+      return r.width >= 24 && r.height >= 24 && bars.some((b) => r.bottom > b.top && r.top < b.bottom && r.right > b.left && r.left < b.right);
+    };
+    return r.violations
+      .map((v) => (v.id === "target-size" ? { ...v, nodes: v.nodes.filter((n) => !underBarOnly(n.target.join(" "))) } : v))
+      .filter((v) => v.nodes.length)
+      .map((v) => ({
+        id: `axe:${v.id}`,
+        impact: v.impact,
+        msg: `${v.help} (${v.nodes.length})`,
+        where: v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join("; "),
+      }));
   });
   problems.push(...axe, ...(await page.evaluate(houseChecks, vp.name)));
   return problems;
