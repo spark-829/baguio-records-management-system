@@ -36,7 +36,7 @@ MFA-pending users. All queries use `createClient()` from
 | `/admin/analytics` | admin flow analytics: `admin/analytics/page.tsx`, `charts.tsx` (server-only BarList, OpenLine, PairedColumns); one RPC `rms_admin_flow_analytics` |
 | `/security` | MFA setup; `/help` user help |
 
-Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (public Client Satisfaction Survey, server form, no client JS),
+Outside `(app)`: `src/app/login` (demo accounts in a scroll box `all-accounts.tsx`, help card, About the developer in `components/public-header.tsx`), `terms` and `privacy` (static text in `lib/legal.ts`, page in `components/legal-page.tsx`), `mfa`, `track` (public tracking), `survey` (public Client Satisfaction Survey, server form, no client JS),
 `developer` (public CV page).
 
 ## API: `src/app/api/`

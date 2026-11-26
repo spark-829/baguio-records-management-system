@@ -14,7 +14,7 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   const password = String(formData.get("password") ?? "");
   const { t } = await getT();
   if (!email || !password) return { email, error: "Enter your email and password." };
-  if (formData.get("privacy") !== "on") return { email, error: "Please confirm you have read the privacy notice." };
+  if (formData.get("privacy") !== "on") return { email, error: "Please read and agree to the Terms of use and the Privacy notice before signing in." };
   const supabase = await createClient();
 
   // Locked accounts are refused before the password is even checked.
