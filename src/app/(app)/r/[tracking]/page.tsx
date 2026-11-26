@@ -31,7 +31,7 @@ type Rec = {
 type Step = { created_at: string; action_taken: string | null; actor: { full_name: string } | null; from_office: { name: string } | null };
 
 export default async function ScanReceivePage({ params, searchParams }: { params: Promise<{ tracking: string }>; searchParams: Promise<{ received?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const { tracking: raw } = await params;
   const { received } = await searchParams;
   let tn = "";
@@ -109,7 +109,7 @@ export default async function ScanReceivePage({ params, searchParams }: { params
           {t("Last step: {step} by {who} on {when}", {
             step: last.action_taken ?? "",
             who: last.actor?.full_name ?? "—",
-            when: fmtDateTime(last.created_at),
+            when: fmtDateTime(last.created_at, lang),
           })}
         </p>
       )}

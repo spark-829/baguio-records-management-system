@@ -12,6 +12,14 @@ describe("date formatting", () => {
     expect(fmtDate("2026-11-23T20:00:00Z", "fil-PH")).toMatch(/2026/);
     expect(fmtDate("2026-11-23T20:00:00Z", "en-PH")).toMatch(/2026/);
   });
+  it("uses Filipino month names for the fil language and English for en (QA-083)", () => {
+    expect(fmtDate("2026-10-28T08:30:00Z", "fil")).toBe("Okt 28, 2026");
+    expect(fmtDate("2026-10-28T08:30:00Z", "en")).toBe("Oct 28, 2026");
+    expect(fmtDateTime("2026-10-28T08:30:00Z", "fil")).toBe("Okt 28, 2026, 4:30 PM");
+  });
+  it("keeps Manila time in Filipino too", () => {
+    expect(fmtDate("2026-11-23T16:30:00Z", "fil")).toBe("Nob 24, 2026");
+  });
   it("shows a dash for empty values", () => {
     expect(fmtDate(null)).toBe("—");
     expect(fmtDateTime(undefined)).toBe("—");

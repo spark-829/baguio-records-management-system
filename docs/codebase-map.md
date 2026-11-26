@@ -16,7 +16,7 @@ MFA-pending users. All queries use `createClient()` from
 | Route | Files |
 | --- | --- |
 | `/` dashboard | `page.tsx` (+ `components/due-calendar.tsx`); admins get the Security overview, `security-hub.tsx`; start screen by role from `startScreen()`: records desk, office window, office head, plain (`?cal=month` shows the calendar) |
-| `/records` list, search | `records/page.tsx`, `records/ai-search-box.tsx`; saved-view tabs for everyone (records desk adds Ready to send out and Sent out) |
+| `/records` list, search | `records/page.tsx`, `records/ai-search-box.tsx`, `records/list-announcer.tsx` (screen reader line after the list changes); saved-view tabs for everyone (records desk adds Ready to send out and Sent out) |
 | `/records/new` register | `records/new/{page,register-form,actions}.tsx` (scan to prefill; `?reply_to=IN-...` starts a reply) |
 | `/records/[id]` detail | `records/[id]/page.tsx`, `forms.tsx` (Actions panel with named buttons, attach, `NoteForm`), `actions.ts`, `summary-box.tsx`; one layout for every role |
 | `/records/[id]/slip`, `/receipt` | routing slip with QR, QR receipt |

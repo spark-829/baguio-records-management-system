@@ -24,7 +24,7 @@ const STATE: Record<RetentionState, { label: string; tone: string }> = {
  * counted from the day it was finished. Nothing is ever deleted from here; it only tells the records desk what to review.
  */
 export default async function RetentionPage({ searchParams }: { searchParams: Promise<{ show?: string; n?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const me = await getProfile();
   if (me.role !== "admin" && me.role !== "records_officer") redirect("/reports");
   const { show, n } = await searchParams;
@@ -50,7 +50,7 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
         </div>
         <PrintButton label="Print schedule" />
       </div>
-      <h1 className="hidden text-xl font-bold print:block">{t("Retention schedule, printed {date}", { date: fmtDate(new Date().toISOString()) })}</h1>
+      <h1 className="hidden text-xl font-bold print:block">{t("Retention schedule, printed {date}", { date: fmtDate(new Date().toISOString(), lang) })}</h1>
 
       <section aria-label={t("Summary")} className="grid gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3">
         {(Object.keys(STATE) as RetentionState[]).map((k) => (
@@ -94,8 +94,8 @@ export default async function RetentionPage({ searchParams }: { searchParams: Pr
                 <td className="whitespace-nowrap px-4 py-2 font-mono text-sm"><Link prefetch={false} href={`/records/${r.id}`}>{r.tracking_no}</Link></td>
                 <td className="px-4 py-2">{r.subject}<div className="text-sm text-slate-600">{STATUS_LABEL[r.status as Status]} · {r.office_name}</div></td>
                 <td className="px-4 py-2 text-slate-700">{r.type_name}<div className="text-sm text-slate-600">{permanent ? t("Permanent") : r.years === 0 ? t("No keep period") : t("{n} years", { n: r.years })}</div></td>
-                <td className="whitespace-nowrap px-4 py-2">{fmtDate(r.finished_at)}</td>
-                <td className="whitespace-nowrap px-4 py-2 font-semibold">{r.keep_until ? fmtDate(r.keep_until) : t("Permanent")}</td>
+                <td className="whitespace-nowrap px-4 py-2">{fmtDate(r.finished_at, lang)}</td>
+                <td className="whitespace-nowrap px-4 py-2 font-semibold">{r.keep_until ? fmtDate(r.keep_until, lang) : t("Permanent")}</td>
                 <td className="px-4 py-2"><span className={`badge border ${STATE[r.state].tone}`}>{t(permanent ? "Keep permanently" : STATE[r.state].label)}</span></td>
               </tr>
               );

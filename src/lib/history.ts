@@ -1,4 +1,4 @@
-/** Newest first by an ISO timestamp (histories on screen read newest first). */
+/** Newest first by an ISO timestamp (used for file and bin events; the record history and public tracking read oldest first). */
 export function newestFirst<T>(items: T[], at: (x: T) => string): T[] {
   return [...items].sort((a, b) => Date.parse(at(b)) - Date.parse(at(a)));
 }

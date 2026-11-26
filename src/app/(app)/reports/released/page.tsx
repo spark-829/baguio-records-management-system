@@ -16,7 +16,7 @@ export const metadata = { title: "Released documents logbook" };
 
 /** The daily logbook of outgoing documents: the records desk sees every office, an office head sees their own. */
 export default async function ReleasedLogbookPage({ searchParams }: { searchParams: Promise<{ day?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const me = await getProfile();
   if (me.role !== "records_officer" && me.role !== "dept_head") redirect("/reports");
   if (!hasFeature(me, "logbook")) return <FeatureOff feature="logbook" />;
@@ -32,7 +32,7 @@ export default async function ReleasedLogbookPage({ searchParams }: { searchPara
       <ReportsNav me={me} current="/reports/released" />
       <div>
         <h1 className="text-2xl font-bold">{t("Released documents logbook")}</h1>
-        <p className="text-sm text-slate-600">{t("Outgoing documents sent out on {date}", { date: fmtDate(day) })}</p>
+        <p className="text-sm text-slate-600">{t("Outgoing documents sent out on {date}", { date: fmtDate(day, lang) })}</p>
         <p className="print-only text-sm">{isCentral(me) ? t("All offices") : me.office?.name}</p>
       </div>
       <div className="no-print flex flex-wrap items-end justify-between gap-2">
@@ -51,7 +51,7 @@ export default async function ReleasedLogbookPage({ searchParams }: { searchPara
       {error ? (
         <p role="alert" className="text-sm text-red-700">{t("The logbook could not be loaded. Please try again.")}</p>
       ) : rows.length === 0 ? (
-        <p className="card p-4 text-sm text-slate-700">{t("Nothing was sent out on {date}.", { date: fmtDate(day) })}</p>
+        <p className="card p-4 text-sm text-slate-700">{t("Nothing was sent out on {date}.", { date: fmtDate(day, lang) })}</p>
       ) : (
         <div className="card overflow-x-auto">
           <table className="w-full text-sm">

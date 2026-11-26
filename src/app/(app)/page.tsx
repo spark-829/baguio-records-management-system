@@ -38,7 +38,7 @@ export async function generateMetadata() {
 }
 
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ scope?: string; cal?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const me = await getProfile();
   const sp = await searchParams;
   if (me.role === "admin") return <SecurityHub me={me} />;
@@ -111,7 +111,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
   const stats = [
     { label: t("Open records"), value: Number(totals.open) || 0, href: "/records?open=1", alert: false },
-    { label: t(isCentral(me) ? "Overdue" : "Overdue (all you can see)"), value: overdueTotal, alert: overdueTotal > 0, href: "/records?overdue=1" },
+    { label: t(isCentral(me) ? "Overdue" : "Late in all offices"), ...(isCentral(me) ? {} : { hint: t("Late records in every office you can see") }), value: overdueTotal, alert: overdueTotal > 0, href: "/records?overdue=1" },
     ...(officeHref ? [{ label: t("In my office"), value: officeTotal, href: officeHref, alert: false }] : []),
     { label: t("Logged this month"), value: Number(totals.this_month) || 0, href: `/records?from=${monthFrom}`, alert: false },
   ];
@@ -136,7 +136,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             {r.due_date ? (
               <span className={late ? "font-semibold text-red-700" : undefined}>{dueText(r.due_date, undefined, t)}</span>
             ) : (
-              t("Logged {date}", { date: fmtDate(r.created_at) })
+              t("Logged {date}", { date: fmtDate(r.created_at, lang) })
             )}
             {hint ? ` · ${hint}` : ""}
           </span>
@@ -198,9 +198,9 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     let fact: string;
     if (lateNum === 0) fact = `${t("Good day, {name}.", { name })} ${t("No records are late.")}`;
     else if (!oldest) fact = lateNum === 1 ? t("Good day, {name}. 1 record is late.", { name }) : t("Good day, {name}. {n} records are late.", { name, n: lateText });
-    else if (lateNum === 1) fact = t("Good day, {name}. 1 record is late; it is with {office}, late since {date}.", { name, office: oldest.name, date: fmtDate(oldest.since) });
-    else if (lateGroups.length === 1 && !capped) fact = t("Good day, {name}. {n} records are late, all with {office}; the oldest is late since {date}.", { name, n: lateText, office: oldest.name, date: fmtDate(oldest.since) });
-    else fact = t("Good day, {name}. {n} records are late in {offices} offices; the oldest is with {office}, late since {date}.", { name, n: lateText, offices: countText(lateGroups.length, capped), office: oldest.name, date: fmtDate(oldest.since) });
+    else if (lateNum === 1) fact = t("Good day, {name}. 1 record is late; it is with {office}, late since {date}.", { name, office: oldest.name, date: fmtDate(oldest.since, lang) });
+    else if (lateGroups.length === 1 && !capped) fact = t("Good day, {name}. {n} records are late, all with {office}; the oldest is late since {date}.", { name, n: lateText, office: oldest.name, date: fmtDate(oldest.since, lang) });
+    else fact = t("Good day, {name}. {n} records are late in {offices} offices; the oldest is with {office}, late since {date}.", { name, n: lateText, offices: countText(lateGroups.length, capped), office: oldest.name, date: fmtDate(oldest.since, lang) });
 
     const deskStats = [
       { label: t("Late, all offices"), value: totalsError ? "—" : overdueTotal, href: "/records?overdue=1&open=1", alert: !totalsError && overdueTotal > 0 },
@@ -250,7 +250,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                   <li key={g.code}>
                     <Link prefetch={false} href={`/records?office=${encodeURIComponent(g.code)}&here=1&overdue=1`} className="grid gap-1 px-4 py-3 hover:bg-brand-50 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-5">
                       <span className="min-w-0 break-words font-semibold text-ink">{g.name}</span>
-                      <span className="font-semibold text-red-700">{t("{n} late · since {date}", { n: g.count, date: fmtDate(g.since) })}</span>
+                      <span className="font-semibold text-red-700">{t("{n} late · since {date}", { n: g.count, date: fmtDate(g.since, lang) })}</span>
                     </Link>
                   </li>
                 ))}
@@ -322,7 +322,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     const windowStats = [
       { label: t("Received here today"), value: queueText, href: todayHref, alert: false },
       { label: t("Waiting in my office"), value: waitingText, href: officeHref ?? undefined, alert: false },
-      { label: t("Overdue (all you can see)"), value: totalsError ? "—" : overdueTotal, href: "/records?overdue=1&open=1", alert: !totalsError && overdueTotal > 0 },
+      { label: t("Late in all offices"), hint: t("Late records in every office you can see"), value: totalsError ? "—" : overdueTotal, href: "/records?overdue=1&open=1", alert: !totalsError && overdueTotal > 0 },
       { label: t("Assigned to me"), value: mine.length, href: undefined, alert: false },
     ];
     return (
@@ -380,7 +380,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
     const lateText = countText(late.length, officeCapped);
     const headStats = [
       { label: t("Needs your decision"), value: decideText, href: officeHref ?? undefined, alert: false },
-      { label: t("Late in my office"), value: lateText, href: lateHereHref, alert: late.length > 0 },
+      { label: t("Late in my office"), hint: t("Late records now in your office"), value: lateText, href: lateHereHref, alert: late.length > 0 },
       { label: t("In my office"), value: totalsError ? "—" : officeTotal, href: officeHref ?? undefined, alert: false },
       { label: t("Logged this month"), value: totalsError ? "—" : Number(totals.this_month) || 0, href: `/records?from=${monthFrom}`, alert: false },
     ];

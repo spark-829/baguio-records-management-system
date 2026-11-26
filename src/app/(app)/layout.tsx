@@ -73,7 +73,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <NavLinks links={links} phoneOnly={[{ href: "/security", label: t("My account") }]} />
         </div>
       </div>
-      <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:py-8">{children}</main>
+      <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-20 sm:pt-8">{children}</main>
       <SiteFooter className="mt-12 pb-24" />
       <AssistantLauncher userId={me.id} greeting={ctx.greeting} scope={ctx.scope} office={ctx.office} prompts={ctx.prompts} demo={isAiDemo()} />
       <IdleLogout minutes={settings.idleTimeoutMinutes} />

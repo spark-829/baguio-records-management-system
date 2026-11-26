@@ -23,7 +23,7 @@ export async function ScopeLinks({ base, scope }: { base: string; scope: "city" 
 
 /** Read-only city-wide numbers from one aggregated database call. */
 export async function CityOverview() {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("rms_oversight_overview");
   if (error) throw new Error("City overview failed");
@@ -81,7 +81,7 @@ export async function CityOverview() {
                   <Link prefetch={false} href={`/records/${r.id}?scope=city`} className="inline-flex min-h-11 items-center font-mono text-brand-700 hover:underline">{r.tracking_no}</Link>
                   {" · "}{r.office}
                   {" · "}{t(STATUS_LABEL[r.status as Status] ?? r.status)}
-                  {r.due_date ? <> · <span className="font-semibold text-red-700">{t("Due {date}", { date: fmtDate(r.due_date) })}</span></> : null}
+                  {r.due_date ? <> · <span className="font-semibold text-red-700">{t("Due {date}", { date: fmtDate(r.due_date, lang) })}</span></> : null}
                 </span>
               </li>
             ))}

@@ -67,7 +67,7 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
           <ul className="divide-y divide-slate-200 card lg:hidden">
             {rows.map((r) => (
               <li key={r.id} className="min-h-11 px-4 py-2">
-                <Link href={`/boxes/${r.id}`} className="font-mono font-bold whitespace-nowrap">{r.code}</Link>
+                <Link href={`/boxes/${r.id}`} className="tap-link font-mono font-bold whitespace-nowrap">{r.code}</Link>
                 <p className="text-sm text-slate-600">
                   {[boxWhere(r.room, r.shelf), r.office_code, years(r), t("{n} records", { n: r.records })].filter(Boolean).join(" · ")}
                 </p>
@@ -89,7 +89,7 @@ export default async function BoxesPage({ searchParams }: { searchParams: Promis
               <tbody>
                 {rows.map((r) => (
                   <tr key={r.id} className="border-b border-slate-100 align-top">
-                    <td className="px-3 py-2"><Link href={`/boxes/${r.id}`} className="font-mono whitespace-nowrap">{r.code}</Link></td>
+                    <td className="px-3 py-2"><Link href={`/boxes/${r.id}`} className="tap-link font-mono whitespace-nowrap">{r.code}</Link></td>
                     <td className="px-3 py-2">{r.office_name}</td>
                     <td className="px-3 py-2">{boxWhere(r.room, r.shelf)}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{years(r) || "—"}</td>

@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useT } from "@/lib/i18n/client";
+import { useLang, useT } from "@/lib/i18n/client";
 import { badgeText, parseAlerts, type Alerts } from "@/lib/alerts";
 import { fmtDate } from "@/lib/labels";
 
 export function AlertBell({ officeCode }: { officeCode: string | null }) {
   const t = useT();
+  const lang = useLang();
   const pathname = usePathname();
   const [data, setData] = useState<Alerts | null>(null);
   const [open, setOpen] = useState(false);
@@ -92,7 +93,7 @@ export function AlertBell({ officeCode }: { officeCode: string | null }) {
                     <span className="block truncate text-sm font-medium">{r.subject}</span>
                     <span className="mt-1 flex flex-wrap gap-1">
                       {r.to_receive && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">{t("Sent to your office. Not yet received.")}</span>}
-                      {r.late && <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-900">{t("Late since {date}", { date: fmtDate(r.due_date) })}</span>}
+                      {r.late && <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-900">{t("Late since {date}", { date: fmtDate(r.due_date, lang) })}</span>}
                     </span>
                   </Link>
                 </li>

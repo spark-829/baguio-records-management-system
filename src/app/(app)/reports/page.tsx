@@ -1,5 +1,6 @@
 import Form from "next/form";
 import { txLabel } from "@/lib/transaction-type";
+import { dateLocale } from "@/lib/i18n/core";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -64,7 +65,7 @@ async function Bars({ title, data, limit = 12, latest = false }: { title: string
 }
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string; scope?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const me = await getProfile();
   if (me.role === "staff") redirect("/");
   const { from, to, scope } = await searchParams;
@@ -87,8 +88,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
   if (error) throw new Error("Report totals failed");
   const s = parseSummary(data);
   const onTime = onErr ? null : onTimeSummary(parseOnTime(onData));
-  const months = s.by_month.map((m) => ({ label: monthLabel(m.key), n: m.n }));
-  const printedAt = fmtDateTime(new Date().toISOString());
+  const months = s.by_month.map((m) => ({ label: monthLabel(m.key, dateLocale(lang)), n: m.n }));
+  const printedAt = fmtDateTime(new Date().toISOString(), lang);
 
   return (
     <div className="space-y-4">
@@ -99,7 +100,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
           <h1 className="text-2xl font-bold">{t("Reports")}</h1>
           {oversight && <div className="my-2"><ScopeLinks base="/reports" scope="mine" /></div>}
           <p className="text-sm text-slate-600">
-            {isCentral(me) ? t("All offices") : t("Records {office} sent or holds", { office: me.office?.name ?? t("your office") })} · {from || to ? t("{a} to {b}", { a: fmtDate(from), b: fmtDate(to) }) : t("all dates")} · {t("{n} records", { n: s.total })}
+            {isCentral(me) ? t("All offices") : t("Records {office} sent or holds", { office: me.office?.name ?? t("your office") })} · {from || to ? t("{a} to {b}", { a: fmtDate(from, lang), b: fmtDate(to, lang) }) : t("all dates")} · {t("{n} records", { n: s.total })}
           </p>
           <p className="print-only text-sm">{t("Prepared by {name} on {date}", { name: me.full_name, date: printedAt })}</p>
         </div>
@@ -166,7 +167,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             </thead>
             <tbody className="divide-y divide-slate-100">
               {s.overdue_rows.slice(0, OVERDUE_SHOWN).map((r) => (
-                <tr key={r.tracking_no}><td className="whitespace-nowrap px-3 font-mono"><Link href={`/records/${r.id}`}>{r.tracking_no}</Link></td><td className="min-w-[10rem] px-3">{r.subject}</td><td className="px-3">{r.office}</td><td className="whitespace-nowrap px-3">{fmtDate(r.due_date)}</td></tr>
+                <tr key={r.tracking_no}><td className="whitespace-nowrap px-3 font-mono"><Link href={`/records/${r.id}`} className="tap-link">{r.tracking_no}</Link></td><td className="min-w-[10rem] px-3">{r.subject}</td><td className="px-3">{r.office}</td><td className="whitespace-nowrap px-3">{fmtDate(r.due_date, lang)}</td></tr>
               ))}
               {s.overdue === 0 && <tr><td colSpan={4} className="py-2 text-slate-500">{t("None.")}</td></tr>}
             </tbody>
@@ -174,7 +175,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         </div>
         {s.overdue > Math.min(OVERDUE_SHOWN, s.overdue_rows.length) && (
           <p className="mt-2 text-sm text-slate-600">
-            {t("Showing the {n} oldest of {total}.", { n: Math.min(OVERDUE_SHOWN, s.overdue_rows.length), total: s.overdue })} <Link href="/records?overdue=1" className="font-semibold text-brand-700">{t("See all late records")}</Link>
+            {t("Showing the {n} oldest of {total}.", { n: Math.min(OVERDUE_SHOWN, s.overdue_rows.length), total: s.overdue })} <Link href="/records?overdue=1" className="tap-link font-semibold text-brand-700">{t("See all late records")}</Link>
           </p>
         )}
       </section>

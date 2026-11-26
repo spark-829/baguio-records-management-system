@@ -180,7 +180,7 @@ export default async function HelpPage() {
 function TopicLink({ id, title }: { id: string; title: string }) {
   return (
     <li>
-      <a className="inline-block py-2 text-brand-700 underline" href={`#${id}`}>{title}</a>
+      <a className="tap-link text-brand-700 underline" href={`#${id}`}>{title}</a>
     </li>
   );
 }

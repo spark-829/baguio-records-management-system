@@ -40,7 +40,7 @@ const manilaToday = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Man
 
 /** Public page: a citizen types the tracking number and code from their receipt and sees where the document is. */
 export default async function TrackPage({ searchParams }: { searchParams: Promise<{ no?: string; code?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const { no = "", code = "" } = await searchParams;
   let result: Track | null = null;
   if (no && code) {
@@ -87,7 +87,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
             <div>
               <p className="font-mono text-sm text-slate-600">{result.tracking_no}</p>
               <h2 className="text-xl font-bold">{result.doc_type}</h2>
-              <p className="text-slate-700">{t("Received on {date}", { date: fmtDate(result.received) })}</p>
+              <p className="text-slate-700">{t("Received on {date}", { date: fmtDate(result.received, lang) })}</p>
             </div>
             {result.status === "binned" ? (
               // A valid receipt for a record the office took off the list: send the citizen to a person, not back to retyping (QA-007).
@@ -107,10 +107,10 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
                     <p>{t("at the {office}", { office: result.office })}</p>
                   )}
                   {result.due && !FINISHED_STATUS.includes(result.status) && (
-                    <p className="text-slate-700">{t("Target date: {date}", { date: fmtDate(result.due) })}</p>
+                    <p className="text-slate-700">{t("Target date: {date}", { date: fmtDate(result.due, lang) })}</p>
                   )}
                   {result.doc_type === COMPLAINT_TYPE && !FINISHED_STATUS.includes(result.status) && (
-                    <p className="mt-2">{t("The office must reply within 72 hours, by {date}.", { date: fmtDateTime(replyDueAt(result.received).toISOString()) })}</p>
+                    <p className="mt-2">{t("The office must reply within 72 hours, by {date}.", { date: fmtDateTime(replyDueAt(result.received).toISOString(), lang) })}</p>
                   )}
                   {/* Like parcel tracking's "delayed" note: say plainly when the target date has passed (QA-008). */}
                   {result.due && !FINISHED_STATUS.includes(result.status) && result.due.slice(0, 10) < manilaToday() && (
@@ -122,11 +122,12 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
                 <section aria-labelledby="progress-h">
                   <h2 id="progress-h" className="font-semibold">{t("Progress")}</h2>
                   <ol className="relative ml-2 mt-3 border-l-2 border-line">
-                    {collapseSteps(result.steps).slice().reverse().map((s, i) => (
-                      <li key={i} className="mb-4 ml-4 last:mb-0" aria-current={i === 0 ? "step" : undefined}>
+                    {/* Oldest first, the same order as the history on the record page; the current step is the last one. */}
+                    {collapseSteps(result.steps).map((s, i, all) => (
+                      <li key={i} className="mb-4 ml-4 last:mb-0" aria-current={i === all.length - 1 ? "step" : undefined}>
                         <span aria-hidden="true" className="absolute -left-[7px] mt-1.5 h-3 w-3 rounded-full border-2 border-white bg-brand-600" />
-                        <p className={i === 0 ? "font-bold text-ink" : "text-slate-800"}>{t(PLAIN[s.status])} · {s.office}</p>
-                        <p className="text-sm text-slate-600"><time dateTime={s.at}>{fmtDateTime(s.at)}</time></p>
+                        <p className={i === all.length - 1 ? "font-bold text-ink" : "text-slate-800"}>{t(PLAIN[s.status])} · {s.office}</p>
+                        <p className="text-sm text-slate-600"><time dateTime={s.at}>{fmtDateTime(s.at, lang)}</time></p>
                       </li>
                     ))}
                   </ol>
@@ -140,7 +141,7 @@ export default async function TrackPage({ searchParams }: { searchParams: Promis
         )}
         <ComplaintChannels />
         <p className="text-slate-700">
-          {t("City staff?")} <Link href="/login" className="font-semibold text-brand-700 underline underline-offset-2">{t("Sign in here")}</Link>.
+          {t("City staff?")} <Link href="/login" className="tap-link font-semibold text-brand-700 underline underline-offset-2">{t("Sign in here")}</Link>.
         </p>
       </main>
       <SiteFooter />

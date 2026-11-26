@@ -109,7 +109,7 @@ type Route = {
 };
 
 export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string; back?: string; copy?: string; delivered?: string; scope?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const { id } = await params;
   const { new: isNew, scan, file, back, copy: copyFlag, delivered, scope } = await searchParams;
   const backHref = recordsBackHref(back);
@@ -321,15 +321,15 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
     [t("Transaction type"), t(txLabel(rec.transaction_type))],
     [t(incoming ? "From" : "To"), [incoming ? rec.sender_name : rec.recipient_name, incoming ? rec.sender_org : rec.recipient_org].filter(Boolean).join(", ") || "—"],
     ...(rec.barangay !== undefined ? [[t("Barangay"), rec.barangay ?? "—"] as [string, React.ReactNode]] : []),
-    [t("Date on document"), fmtDate(rec.document_date)],
+    [t("Date on document"), fmtDate(rec.document_date, lang)],
     [t("How it arrived"), rec.mode ? t(rec.mode[0].toUpperCase() + rec.mode.slice(1)) : "—"],
     [t("Subject area"), rec.category ?? "—"],
     [t("Search words"), rec.keywords.length ? rec.keywords.join(", ") : "—"],
     [t("Priority"), t(PRIORITY_LABEL[rec.priority])],
     [t("Who may see it"), `${t(CONF_LABEL[rec.confidentiality])}: ${t(CONF_HELP[rec.confidentiality]).toLowerCase()}`],
     [t("Started by office"), officeName(rec.origin_office)],
-    [t("Logged in"), t("{date} by {name}", { date: fmtDateTime(rec.created_at), name: rec.creator?.full_name ?? "—" })],
-    [t("Due date"), rec.due_date ? `${fmtDate(rec.due_date)}${due ? ` (${due})` : ""}` : "—"],
+    [t("Logged in"), t("{date} by {name}", { date: fmtDateTime(rec.created_at, lang), name: rec.creator?.full_name ?? "—" })],
+    [t("Due date"), rec.due_date ? `${fmtDate(rec.due_date, lang)}${due ? ` (${due})` : ""}` : "—"],
     ...(me.role !== "admin"
       ? [[
           t("Paper copy"),
@@ -382,7 +382,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
           <span className="font-medium">{t("Attached {file}", { file: f.file_name })}{f.version > 1 ? ` (${t("version {n}", { n: f.version })})` : ""}</span>
         </div>
         <p className="mt-0.5 text-sm text-slate-600">
-          {fmtDateTime(f.uploaded_at)} · {f.uploader?.full_name ?? "—"}
+          {fmtDateTime(f.uploaded_at, lang)} · {f.uploader?.full_name ?? "—"}
         </p>
       </li>
     )),
@@ -397,7 +397,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
         </div>
         {e.reason && <p className="mt-1 text-sm text-slate-700">“{e.reason}”</p>}
         <p className="mt-0.5 text-sm text-slate-600">
-          {fmtDateTime(e.at)} · {e.actor ?? "—"}
+          {fmtDateTime(e.at, lang)} · {e.actor ?? "—"}
         </p>
       </li>
     )),
@@ -425,7 +425,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
       {slow[r.id] && <p className="mt-1 text-sm text-slate-700">{t("Took {took}, standard {std}", { took: fmtTook(slow[r.id].took), std: fmtTook(slow[r.id].standard) })}</p>}
       {assignEvents[r.id]?.kind === "cleared" && <p className="mt-1 text-sm text-slate-600">{t("Assignment cleared.")}</p>}
       <p className="mt-0.5 text-sm text-slate-600">
-        {fmtDateTime(r.created_at)} · {r.actor?.full_name ?? "—"}
+        {fmtDateTime(r.created_at, lang)} · {r.actor?.full_name ?? "—"}
       </p>
     </li>,
   ]);
@@ -444,7 +444,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
       {deleted && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
           <span>
-            {t("In the deleted-records bin since {date} by {name}. Reason:", { date: fmtDateTime(rec.deleted_at), name: rec.deleter?.full_name ?? "—" })} “{rec.delete_reason}”
+            {t("In the deleted-records bin since {date} by {name}. Reason:", { date: fmtDateTime(rec.deleted_at, lang), name: rec.deleter?.full_name ?? "—" })} “{rec.delete_reason}”
           </span>
           <form action={restoreRecord}>
             <input type="hidden" name="record_id" value={rec.id} />
@@ -529,7 +529,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               <dd className="text-lg font-semibold">{officeName(rec.current_office)}</dd>
               {latest && (
                 <dd className="text-sm text-slate-700">
-                  {t("Last update by {name} on {date}", { name: latest.actor?.full_name ?? "—", date: fmtDate(latest.created_at) })}
+                  {t("Last update by {name} on {date}", { name: latest.actor?.full_name ?? "—", date: fmtDate(latest.created_at, lang) })}
                 </dd>
               )}
             </div>
@@ -548,19 +548,19 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               {latestNote && open && latestNote !== arrival && (
                 <dd className="mt-2 rounded-md bg-gold-100 px-3 py-2 text-sm text-slate-800">
                   <span className="font-semibold">{t("Latest note:")}</span> “{latestNote.remarks || actionText(latestNote.action_taken, t)}”
-                  <span className="block text-slate-600">{latestNote.actor?.full_name ?? "—"}, {fmtDate(latestNote.created_at)}</span>
+                  <span className="block text-slate-600">{latestNote.actor?.full_name ?? "—"}, {fmtDate(latestNote.created_at, lang)}</span>
                 </dd>
               )}
             </div>
             <div className="sm:px-4 first:pl-0 last:pr-0">
               <dt className="text-sm text-slate-600">{t("Due")}</dt>
               <dd className={`text-lg font-semibold ${isLate ? "text-red-700" : ""}`}>
-                {rec.due_date ? fmtDate(rec.due_date) : t("No due date")}
+                {rec.due_date ? fmtDate(rec.due_date, lang) : t("No due date")}
               </dd>
               {due && <dd className={`text-sm font-medium ${isLate ? "text-red-700" : "text-slate-700"}`}>{due[0].toUpperCase() + due.slice(1)}</dd>}
               {complaintClock && complaintClock.kind !== "replied" && (
                 <dd className={`text-sm ${complaintClock.kind === "late" ? "font-medium text-red-700" : "text-slate-700"}`}>
-                  {t("Reply due {date}", { date: fmtDateTime(replyDueAt(rec.created_at).toISOString()) })} · {complaintClock.kind === "late" ? t("Late by {n} hours", { n: complaintClock.hours }) : t("{n} hours left", { n: complaintClock.hours })}
+                  {t("Reply due {date}", { date: fmtDateTime(replyDueAt(rec.created_at).toISOString(), lang) })} · {complaintClock.kind === "late" ? t("Late by {n} hours", { n: complaintClock.hours }) : t("{n} hours left", { n: complaintClock.hours })}
                 </dd>
               )}
               {arta && (
@@ -687,7 +687,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
               <h2 id="copy-h" className="mb-3 font-semibold">{t("Copy request")}</h2>
               {copyReq ? (
                 (() => {
-                  const tag = dpoTag({ dpo_status: copyReq.dpo_status, dpo_name: copyReq.dpo?.full_name, dpo_at: copyReq.dpo_at }, fmtDate);
+                  const tag = dpoTag({ dpo_status: copyReq.dpo_status, dpo_name: copyReq.dpo?.full_name, dpo_at: copyReq.dpo_at }, (v) => fmtDate(v, lang));
                   return (
                     <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                       <div className="flex gap-2 border-b border-slate-100 py-1">
@@ -721,7 +721,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                       {copyReq.released_at && (
                         <div className="flex gap-2 border-b border-slate-100 py-1">
                           <dt className="w-40 shrink-0 text-slate-500">{t("Copy released")}</dt>
-                          <dd className="font-medium">{t("Released to {name}, {date}", { name: copyReq.released_to ?? "—", date: fmtDate(copyReq.released_at) })}</dd>
+                          <dd className="font-medium">{t("Released to {name}, {date}", { name: copyReq.released_to ?? "—", date: fmtDate(copyReq.released_at, lang) })}</dd>
                         </div>
                       )}
                     </dl>
@@ -786,7 +786,7 @@ export default async function RecordPage({ params, searchParams }: { params: Pro
                   <span className="min-w-0 break-all font-medium">{f.file_name}</span>
                 </a>
                 <p className="mt-1 pl-12 text-slate-600">
-                  {[KIND[f.mime_type] ?? t("File"), formatBytes(f.size_bytes), fmtDate(f.uploaded_at), f.uploader?.full_name ?? "—", ...(f.version > 1 ? [t("version {n}", { n: f.version })] : [])].join(" · ")}
+                  {[KIND[f.mime_type] ?? t("File"), formatBytes(f.size_bytes), fmtDate(f.uploaded_at, lang), f.uploader?.full_name ?? "—", ...(f.version > 1 ? [t("version {n}", { n: f.version })] : [])].join(" · ")}
                 </p>
               </li>
             ))}

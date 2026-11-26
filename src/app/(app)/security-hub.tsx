@@ -9,14 +9,14 @@ import { EVENT_WORDS, attentionItems, findingText, parseSecuritySummary } from "
 /** The administrator's home: is anything wrong with access right now? One RPC feeds the whole screen. */
 export async function SecurityHub({ me }: { me: Profile }) {
   if (me.role !== "admin") return null;
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const settings = await getSettings();
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("rms_admin_security_summary");
   if (error) console.error("rms_admin_security_summary failed", error.message);
   const s = error ? null : parseSecuritySummary(data);
 
-  const items = s ? attentionItems(s, new Date(), fmtDateTime) : [];
+  const items = s ? attentionItems(s, new Date(), (v) => fmtDateTime(v, lang)) : [];
   const finding = findingText(items.length);
 
   const strip = s
@@ -31,7 +31,7 @@ export async function SecurityHub({ me }: { me: Profile }) {
     : [];
 
   const audit = s?.audit ?? null;
-  const asOf = s ? fmtDateTime(s.asOf) : "";
+  const asOf = s ? fmtDateTime(s.asOf, lang) : "";
 
   return (
     <div className="space-y-6">
@@ -110,7 +110,7 @@ export async function SecurityHub({ me }: { me: Profile }) {
                   <tbody className="divide-y divide-line">
                     {s.events.map((e, i) => (
                       <tr key={i}>
-                        <td className="whitespace-nowrap px-4 py-2 sm:px-5">{fmtDateTime(e.at)}</td>
+                        <td className="whitespace-nowrap px-4 py-2 sm:px-5">{fmtDateTime(e.at, lang)}</td>
                         <td className="px-3 py-2">{e.who || "—"}</td>
                         <td className="px-3 py-2">{EVENT_WORDS[e.event] ? t(EVENT_WORDS[e.event]) : e.event}</td>
                         <td className="px-3 py-2 font-mono">{e.ip ?? "—"}</td>
@@ -140,7 +140,7 @@ export async function SecurityHub({ me }: { me: Profile }) {
                 ) : audit.checkedAt && audit.pending === 0 && Date.now() - new Date(audit.checkedAt).getTime() <= 24 * 3600_000 ? (
                   <dd>
                     <span className="badge bg-emerald-100 text-emerald-900">{t("Checked")}</span>
-                    <span className="mt-1 block text-sm text-slate-600">{t("{total} entries · last checked {time}", { total: audit.total, time: fmtDateTime(audit.checkedAt) })}</span>
+                    <span className="mt-1 block text-sm text-slate-600">{t("{total} entries · last checked {time}", { total: audit.total, time: fmtDateTime(audit.checkedAt, lang) })}</span>
                   </dd>
                 ) : (
                   <dd>

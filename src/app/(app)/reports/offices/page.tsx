@@ -23,7 +23,7 @@ type OfficeRow = {
 
 /** Per office: what is waiting, being worked on and late, how long things sit there, and how fast work gets done. */
 export default async function OfficeWorkloadPage() {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const me = await getProfile();
   if (me.role === "staff" || me.role === "viewer") redirect("/");
   const supabase = await createClient();
@@ -60,7 +60,7 @@ export default async function OfficeWorkloadPage() {
         </div>
         <PrintButton label="Print report" />
       </div>
-      <h1 className="hidden text-xl font-bold print:block">{t("Office workload, {date}", { date: fmtDate(new Date().toISOString()) })}</h1>
+      <h1 className="hidden text-xl font-bold print:block">{t("Office workload, {date}", { date: fmtDate(new Date().toISOString(), lang) })}</h1>
 
       <section className="card overflow-x-auto">
         <table className="w-full">

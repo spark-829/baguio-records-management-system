@@ -12,7 +12,7 @@ import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
  * and a QR code that opens the public tracking page. It shows no other personal data.
  */
 export default async function ReceiptPage({ params }: { params: Promise<{ id: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const { id } = await params;
   const supabase = await createClient();
   const { data } = await supabase
@@ -49,7 +49,7 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
           <dt className="font-semibold">{t("Document")}</dt><dd>{r.doc_type?.name}</dd>
           {r.sender_name && (<><dt className="font-semibold">{t("Filed by")}</dt><dd>{r.sender_name}</dd></>)}
           {r.reference_no && (<><dt className="font-semibold">{t(r.reference_label ?? DEFAULT_REF_LABEL)}</dt><dd className="font-mono">{r.reference_no}</dd></>)}
-          <dt className="font-semibold">{t("Received")}</dt><dd>{fmtDateTime(r.created_at)}</dd>
+          <dt className="font-semibold">{t("Received")}</dt><dd>{fmtDateTime(r.created_at, lang)}</dd>
           <dt className="font-semibold">{t("Received by")}</dt><dd>{r.creator?.full_name?.split(" (")[0]}</dd>
         </dl>
         <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-300 pt-4">

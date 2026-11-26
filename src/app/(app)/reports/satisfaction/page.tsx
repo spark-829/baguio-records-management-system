@@ -20,7 +20,7 @@ type CssSent = { office_id: string; record_id: string; tracking_no: string; sent
 
 /** Monthly client satisfaction by office. Heads see their own office (RLS); the records desk, admin and HRMO see every office. */
 export default async function SatisfactionReportPage({ searchParams }: { searchParams: Promise<{ month?: string; sent?: string; failed?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const me = await getProfile();
   const hrmo = isHrmoCss({ role: me.role, officeCode: me.office?.code, windowFlag: me.window_intake });
   if (!(isCentral(me) || me.role === "dept_head" || hrmo)) redirect("/");
@@ -66,7 +66,7 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
       <ReportsNav me={me} current="/reports/satisfaction" />
       <div className="space-y-2">
         <h1 className="text-2xl font-bold">{t("Client satisfaction")}</h1>
-        <p className="text-slate-700">{t("Send to the City Human Resource Management Office by {date}.", { date: fmtDate(hrmoDeadline(month)) })}</p>
+        <p className="text-slate-700">{t("Send to the City Human Resource Management Office by {date}.", { date: fmtDate(hrmoDeadline(month), lang) })}</p>
         <Form action="/reports/satisfaction" prefetch={false} className="no-print flex flex-wrap items-end gap-2">
           <div><label className="label" htmlFor="sat-month">{t("Month")}</label><input id="sat-month" type="month" name="month" defaultValue={month} className="input" /></div>
           <button className="btn-secondary">{t("Apply")}</button>
@@ -81,7 +81,7 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
         <section className="card space-y-2 p-4" aria-label={t("Send this month's summary to HRMO")}>
           {mySent ? (
             <p>
-              {t("Sent on {date} as {tracking}.", { date: fmtDate((mySent as { created_at: string }).created_at), tracking: (mySent as { tracking_no: string }).tracking_no })}{" "}
+              {t("Sent on {date} as {tracking}.", { date: fmtDate((mySent as { created_at: string }).created_at, lang), tracking: (mySent as { tracking_no: string }).tracking_no })}{" "}
               <Link href={`/records/${(mySent as { id: string }).id}`}>{t("Open the record")}</Link>
             </p>
           ) : (
@@ -123,7 +123,7 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
                     {consolidated && (
                       <td className="p-3">
                         {o.state === "sent" && o.css ? (
-                          <Link href={`/records/${o.css.record_id}`}>{t("Sent {date}", { date: fmtDate(o.css.sent_at) })}</Link>
+                          <Link href={`/records/${o.css.record_id}`}>{t("Sent {date}", { date: fmtDate(o.css.sent_at, lang) })}</Link>
                         ) : o.state === "late" ? (
                           <span className="badge bg-red-100 text-red-800">{t("Late")}</span>
                         ) : (
@@ -141,7 +141,7 @@ export default async function SatisfactionReportPage({ searchParams }: { searchP
               <h2 id="sat-comments" className="text-xl font-bold">{t("Comments")}</h2>
               <ul className="space-y-2">
                 {rep.comments.map((c, i) => (
-                  <li key={i}>“{c.comment}” <span className="text-sm text-slate-600">{c.office}, {fmtDate(c.at)}</span></li>
+                  <li key={i}>“{c.comment}” <span className="text-sm text-slate-600">{c.office}, {fmtDate(c.at, lang)}</span></li>
                 ))}
               </ul>
             </section>
