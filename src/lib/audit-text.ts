@@ -70,3 +70,18 @@ export function profileText(action: string, data: Record<string, unknown> | null
   const text = parts.join(", ");
   return `${old.full_name ?? d.full_name ?? ""}: ${text || "account updated"}`;
 }
+
+/**
+ * Administrators do not read confidential records (role review 2026-11-26). The audit trail still holds every
+ * change, so for an admin the Details text of a confidential record, or of a routing step or file on a record
+ * the admin cannot see, is replaced. Returns null when nothing needs hiding.
+ */
+export function adminMaskedText(table: string, d: Record<string, unknown>, lk: RouteLookups): string | null {
+  if (table === "rms_records") {
+    return d.confidentiality === "confidential" ? `${String(d.tracking_no ?? "")}: confidential record (details hidden)`.trim() : null;
+  }
+  if (table === "rms_routes" || table === "rms_attachments") {
+    return lk.tracking.has(String(d.record_id ?? "")) ? null : "Confidential record (details hidden)";
+  }
+  return null;
+}

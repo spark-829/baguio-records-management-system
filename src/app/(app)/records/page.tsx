@@ -57,6 +57,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           <h1 className="text-2xl font-bold">{t("Records")}</h1>
           {me.role !== "viewer" && me.role !== "admin" && <Link prefetch={false} href="/records/new" className="btn-primary">{t("Register a record")}</Link>}
         </div>
+        {me.role === "admin" && <p className="text-slate-600">{t("Confidential records are not shown to administrators. The records desk and the office holding them can open them.")}</p>}
         {oversight && <div className="my-2"><ScopeLinks base="/records" scope="mine" /></div>}
         {f.box && (
           <p className="text-lg font-semibold">

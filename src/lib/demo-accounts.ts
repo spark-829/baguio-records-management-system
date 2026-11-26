@@ -23,6 +23,7 @@ export const DEMO_START: DemoAccount[] = [
 /** Every demo account, grouped by office (A to Z by office name). */
 export const DEMO_OFFICES: DemoOffice[] = [
   { office: "Administrator (system)", accounts: [{ email: "admin@rms-demo.test", role: "Administrator" }] },
+  { office: "Auditor (independent, read-only)", accounts: [{ email: "auditor@rms-demo.test", role: "Auditor: audit log and access history only" }] },
   { office: "City Accounting Office", accounts: [{ email: "cacco.head@rms-demo.test", role: HEAD }, { email: "cacco.window@rms-demo.test", role: WINDOW }] },
   { office: "City Administrator's Office", accounts: [{ email: "cao.head@rms-demo.test", role: "Head (city-wide view)" }, { email: "admin.office@rms-demo.test", role: STAFF }] },
   { office: "City Assessor's Office", accounts: [{ email: "casso.head@rms-demo.test", role: HEAD }, { email: "casso.window@rms-demo.test", role: WINDOW }] },

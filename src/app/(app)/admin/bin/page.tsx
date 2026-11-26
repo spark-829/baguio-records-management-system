@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { fmtDateTime } from "@/lib/labels";
 import { restoreRecord } from "../../records/[id]/actions";
 
-type Row = { id: string; tracking_no: string; subject: string; deleted_at: string; delete_reason: string | null; deleter: { full_name: string } | null };
+// Confidential records come back with no subject: administrators can restore them but not read them (rms_admin_bin).
+type Row = { id: string; tracking_no: string; subject: string | null; confidential: boolean; deleted_at: string; delete_reason: string | null; deleted_by_name: string | null };
 
 export const generateMetadata = pageTitle("Deleted records bin");
 
@@ -16,12 +17,8 @@ export default async function BinPage({ searchParams }: { searchParams: Promise<
   if (me.role !== "admin") redirect("/");
   const { deleted } = await searchParams;
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("rms_records")
-    .select("id, tracking_no, subject, deleted_at, delete_reason, deleter:rms_profiles!rms_records_deleted_by_fkey(full_name)")
-    .not("deleted_at", "is", null)
-    .order("deleted_at", { ascending: false });
-  const rows = (data ?? []) as unknown as Row[];
+  const { data } = await supabase.rpc("rms_admin_bin");
+  const rows = (data ?? []) as Row[];
   return (
     <div className="space-y-4">
       <div>
@@ -40,10 +37,19 @@ export default async function BinPage({ searchParams }: { searchParams: Promise<
             {rows.map((r) => (
               <tr key={r.id}>
                 <td className="px-3 py-2">
-                  <Link href={`/records/${r.id}`} className="tap-link font-mono text-brand-700 hover:underline">{r.tracking_no}</Link>
-                  <div className="text-slate-700">{r.subject}</div>
+                  {r.confidential ? (
+                    <>
+                      <span className="font-mono">{r.tracking_no}</span>
+                      <div className="text-slate-600">{t("Confidential: subject hidden from administrators")}</div>
+                    </>
+                  ) : (
+                    <>
+                      <Link href={`/records/${r.id}`} className="tap-link font-mono text-brand-700 hover:underline">{r.tracking_no}</Link>
+                      <div className="text-slate-700">{r.subject}</div>
+                    </>
+                  )}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.deleted_at, lang)}<div className="text-xs">{t("by {name}", { name: r.deleter?.full_name ?? "—" })}</div></td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.deleted_at, lang)}<div className="text-xs">{t("by {name}", { name: r.deleted_by_name ?? "—" })}</div></td>
                 <td className="px-3 py-2">{r.delete_reason}</td>
                 <td className="px-3 py-2 text-right">
                   <form action={restoreRecord}>

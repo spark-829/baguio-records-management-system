@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { integrityErrorText, profileText, routeText, checkCoverageText } from "../src/lib/audit-text";
+import { adminMaskedText, integrityErrorText, profileText, routeText, checkCoverageText } from "../src/lib/audit-text";
 
 describe("checkCoverageText", () => {
   const fmt = (s: string) => `on ${s}`;
@@ -67,5 +67,19 @@ describe("profileText", () => {
   it("lists admin changes", () => {
     expect(profileText("UPDATE", { ...base, role: "dept_head", office_id: "o2", is_active: false }, base, offices)).toBe("Ana Dizon: role Department Staff → Department Head, office → City Legal Office, deactivated");
     expect(profileText("INSERT", base, null, offices)).toBe("Ana Dizon · Department Staff");
+  });
+});
+
+describe("adminMaskedText", () => {
+  const lk = { tracking: new Map([["r1", "IN-2026-0001"]]), offices: new Map<string, string>() };
+  it("hides confidential record rows", () => {
+    expect(adminMaskedText("rms_records", { tracking_no: "IN-2026-0002", subject: "Medical", confidentiality: "confidential" }, lk)).toBe("IN-2026-0002: confidential record (details hidden)");
+    expect(adminMaskedText("rms_records", { tracking_no: "IN-2026-0001", subject: "Memo", confidentiality: "internal" }, lk)).toBeNull();
+  });
+  it("hides routing steps and files of records the admin cannot see", () => {
+    expect(adminMaskedText("rms_routes", { record_id: "r2", remarks: "secret" }, lk)).toBe("Confidential record (details hidden)");
+    expect(adminMaskedText("rms_attachments", { record_id: "r2", file_name: "x.pdf" }, lk)).toBe("Confidential record (details hidden)");
+    expect(adminMaskedText("rms_routes", { record_id: "r1" }, lk)).toBeNull();
+    expect(adminMaskedText("rms_profiles", { full_name: "A" }, lk)).toBeNull();
   });
 });

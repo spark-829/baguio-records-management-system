@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { DEMO_OFFICES, DEMO_START, demoAccountCount, demoEmailParam, demoHref } from "../src/lib/demo-accounts";
 
 describe("demo accounts", () => {
-  it("lists all 41 live demo accounts once per office", () => {
-    expect(demoAccountCount()).toBe(41);
+  it("lists all 42 live demo accounts once per office", () => {
+    expect(demoAccountCount()).toBe(42);
     const offices = DEMO_OFFICES.map((o) => o.office);
     expect(new Set(offices).size).toBe(offices.length);
   });

@@ -1635,7 +1635,7 @@ export const FIL: Record<string, string> = {
   "Never share your password or let someone else work under your name. Everything done under your account is recorded as done by you.": "Huwag ibahagi ang iyong password o hayaang may ibang gumamit ng pangalan mo. Lahat ng ginawa sa iyong account ay itinatalang ginawa mo.",
   "What you can do depends on your role": "Ang magagawa mo ay nakadepende sa iyong tungkulin",
   "Your role and your office decide which records you can see and what you can do with them. The database itself enforces these rules, not only the screens.": "Ang iyong tungkulin at opisina ang nagpapasya kung aling mga record ang makikita mo at ano ang magagawa mo sa mga ito. Ang database mismo ang nagpapatupad ng mga patakarang ito, hindi lamang ang mga screen.",
-  "Administrator: manages accounts, offices, security settings and system analytics. Administrators do not register or act on records.": "Administrador: namamahala ng mga account, opisina, setting ng seguridad at system analytics. Hindi nagrerehistro o kumikilos sa mga record ang mga administrador.",
+  "Administrator: manages accounts, offices, security settings and system analytics. Administrators do not register or act on records, and cannot open confidential records.": "Administrador: namamahala ng mga account, opisina, setting ng seguridad at system analytics. Hindi nagrerehistro o kumikilos sa mga record ang mga administrador, at hindi nila mabubuksan ang mga kumpidensyal na record.",
   "Records Officer: registers incoming and outgoing records, sends them to offices and keeps track of paper boxes.": "Records Officer: nagrerehistro ng papasok at palabas na record, ipinapadala ang mga ito sa mga opisina at sinusubaybayan ang mga kahon ng papel.",
   "Department Head: acts on records sent to the office, assigns them to staff and can open the office's confidential records.": "Department Head: kumikilos sa mga record na ipinadala sa opisina, iniaatas ang mga ito sa kawani at nabubuksan ang mga kumpidensyal na record ng opisina.",
   "Department Staff: acts on records of their own office.": "Department Staff: kumikilos sa mga record ng sarili nilang opisina.",
@@ -1747,4 +1747,9 @@ export const FIL: Record<string, string> = {
   "No office (auditor or administrator)": "Walang opisina (auditor o administrator)",
   "Auditor: may read the audit log and access history": "Auditor: maaaring basahin ang audit log at kasaysayan ng pag-access",
   "For an independent auditor such as the COA resident auditor. Leave the office empty so they see the audit trail only, not the records of an office.": "Para sa independiyenteng auditor gaya ng resident auditor ng COA. Iwanang walang opisina para audit trail lang ang makita nila, hindi ang mga rekord ng isang opisina.",
+  "Confidential: subject hidden from administrators": "Kumpidensyal: nakatago ang paksa sa mga administrator",
+  "Confidential records are not shown to administrators. The records desk and the office holding them can open them.": "Hindi ipinapakita sa mga administrator ang mga kumpidensyal na rekord. Ang records desk at ang opisinang may hawak nito ang maaaring magbukas.",
+  "Confidential record": "Kumpidensyal na record",
+  "Auditor: audit log and access history only": "Auditor: audit log at kasaysayan ng pag-access lamang",
+  "Auditor (independent, read-only)": "Auditor (independiyente, basa lamang)",
 };

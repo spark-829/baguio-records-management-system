@@ -46,7 +46,7 @@ export const TERMS: LegalDoc = {
       heading: "What you can do depends on your role",
       paras: ["Your role and your office decide which records you can see and what you can do with them. The database itself enforces these rules, not only the screens."],
       list: [
-        "Administrator: manages accounts, offices, security settings and system analytics. Administrators do not register or act on records.",
+        "Administrator: manages accounts, offices, security settings and system analytics. Administrators do not register or act on records, and cannot open confidential records.",
         "Records Officer: registers incoming and outgoing records, sends them to offices and keeps track of paper boxes.",
         "Department Head: acts on records sent to the office, assigns them to staff and can open the office's confidential records.",
         "Department Staff: acts on records of their own office.",
