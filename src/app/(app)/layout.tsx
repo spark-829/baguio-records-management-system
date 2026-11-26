@@ -6,7 +6,9 @@ import { ROLE_LABEL } from "@/lib/labels";
 import { signOut } from "../login/actions";
 import { NavLinks } from "@/components/nav-links";
 import { BrandLockup, SiteFooter } from "@/components/brand";
-import { LangToggle } from "@/components/lang-toggle";
+import { AccountMenu } from "@/components/account-menu";
+import { LogOutIcon } from "@/components/icons";
+import { inlineNav } from "@/lib/nav";
 import { getT } from "@/lib/i18n/server";
 import { AlertBell } from "@/components/alert-bell";
 import { assistantContext } from "@/lib/chat-prompts";
@@ -26,7 +28,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         { href: "/records", label: t("Records") },
         { href: "/admin/bin", label: t("Bin") },
         { href: "/admin/settings", label: t("Settings") },
-        { href: "/help", label: t("Help") },
       ]
     : [
         { href: "/", label: t("Dashboard") },
@@ -39,7 +40,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         ...(me.role === "staff" && isHrmoCss({ role: me.role, officeCode: me.office?.code, windowFlag: me.window_intake })
           ? [{ href: "/reports/satisfaction", label: t("Client satisfaction") }]
           : []),
-        { href: "/help", label: t("Help") },
       ];
   const ctx = assistantContext(me);
   const roleLabel = ROLE_LABEL[me.role];
@@ -50,32 +50,52 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <a href="#main" className="sr-only z-50 rounded-lg bg-white px-4 py-3 font-semibold text-brand-800 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         {t("Skip to main content")}
       </a>
-      <header className="no-print on-dark border-b-4 border-gold-500 bg-brand-700 text-white">
-        <div className="shell-bar mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
+      <header className="shell-header no-print on-dark sticky top-0 z-30 border-b-4 border-gold-500 bg-brand-700 text-white">
+        <div className="shell-bar mx-auto flex max-w-7xl items-center gap-x-3 px-4 py-2 xl:py-0">
           <Link prefetch={false} href="/" className="flex min-h-11 items-center rounded-lg">
-            <BrandLockup />
+            <BrandLockup compact />
           </Link>
-          <div className="relative ml-auto flex min-w-0 flex-wrap items-center justify-end lg:flex-nowrap gap-2 text-sm sm:gap-3">
-            <LangToggle dark />
+          <NavLinks part="inline" links={links} inline={inlineNav(links.length)} />
+          <div className="ml-auto flex items-center gap-2">
             {me.office_id && me.role !== "admin" && <AlertBell officeCode={me.office?.code ?? null} />}
-            <div className="shell-who hidden min-w-0 max-w-[12rem] leading-tight sm:block sm:text-right xl:max-w-[18rem]" title={line2 ? `${me.full_name} · ${line2}` : me.full_name}>
+            <div className="shell-who hidden min-w-0 max-w-[14rem] text-sm leading-tight xl:block xl:text-right" title={line2 ? `${me.full_name} · ${line2}` : me.full_name}>
               <div className="font-semibold [overflow-wrap:anywhere]">{me.full_name}</div>
               <div className="text-xs text-brand-100 [overflow-wrap:anywhere]">{line2}</div>
             </div>
-            <Link prefetch={false} href="/security" className="shell-account hidden min-h-11 items-center sm:inline-flex rounded-md border-2 border-white/60 px-3.5 font-semibold hover:bg-white/10">{t("My account")}</Link>
-            <form action={signOut}>
-              <button className="inline-flex min-h-11 items-center rounded-md border-2 border-white/60 px-3.5 font-semibold text-white hover:bg-white/10">{t("Sign out")}</button>
+            <AccountMenu />
+            <form action={signOut} className="hidden sm:block">
+              <button
+                aria-label={t("Sign out")}
+                title={t("Sign out")}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-lg border-2 border-white/60 text-white hover:bg-white/10"
+              >
+                <LogOutIcon />
+              </button>
             </form>
+          </div>
+          <NavLinks
+            part="menu"
+            links={links}
+            inline={inlineNav(links.length)}
+            signOutSlot={
+              <form action={signOut}>
+                <button className="flex min-h-12 w-full items-center gap-3 border-l-4 border-transparent px-3 text-left font-semibold text-slate-700 hover:bg-brand-50 hover:text-brand-900">
+                  <LogOutIcon className="h-5 w-5" />
+                  {t("Sign out")}
+                </button>
+              </form>
+            }
+          />
+        </div>
+        <div className="shell-who-strip bg-brand-800 px-4 py-1.5 text-sm xl:hidden" title={line2 ? `${me.full_name} · ${line2}` : me.full_name}>
+          <div className="mx-auto max-w-7xl leading-snug [overflow-wrap:anywhere]">
+            <span className="font-semibold">{me.full_name}</span>
+            {line2 && <span className="text-brand-100"> · {line2}</span>}
           </div>
         </div>
       </header>
-      <div className="no-print border-b border-slate-300 bg-white shadow-sm">
-        <div className="mx-auto max-w-7xl px-4">
-          <NavLinks links={links} phoneOnly={[{ href: "/security", label: t("My account") }]} />
-        </div>
-      </div>
       <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-20 sm:pt-8">{children}</main>
-      <SiteFooter className="mt-12 pb-24" />
+      <SiteFooter className="mt-12 pb-24" help />
       <AssistantLauncher userId={me.id} greeting={ctx.greeting} scope={ctx.scope} office={ctx.office} prompts={ctx.prompts} demo={isAiDemo()} />
       <IdleLogout minutes={settings.idleTimeoutMinutes} />
     </div>

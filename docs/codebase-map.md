@@ -61,6 +61,7 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `chat-prompts.ts` | assistant greeting, scope line and role-based starter questions |
 | `chat-store.ts` | assistant chat kept in sessionStorage per user, wiped at /login |
 | `nav-progress.ts` | which link clicks and GET form submits start a page change (top progress bar in `components/nav-progress.tsx`, mounted in the root layout) |
+| `nav.ts` | `isActive` (current main link), `inlineNav` (links go inline in the header only when there are at most 6; else in the Menu sheet) |
 | `api.ts` | `apiContext`, `aiError` for routes |
 | `i18n/` | `core.ts` (`makeT`), `server.ts` (`getT`), `client.tsx` (`useT`), `fil.ts` (dictionary, grep only) |
 | `qr.ts`, `watermark.ts`, `shrink-image.ts`, `image-size.ts` | QR, PDF stamp, image helpers |
@@ -93,8 +94,8 @@ Outside `(app)`: `src/app/login`, `mfa`, `track` (public tracking), `survey` (pu
 | `settings-diff.ts` | `changedSettings` (which admin settings actually changed) |
 | `user-list.ts`, `demo-accounts.ts` | admin user list filters and status; the sign-in page demo accounts by office (`?email=` prefill) |
 
-`src/components/`: alert-bell, badges, brand, nav-links, stat-strip (summary numbers), reports-nav (links between report pages), tab-nav (one tab style), lang-toggle, idle-logout,
-scan-qr-button, rich, due-calendar, barangay-map, use-upload-prep (compress + thumbnail hook).
+`src/components/`: account-menu (My account card with the language switch), alert-bell, badges, brand, icons (inline Lucide SVGs), nav-links (header links, Menu button and sheet), stat-strip (summary numbers), reports-nav (links between report pages), tab-nav (one tab style), lang-toggle, idle-logout,
+scan-qr-button, rich, due-calendar, barangay-map, use-upload-prep (compress + thumbnail hook), use-exclusive-panel (header panels close each other).
 
 ## Database: `supabase/`
 

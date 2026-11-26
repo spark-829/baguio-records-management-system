@@ -161,7 +161,7 @@ content.
   line; Filipino runs about 30% longer, so leave room.
 - **Proven patterns** (Vic's rule): name the app or design system a
   pattern comes from when proposing it.
-- **App shell**: GOV.UK header over a white service-nav bar. The assistant has one entry point on every page and for every role: a labelled "Ask the assistant" button fixed bottom-right (never icon-only), hidden while its panel is open. The panel is full height on the right: docked and pushing the page (non-modal; Esc closes it only from inside) from 1280px; a modal sheet from 640 to 1279px; full screen on phones. The page keeps bottom padding so the button never covers the last content or a sticky action bar.
+- **App shell**: one sticky GOV.UK-style header holding the main links, name and position, and icon-only Alerts, My account (with the language switch inside) and Sign out. Help lives in the footer. Below xl (and when the docked assistant narrows the page) the links fold into a Menu button, and the name and position move to a slim strip under the header; roles with more than 6 links always use the Menu button. The assistant has one entry point on every page and for every role: a labelled "Ask the assistant" button fixed bottom-right (never icon-only), hidden while its panel is open. The panel is full height on the right: docked and pushing the page (non-modal; Esc closes it only from inside) from 1280px; a modal sheet from 640 to 1279px; full screen on phones. The page keeps bottom padding so the button never covers the last content or a sticky action bar.
 
 ## Sources
 

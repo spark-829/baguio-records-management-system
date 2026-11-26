@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useT } from "@/lib/i18n/client";
 
 /*
@@ -17,20 +18,21 @@ export function PineMark({ className = "h-10 w-10 text-gold-100" }: { className?
   );
 }
 
-export function BrandLockup({ sub = true }: { sub?: boolean }) {
+/** `compact` hides the sub line from xl up so the app header row fits at 1280px. */
+export function BrandLockup({ sub = true, compact = false }: { sub?: boolean; compact?: boolean }) {
   const t = useT();
   return (
     <span className="flex items-center gap-3">
       <PineMark className="h-11 w-11 shrink-0 text-gold-100" />
       <span className="leading-tight">
         <span className="block text-xl font-bold tracking-tight text-white">{t("Baguio RMS")}</span>
-        {sub && <span className="brand-sub hidden text-xs text-brand-100 sm:block">{t("Records Management System")}</span>}
+        {sub && <span className={`brand-sub hidden text-xs text-brand-100 sm:block${compact ? " xl:hidden" : ""}`}>{t("Records Management System")}</span>}
       </span>
     </span>
   );
 }
 
-export function SiteFooter({ className = "mt-10" }: { className?: string }) {
+export function SiteFooter({ className = "mt-10", help = false }: { className?: string; help?: boolean }) {
   const t = useT();
   return (
     <footer className={`no-print ${className} border-t-4 border-gold-500 bg-brand-900 text-brand-100`}>
@@ -40,6 +42,9 @@ export function SiteFooter({ className = "mt-10" }: { className?: string }) {
           <div className="leading-snug">
             <div className="font-semibold text-white">Baguio RMS</div>
             <div>{t("Records Management System")}</div>
+            {help && (
+              <Link prefetch={false} href="/help" className="tap-link font-semibold text-white underline">{t("Help")}</Link>
+            )}
           </div>
         </div>
         <p className="max-w-xl leading-relaxed sm:text-right">
