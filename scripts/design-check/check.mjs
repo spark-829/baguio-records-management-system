@@ -30,7 +30,7 @@ const BASE = (arg("url") ?? process.env.RMS_URL ?? "https://baguio-rms.vicsonyar
 const OUT = arg("out");
 const ONLY = arg("only")?.split(",");
 
-const PUBLIC = ["/login", "/track", "/developer", "/terms", "/privacy"];
+const PUBLIC = ["/login", "/login/forgot", "/track", "/developer", "/terms", "/privacy"];
 const SIGNED_IN = ["/", "/records", "/records/new", "/reports", "/map", "/assistant", "/help", "@record", "/admin/analytics", "/boxes", "/reports/released"];
 const VIEWPORTS = [
   { name: "phone", width: 375, height: 812 },

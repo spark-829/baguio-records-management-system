@@ -2,7 +2,7 @@
 // supabase/seed.sql, seed_more.sql and seed_departments.sql (all active on the
 // live demo). Role labels are English; the page wraps them in t().
 
-export type DemoAccount = { email: string; role: string };
+export type DemoAccount = { email: string; role: string; short?: string };
 export type DemoOffice = { office: string; accounts: DemoAccount[] };
 
 /** Shared password of every demo account (printed on /login). */
@@ -14,10 +14,10 @@ const STAFF = "Staff";
 
 /** The accounts a first-time visitor should try, in order. */
 export const DEMO_START: DemoAccount[] = [
-  { email: "records@rms-demo.test", role: "Records Officer, City General Services Office (records desk)" },
-  { email: "admin@rms-demo.test", role: "Administrator (security and system analytics)" },
-  { email: "ccro.window@rms-demo.test", role: "Window clerk, City Civil Registry Office" },
-  { email: "cmo.head@rms-demo.test", role: "Head, City Mayor's Office (city-wide view)" },
+  { email: "records@rms-demo.test", role: "Records Officer, City General Services Office (records desk)", short: "Records officer" },
+  { email: "ccro.window@rms-demo.test", role: "Window clerk, City Civil Registry Office", short: "Window clerk" },
+  { email: "cmo.head@rms-demo.test", role: "Head, City Mayor's Office (city-wide view)", short: "Office head" },
+  { email: "admin@rms-demo.test", role: "Administrator (security and system analytics)", short: "Administrator" },
 ];
 
 /** Every demo account, grouped by office (A to Z by office name). */
