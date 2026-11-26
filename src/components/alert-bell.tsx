@@ -6,6 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useLang, useT } from "@/lib/i18n/client";
 import { badgeText, parseAlerts, type Alerts } from "@/lib/alerts";
 import { fmtDate } from "@/lib/labels";
+import { BellIcon } from "@/components/icons";
+import { useExclusivePanel } from "@/components/use-exclusive-panel";
 
 export function AlertBell({ officeCode }: { officeCode: string | null }) {
   const t = useT();
@@ -14,6 +16,9 @@ export function AlertBell({ officeCode }: { officeCode: string | null }) {
   const [data, setData] = useState<Alerts | null>(null);
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useExclusivePanel("alerts", open, close);
 
   const load = useCallback(async () => {
     try {
@@ -42,7 +47,11 @@ export function AlertBell({ officeCode }: { officeCode: string | null }) {
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      trigger.current?.focus();
+    };
     const onDown = (e: MouseEvent) => {
       if (wrap.current && !wrap.current.contains(e.target as Node)) setOpen(false);
     };
@@ -59,26 +68,25 @@ export function AlertBell({ officeCode }: { officeCode: string | null }) {
   const base = officeCode ? `/records?office=${encodeURIComponent(officeCode)}&here=1` : null;
 
   return (
-    <div ref={wrap}>
+    <div ref={wrap} className="relative">
       <button
+        ref={trigger}
         type="button"
         aria-expanded={open}
         aria-controls="alert-panel"
+        title={t("Alerts")}
         onClick={() => setOpen((o) => !o)}
-        className="relative inline-flex min-h-11 items-center gap-2 rounded-lg border-2 border-white/60 px-3 font-semibold hover:bg-white/10"
+        className="relative inline-flex h-11 w-11 items-center justify-center rounded-lg border-2 border-white/60 hover:bg-white/10"
       >
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-6 w-6">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-        </svg>
-        {/* Name comes from content, not aria-label, so it always contains the visible word (WCAG 2.5.3) */}
-        <span aria-hidden="true" className="hidden sm:inline">{t("Alerts")}</span>
+        <BellIcon />
+        {/* Icon-only: the name comes from this text, which includes the count */}
         <span className="sr-only">{t("Alerts: {n} need your attention", { n: count })}</span>
         {badge && (
           <span aria-hidden="true" className="absolute -right-2 -top-2 min-w-6 rounded-full bg-red-600 px-1.5 text-center text-xs font-bold leading-6 text-white">{badge}</span>
         )}
       </button>
       {open && (
-        <div id="alert-panel" className="card absolute right-0 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] text-left text-slate-900">
+        <div id="alert-panel" className="card absolute right-0 top-full z-50 mt-2 max-h-[calc(100dvh-6rem)] w-[min(24rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain text-left text-slate-900">
           <h2 className="border-b border-slate-200 px-4 py-3 text-base font-bold">{t("Needs your office's attention")}</h2>
           {!data ? (
             <p className="px-4 py-3 text-sm text-slate-700" role="status">{t("Loading…")}</p>

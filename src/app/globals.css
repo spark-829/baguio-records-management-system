@@ -69,7 +69,12 @@ html {
   font-size: 100%;
   /* keeps a focused field above the register form's sticky Save bar */
   scroll-padding-bottom: 6rem;
+  /* keeps a focused field below the sticky header (WCAG 2.4.11); 8rem also covers the name strip under xl */
+  scroll-padding-top: 8rem;
   -webkit-text-size-adjust: 100%;
+}
+@media (min-width: 80rem) {
+  html { scroll-padding-top: 5rem; }
 }
 /* the full assistant page's sticky composer (textarea plus note) is taller */
 html:has(#ask) {
@@ -114,6 +119,9 @@ body {
   outline-offset: -5px;
 }
 .on-dark .card :focus-visible {
+  outline-color: var(--color-brand-700);
+}
+.on-dark .shell-sheet :focus-visible {
   outline-color: var(--color-brand-700);
 }
 
@@ -269,21 +277,27 @@ main table tbody tr:hover {
 /* The assistant panel docks on the right and pushes the page on wide screens. */
 @media (min-width: 80rem) {
   html[data-assistant="open"] .app-shell { padding-right: 26rem; }
+  /* The page is 26rem narrower, so the header folds like a narrow screen: links into the Menu button, name into the strip. */
   html[data-assistant="open"] .shell-who { display: none; }
+  html[data-assistant="open"] .shell-who-strip { display: block; }
+  html[data-assistant="open"] .shell-nav-inline { display: none; }
+  html[data-assistant="open"] .shell-menu { display: inline-flex; }
+  html[data-assistant="open"] .shell-sheet { display: block; }
+  html[data-assistant="open"] { scroll-padding-top: 8rem; }
 }
 
-/* Phones held sideways (QA-109): the screen is short, so the header keeps to one slim row (name and office are
-   on My account), and the assistant button shrinks to "Ask" so it does not sit on the Menu button. */
+/* Phones held sideways (QA-109): the screen is short, so the header keeps to one slim row (no name strip, and it
+   scrolls away instead of sticking), and the assistant button shrinks to "Ask" so it does not sit on the Menu button.
+   "relative" (not "static") so the Menu sheet still anchors to the header. */
 @media (orientation: landscape) and (max-height: 32rem) {
+  .shell-header { position: relative; }
+  html, html[data-assistant="open"] { scroll-padding-top: 0; }
   .shell-bar { padding-block: 0.25rem; }
-  .shell-who, .brand-sub { display: none; }
+  .shell-who, .shell-who-strip, .brand-sub { display: none; }
+  html[data-assistant="open"] .shell-who-strip { display: none; }
   .assistant-fab { right: 1rem; bottom: 1rem; }
   .assistant-fab .fab-long { display: none; }
   .assistant-fab .fab-short { display: inline; }
-}
-/* Below md "My account" is also in the Menu, so the sideways header can drop it and stay on one row. */
-@media (orientation: landscape) and (max-height: 32rem) and (max-width: 47.99rem) {
-  .shell-account { display: none; }
 }
 
 /* Top page-change bar (src/components/nav-progress.tsx): grows quickly, then slowly, never reaches the end on its own. */

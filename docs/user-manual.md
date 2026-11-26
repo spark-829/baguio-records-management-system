@@ -1,12 +1,12 @@
 # User manual
 
 ## Signing in
-Open the system, read the privacy notice, tick the box and sign in with the email and password from your administrator. Your name, role and office show at the top right. Sign out when you leave the desk.
+Open the system, read the privacy notice, tick the box and sign in with the email and password from your administrator. Your name, role and office show in the header: top right on wide screens, in a strip under the header on smaller ones. Sign out when you leave the desk.
 
 - After 5 wrong passwords the account locks for 15 minutes. An administrator can unlock it sooner on the Users page.
 - After 15 minutes without activity you are signed out automatically. A large "Are you still there?" message with a countdown appears a minute before. Press **Yes, keep me signed in** to stay.
-- **My account** (top right) lets you turn on two-step sign-in with an authenticator app. Administrators should turn it on.
-- **Help** (top menu) explains each task in short, plain steps.
+- **My account** (the person icon, top right) lets you turn on two-step sign-in with an authenticator app. Administrators should turn it on. The English and Filipino language switch is in the same place.
+- **Help** (at the bottom of every page) explains each task in short, plain steps.
 - Every sign-in, record you open and file you download is logged.
 - In lists, people's names are shortened (for example "J*** dela C***"). The full name shows when you open the record.
 

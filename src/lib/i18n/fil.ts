@@ -140,6 +140,7 @@ export const FIL: Record<string, string> = {
   "Records Management System": "Sistema ng Pamamahala ng mga Record",
   "My account": "Aking account",
   "Sign out": "Mag-sign out",
+  "Language": "Wika",
   "Page not found": "Hindi makita ang pahina",
   "This page or record does not exist, or your account is not allowed to see it.": "Walang ganitong pahina o record, o hindi ito pinapayagang makita ng account mo.",
   "Check the tracking number, or search for it on the Records page.": "Suriin ang tracking number, o hanapin ito sa pahina ng Mga Record.",
