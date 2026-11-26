@@ -1,4 +1,4 @@
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import { safeNextPath } from "@/lib/safe-next";
 import { LoginForm } from "./login-form";
 import { BrandLockup, SiteFooter } from "@/components/brand";
@@ -15,6 +15,8 @@ const NOTICES: Record<string, string> = {
   expired: "Your sign-in has ended. Please sign in again.",
 };
 
+export const generateMetadata = pageTitle("Sign in");
+
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string; email?: string }> }) {
   const { t } = await getT();
   const { error, next, email } = await searchParams;
@@ -22,6 +24,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const prefill = demoEmailParam(email);
   return (
     <div className="flex min-h-screen flex-col">
+      <a href="#main" className="sr-only z-50 rounded-lg bg-white px-4 py-3 font-semibold text-brand-800 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
+        {t("Skip to main content")}
+      </a>
       <header className="on-dark border-b-4 border-gold-500 bg-brand-800 text-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
           <BrandLockup />

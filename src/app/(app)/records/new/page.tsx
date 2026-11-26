@@ -1,4 +1,4 @@
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 import { getProfile, isCentral } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
@@ -10,6 +10,8 @@ import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 import type { ServiceOpt } from "@/lib/charter";
 import { RegisterForm } from "./register-form";
 import { PrivacyNotice } from "@/components/privacy-notice";
+
+export const generateMetadata = pageTitle("Register a record");
 
 export default async function NewRecordPage({ searchParams }: { searchParams: Promise<{ reply_to?: string }> }) {
   const { t } = await getT();

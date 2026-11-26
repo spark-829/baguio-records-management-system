@@ -51,7 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {t("Skip to main content")}
       </a>
       <header className="no-print on-dark border-b-4 border-gold-500 bg-brand-800 text-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
+        <div className="shell-bar mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
           <Link prefetch={false} href="/" className="flex min-h-11 items-center rounded-lg">
             <BrandLockup />
           </Link>
@@ -59,10 +59,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <LangToggle dark />
             {me.office_id && me.role !== "admin" && <AlertBell officeCode={me.office?.code ?? null} />}
             <div className="shell-who hidden min-w-0 max-w-[12rem] leading-tight sm:block sm:text-right xl:max-w-[18rem]" title={line2 ? `${me.full_name} · ${line2}` : me.full_name}>
-              <div className="truncate font-semibold">{me.full_name}</div>
-              <div className="truncate text-xs text-brand-100">{line2}</div>
+              <div className="font-semibold [overflow-wrap:anywhere]">{me.full_name}</div>
+              <div className="text-xs text-brand-100 [overflow-wrap:anywhere]">{line2}</div>
             </div>
-            <Link prefetch={false} href="/security" className="hidden min-h-11 items-center sm:inline-flex rounded-md border-2 border-white/60 px-3.5 font-semibold hover:bg-white/10">{t("My account")}</Link>
+            <Link prefetch={false} href="/security" className="shell-account hidden min-h-11 items-center sm:inline-flex rounded-md border-2 border-white/60 px-3.5 font-semibold hover:bg-white/10">{t("My account")}</Link>
             <form action={signOut}>
               <button className="inline-flex min-h-11 items-center rounded-md border-2 border-white/60 px-3.5 font-semibold text-white hover:bg-white/10">{t("Sign out")}</button>
             </form>

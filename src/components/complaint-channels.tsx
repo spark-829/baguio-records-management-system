@@ -10,7 +10,7 @@ export async function ComplaintChannels() {
       <p>{t("The concerned office must respond within 72 hours.")}</p>
       <ul className="list-disc space-y-1 pl-6">
         {CHANNELS.map((c) => (
-          <li key={c.key}><a href={c.href}>{t(c.key)}</a>{c.key === "Hotline 8888" ? "" : `: ${c.address}`}</li>
+          <li key={c.key} className="[overflow-wrap:anywhere]"><a href={c.href}>{t(c.key)}</a>{c.key === "Hotline 8888" ? "" : `: ${c.address}`}</li>
         ))}
       </ul>
     </section>

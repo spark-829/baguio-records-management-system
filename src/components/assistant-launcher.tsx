@@ -152,8 +152,8 @@ export function AssistantLauncher({ userId, greeting, scope, office, prompts, de
           className={`assistant-fab no-print fixed right-4 bottom-4 z-30 min-h-12 items-center gap-2 rounded-full bg-brand-700 px-5 text-base font-semibold text-white shadow-lg ring-2 ring-white hover:bg-brand-800 focus-visible:outline sm:right-6 sm:bottom-6 ${onRegister ? "hidden sm:inline-flex" : "inline-flex"}`}
         >
           <ChatIcon />
-          <span className="sm:hidden" aria-hidden="true">{t("Ask")}</span>
-          <span className="hidden sm:inline" aria-hidden="true">{t("Ask the assistant")}</span>
+          <span className="fab-short sm:hidden" aria-hidden="true">{t("Ask")}</span>
+          <span className="fab-long hidden sm:inline" aria-hidden="true">{t("Ask the assistant")}</span>
         </button>
       )}
     </>

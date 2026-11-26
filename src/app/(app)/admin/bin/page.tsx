@@ -1,4 +1,4 @@
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
@@ -7,6 +7,8 @@ import { fmtDateTime } from "@/lib/labels";
 import { restoreRecord } from "../../records/[id]/actions";
 
 type Row = { id: string; tracking_no: string; subject: string; deleted_at: string; delete_reason: string | null; deleter: { full_name: string } | null };
+
+export const generateMetadata = pageTitle("Deleted records bin");
 
 export default async function BinPage({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
   const { t, lang } = await getT();

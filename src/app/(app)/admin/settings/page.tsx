@@ -1,8 +1,10 @@
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 import { getProfile, getSettings } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { saveSettings } from "./actions";
+
+export const generateMetadata = pageTitle("Security settings");
 
 export default async function SettingsPage() {
   const { t } = await getT();

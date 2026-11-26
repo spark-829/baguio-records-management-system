@@ -69,7 +69,12 @@ export function RegisterForm(props: {
   const desk = !!props.desk;
   const svcDefault = desk ? "other" : "";
   const canIncoming = !!props.incomingMode;
-  const [state, action, pending] = useActionState(registerRecord, undefined);
+  const [state, action, actionPending] = useActionState(registerRecord, undefined);
+  // "Saving…" shows the instant Save is pressed, not only once React starts the action, and a second press is
+  // ignored until the first one comes back, so a slow save cannot create the same record twice (QA-107).
+  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => setSubmitting(false), [state]);
+  const pending = actionPending || submitting;
   const [f, setF] = useState<Fields>({
     direction: props.replyTo ? "outgoing" : canIncoming ? "incoming" : "outgoing",
     subject: "",
@@ -398,13 +403,19 @@ export function RegisterForm(props: {
   }
 
   function checkService(e: React.FormEvent<HTMLFormElement>) {
+    if (pending) {
+      e.preventDefault();
+      return;
+    }
     setMissing([]); // submit only fires once the browser's own check passed
     if (showPicker && svc === "") {
       e.preventDefault();
       setSvcError(true);
       pickerRef.current?.focus();
       pickerRef.current?.scrollIntoView({ block: "center" });
+      return;
     }
+    setSubmitting(true);
   }
 
   const hl = (k: keyof Fields) => (aiFilled.has(k) ? "bg-brand-50 border-brand-600" : "");
@@ -722,7 +733,8 @@ export function RegisterForm(props: {
   const cancelSave = (
     <>
       <Link href="/records" className="btn-secondary"><span className="sm:hidden">{t("Cancel")}</span><span className="hidden sm:inline">{t("Cancel (nothing is saved)")}</span></Link>
-      <button className="btn-primary" disabled={pending || prep.busy || prep.tooBig}>{pending ? t("Saving…") : <><span className="sm:hidden">{t("Save")}</span><span className="hidden sm:inline">{t("Save and get tracking number")}</span></>}</button>
+      <button className="btn-primary" disabled={prep.busy || prep.tooBig} aria-disabled={pending || undefined} aria-busy={pending || undefined}>{pending ? t("Saving…") : <><span className="sm:hidden">{t("Save")}</span><span className="hidden sm:inline">{t("Save and get tracking number")}</span></>}</button>
+      <span role="status" className="sr-only">{pending ? t("Saving…") : ""}</span>
     </>
   );
 

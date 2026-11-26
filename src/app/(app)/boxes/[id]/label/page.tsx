@@ -59,7 +59,7 @@ export default async function BoxLabelPage({ params }: { params: Promise<{ id: s
           </div>
         )}
         <div className="pt-2 text-center">
-          <div className="mx-auto [&>svg]:h-full [&>svg]:w-full" style={{ width: "40mm", height: "40mm" }} dangerouslySetInnerHTML={{ __html: qr }} />
+          <div role="img" aria-label={`${t("QR code")}: ${t("Scan to open this box (staff sign-in needed)")}`} className="mx-auto [&>svg]:h-full [&>svg]:w-full" style={{ width: "40mm", height: "40mm" }} dangerouslySetInnerHTML={{ __html: qr }} />
           <p className="mt-1 text-xs">{t("Scan to open this box (staff sign-in needed)")}</p>
         </div>
       </div>

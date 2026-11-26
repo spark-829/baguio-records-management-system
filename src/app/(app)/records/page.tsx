@@ -1,5 +1,5 @@
 import Form from "next/form";
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/session";
@@ -18,6 +18,8 @@ import { maskedSubject, parseCityRows } from "@/lib/oversight";
 import { activeView, savedViews, viewHref } from "@/lib/records-desk";
 import { ScopeLinks } from "../city-overview";
 import { ListAnnouncer } from "./list-announcer";
+
+export const generateMetadata = pageTitle("Records");
 
 export default async function RecordsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { t, lang } = await getT();
@@ -231,6 +233,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
 
       <div className="card hidden overflow-x-auto lg:block">
         <table className="w-full text-sm">
+          <caption className="sr-only">{view ? `${t("Records")}: ${t(view.label)}` : t("Records")}</caption>
           <thead className="bg-slate-50 text-left text-sm text-slate-700">
             <tr>
               <th className="w-40 px-4 py-2">{t("Tracking no.")}</th>

@@ -1,5 +1,5 @@
 import Form from "next/form";
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/session";
@@ -19,6 +19,8 @@ const STATUS_CLASS: Record<UserStatus, string> = {
 };
 
 type SP = { q?: string; office?: string; role?: string; status?: string; locked?: string; edit?: string; saved?: string; failed?: string; add?: string };
+
+export const generateMetadata = pageTitle("User accounts");
 
 export default async function UsersPage({ searchParams }: { searchParams: Promise<SP> }) {
   const { t, lang } = await getT();
