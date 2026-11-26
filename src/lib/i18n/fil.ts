@@ -1743,4 +1743,8 @@ export const FIL: Record<string, string> = {
   "Sent from Forgot password? on the sign-in page. Check who is asking through their office before you help, then mark the request handled.": "Ipinadala mula sa Forgot password? sa pahina ng pag-sign in. Alamin muna sa kanilang opisina kung sino ang humihingi bago tumulong, saka markahang naasikaso ang kahilingan.",
   "No account uses this email": "Walang account na gumagamit ng email na ito",
   "Mark handled": "Markahang naasikaso",
+  "Auditor: reads the audit log": "Auditor: nakakabasa ng audit log",
+  "No office (auditor or administrator)": "Walang opisina (auditor o administrator)",
+  "Auditor: may read the audit log and access history": "Auditor: maaaring basahin ang audit log at kasaysayan ng pag-access",
+  "For an independent auditor such as the COA resident auditor. Leave the office empty so they see the audit trail only, not the records of an office.": "Para sa independiyenteng auditor gaya ng resident auditor ng COA. Iwanang walang opisina para audit trail lang ang makita nila, hindi ang mga rekord ng isang opisina.",
 };

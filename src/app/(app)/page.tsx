@@ -1,6 +1,7 @@
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
-import { getProfile, isCentral } from "@/lib/session";
+import { getProfile, isAuditOnly, isCentral } from "@/lib/session";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_ORDER, dueText, fmtDate, greetingName } from "@/lib/labels";
 import { isOverdue } from "@/lib/workflow";
@@ -42,6 +43,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const me = await getProfile();
   const sp = await searchParams;
   if (me.role === "admin") return <SecurityHub me={me} />;
+  if (isAuditOnly(me)) redirect("/admin/audit");
   const oversight = isOversight({ role: me.role, officeCode: me.office?.code, features: me.office?.features });
   if (oversight && sp.scope === "city") {
     // City view: one aggregated call; the own-office queries below are skipped.

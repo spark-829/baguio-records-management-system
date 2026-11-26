@@ -3,6 +3,7 @@ import { cache } from "react";
 import { createClient } from "./supabase/server";
 import type { Profile } from "./types";
 import { parseStepMinutes } from "@/lib/step-times";
+export { canAudit, isAuditOnly } from "@/lib/role-scope";
 
 /** The signed-in user's RMS profile. Sends locked, inactive or not-yet-verified users elsewhere. */
 export const getProfile = cache(async (): Promise<Profile> => {
@@ -41,11 +42,6 @@ export const getProfile = cache(async (): Promise<Profile> => {
   }
   return profile;
 });
-
-/** Administrators, and Viewer accounts flagged as auditors, may read the audit trail and access history (QA-097). */
-export function canAudit(p: Profile) {
-  return p.role === "admin" || (p.role === "viewer" && p.is_auditor === true);
-}
 
 export function isCentral(p: Profile) {
   return p.role === "admin" || p.role === "records_officer";

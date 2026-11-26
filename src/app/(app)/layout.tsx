@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SigninNote } from "@/components/signin-note";
-import { canAudit, getProfile, getSettings } from "@/lib/session";
+import { canAudit, getProfile, getSettings, isAuditOnly } from "@/lib/session";
 import { IdleLogout } from "@/components/idle-logout";
 import { AssistantLauncher } from "@/components/assistant-launcher";
 import { ROLE_LABEL } from "@/lib/labels";
@@ -18,7 +18,14 @@ import { hasFeature, isHrmoCss } from "@/lib/office-features";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [me, settings, { t }] = await Promise.all([getProfile(), getSettings(), getT()]);
-  const links = me.role === "admin"
+  const auditOnly = isAuditOnly(me);
+  const links = auditOnly
+    ? [
+        // An auditor with no office (e.g. COA): the audit trail is their whole job, records stay with the offices.
+        { href: "/admin/audit", label: t("Audit log") },
+        { href: "/admin/access", label: t("Access history") },
+      ]
+    : me.role === "admin"
     ? [
         { href: "/", label: t("Security") },
         { href: "/admin/users", label: t("Users") },
@@ -97,7 +104,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </header>
       <main id="main" className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-20 sm:pt-8"><SigninNote />{children}</main>
       <SiteFooter className="mt-12 pb-24" help />
-      <AssistantLauncher userId={me.id} greeting={ctx.greeting} scope={ctx.scope} office={ctx.office} prompts={ctx.prompts} demo={isAiDemo()} />
+      {!auditOnly && <AssistantLauncher userId={me.id} greeting={ctx.greeting} scope={ctx.scope} office={ctx.office} prompts={ctx.prompts} demo={isAiDemo()} />}
       <IdleLogout minutes={settings.idleTimeoutMinutes} />
     </div>
   );
