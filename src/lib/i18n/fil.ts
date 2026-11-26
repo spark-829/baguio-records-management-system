@@ -1712,4 +1712,8 @@ export const FIL: Record<string, string> = {
   "Back to sign in": "Bumalik sa pag-sign in",
   "Last updated {date}": "Huling binago noong {date}",
   "On this page": "Sa pahinang ito",
+  "Auditor: reads the audit log": "Auditor: nakakabasa ng audit log",
+  "No office (auditor or administrator)": "Walang opisina (auditor o administrator)",
+  "Auditor: may read the audit log and access history": "Auditor: maaaring basahin ang audit log at kasaysayan ng pag-access",
+  "For an independent auditor such as the COA resident auditor. Leave the office empty so they see the audit trail only, not the records of an office.": "Para sa independiyenteng auditor gaya ng resident auditor ng COA. Iwanang walang opisina para audit trail lang ang makita nila, hindi ang mga rekord ng isang opisina.",
 };
