@@ -28,10 +28,15 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   const f = parseUserFilters(sp);
   const supabase = await createClient();
   const [{ data: users }, { data: offices }] = await Promise.all([
-    supabase.from("rms_profiles").select("id, full_name, role, office_id, is_active, created_at, locked_until, last_login_at, window_intake").order("full_name"),
+    supabase.from("rms_profiles").select("id, full_name, role, office_id, is_active, created_at, locked_until, window_intake").order("full_name"),
     supabase.from("rms_offices").select("id, code, name, features").order("name"),
   ]);
-  const all = users ?? [];
+  // Last sign-in times are for administrators only (QA-077), so they come from an admin-only function.
+  // Fallback for the short time before that database update runs: read the column directly.
+  let signins = await supabase.rpc("rms_admin_user_signins");
+  if (signins.error) signins = await supabase.from("rms_profiles").select("id, last_login_at");
+  const lastLogin = new Map(((signins.data ?? []) as { id: string; last_login_at: string | null }[]).map((s) => [s.id, s.last_login_at]));
+  const all = (users ?? []).map((u) => ({ ...u, last_login_at: lastLogin.get(u.id) ?? null }));
   const officeBy = new Map((offices ?? []).map((o) => [o.id, o]));
   const rows = filterUsers(all, f);
   const editing = all.find((u) => u.id === sp.edit);
