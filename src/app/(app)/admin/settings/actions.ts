@@ -10,7 +10,7 @@ const NUMBERS: Record<string, [number, number]> = {
   lockout_minutes: [5, 1440],
   idle_timeout_minutes: [5, 240],
 };
-const FLAGS = ["watermark_downloads", "ai_exclude_confidential"];
+const FLAGS = ["watermark_downloads"]; // ai_exclude_confidential is always on (QA-099)
 
 export async function saveSettings(form: FormData) {
   const me = await getProfile();

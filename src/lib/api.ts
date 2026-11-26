@@ -35,7 +35,8 @@ export function aiError(err: unknown) {
 }
 
 /** Admin setting: keep Confidential records out of AI features (on by default). */
-export async function aiExcludesConfidential(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data } = await supabase.from("rms_settings").select("value").eq("key", "ai_exclude_confidential").maybeSingle();
-  return data?.value !== false;
+/** Always true (QA-099): confidential records never go to the outside AI service. Kept async for its callers. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function aiExcludesConfidential(_supabase?: Awaited<ReturnType<typeof createClient>>) {
+  return true;
 }

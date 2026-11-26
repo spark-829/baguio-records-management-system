@@ -2,7 +2,7 @@ import Form from "next/form";
 import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getProfile } from "@/lib/session";
+import { getProfile, canAudit } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { fmtDateTime } from "@/lib/labels";
 
@@ -36,7 +36,7 @@ type SP = { user?: string; record?: string; event?: string; person?: string; mor
 export default async function AccessHistoryPage({ searchParams }: { searchParams: Promise<SP> }) {
   const { t } = await getT();
   const me = await getProfile();
-  if (me.role !== "admin") redirect("/");
+  if (!canAudit(me)) redirect("/");
   const sp = await searchParams;
   const supabase = await createClient();
 

@@ -4,6 +4,7 @@ import { BrandLockup, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
 import { ITEMS, SCALE } from "@/lib/satisfaction";
 import { submitSurvey } from "./actions";
+import { PrivacyNotice } from "@/components/privacy-notice";
 
 export const metadata = { title: "Client Satisfaction Survey" };
 
@@ -87,6 +88,7 @@ export default async function SurveyPage({ searchParams }: { searchParams: Promi
             </form>
           </>
         )}
+        <PrivacyNotice where="survey" />
       </main>
       <SiteFooter />
     </div>

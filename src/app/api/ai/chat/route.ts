@@ -46,6 +46,9 @@ export async function POST(req: Request) {
       p_row_id: ctx.me.id,
       p_data: { model: demo ? "demo" : aiModel(), question, records: result.records.map((r) => r.tracking_no), cited: sources.map((s) => s.tracking_no) },
     });
+    // Each record the assistant read is written to the access log, so the person-access report shows it (QA-100).
+    if (result.records.length)
+      await ctx.supabase.rpc("rms_log_access_many", { p_via: "ai_chat", p_record_ids: result.records.map((r) => r.id), p_detail: { demo } });
     return NextResponse.json({ answer, sources, demo, note });
   } catch (err) {
     return aiError(err);

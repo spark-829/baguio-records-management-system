@@ -37,8 +37,8 @@ export default async function SettingsPage() {
             <span><strong>{t("Stamp downloads")}</strong> {t("with “Viewed by name, date” (PDF and image files), so a leaked copy can be traced.")}</span>
           </label>
           <label className="flex items-start gap-2 text-sm">
-            <input type="checkbox" name="ai_exclude_confidential" defaultChecked={s.aiExcludeConfidential} className="mt-0.5" />
-            <span><strong>{t("Keep Confidential records out of AI.")}</strong> {t("The assistant cannot search or read them and summaries are turned off for them.")}</span>
+            <input type="checkbox" checked disabled aria-describedby="ai-conf-note" className="mt-0.5" />
+            <span><strong>{t("Keep Confidential records out of AI.")}</strong> {t("The assistant cannot search or read them and summaries are turned off for them.")} <span id="ai-conf-note" className="text-slate-600">{t("Always on: the AI service is outside the Philippines, so this can no longer be switched off.")}</span></span>
           </label>
         </fieldset>
         <button className="btn-primary">{t("Save settings")}</button>
