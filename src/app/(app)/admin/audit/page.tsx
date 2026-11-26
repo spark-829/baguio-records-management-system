@@ -65,7 +65,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   const sp = await searchParams;
   const table = sp.table ?? sp.t;
   const more = sp.more;
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const limit = more ? 500 : 50;
   const supabase = await createClient();
   let q = supabase.from("rms_audit_log").select("id, table_name, row_id, action, old_data, new_data, actor_id, created_at, ip").order("created_at", { ascending: false }).limit(limit);
@@ -81,7 +81,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   let coverage: ReturnType<typeof checkCoverageText> | null = null;
   if (!chain.error && chain.data === null) {
     const { data: info, error: infoErr } = await supabase.rpc("rms_audit_check_info");
-    if (!infoErr && info) coverage = checkCoverageText(info as CheckInfo, fmtDateTime);
+    if (!infoErr && info) coverage = checkCoverageText(info as CheckInfo, (v) => fmtDateTime(v, lang));
   }
 
   // Routing rows only hold ids; look up tracking numbers and office names in batches.
@@ -140,7 +140,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
           <tbody className="divide-y divide-slate-100">
             {(rows ?? []).map((r) => (
               <tr key={r.id} className="align-top">
-                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.created_at)}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.created_at, lang)}</td>
                 <td className="px-3 py-2">{r.actor_id ? names.get(r.actor_id) ?? "—" : t("System")}</td>
                 <td className="px-3 py-2">{t(TABLE_LABEL[r.table_name] ?? r.table_name)}</td>
                 <td className="px-3 py-2">{t(r.action === "INSERT" ? "Added" : r.action === "UPDATE" ? "Changed" : "Removed")}</td>

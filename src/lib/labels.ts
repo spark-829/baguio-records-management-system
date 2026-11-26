@@ -1,3 +1,4 @@
+import { dateLocale, type Lang } from "./i18n/core";
 import type { Confidentiality, Priority, Role, Status } from "./types";
 
 const MANILA = "Asia/Manila";
@@ -103,14 +104,17 @@ export const STATUS_TONE: Record<Status, string> = {
 /** ICU versions differ on the space before AM/PM (U+202F or U+00A0); the server and the browser can disagree, so use a plain space. */
 const plainSpaces = (s: string) => s.replace(/[\u202F\u00A0]/g, " ");
 
-export function fmtDate(value: string | null | undefined, locale = "en-PH") {
+/** Pass the page language ("en" | "fil") so Filipino shows Filipino month names; a locale such as "fil-PH" also works. Always Manila time. */
+const asLocale = (l: Lang | string) => (l === "en" || l === "fil" ? dateLocale(l) : l);
+
+export function fmtDate(value: string | null | undefined, locale: Lang | string = "en-PH") {
   if (!value) return "—";
-  return plainSpaces(fmt("d", locale).format(new Date(value)));
+  return plainSpaces(fmt("d", asLocale(locale)).format(new Date(value)));
 }
 
-export function fmtDateTime(value: string | null | undefined, locale = "en-PH") {
+export function fmtDateTime(value: string | null | undefined, locale: Lang | string = "en-PH") {
   if (!value) return "—";
-  return plainSpaces(fmt("dt", locale).format(new Date(value)));
+  return plainSpaces(fmt("dt", asLocale(locale)).format(new Date(value)));
 }
 
 /** Name for "Good day, …": the first name of a person ("Ana Dizon (Engineering Head)" → "Ana", "Atty. Teresa Navarro" → "Teresa"),

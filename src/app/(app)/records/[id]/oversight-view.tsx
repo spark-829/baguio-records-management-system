@@ -11,7 +11,7 @@ import { CharterSteps } from "./charter-steps";
 
 /** Read-only view of any record for the CMO and CAO heads: no remarks, no names, no attachments, no actions. */
 export async function OversightView({ id, meId }: { id: string; meId: string }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const supabase = await createClient();
   const { data } = await supabase.rpc("rms_oversight_record", { p_id: id });
   const r = parseCityRecord(data);
@@ -28,8 +28,8 @@ export async function OversightView({ id, meId }: { id: string; meId: string }) 
       ? [[t("Received at"), r.intake_window ? t("{office} window", { office: r.origin_office }) : t("Records Section (City General Services Office)")] as [string, React.ReactNode]]
       : []),
     [t("ARTA processing time"), isArtaClass(r.arta_class) ? t(ARTA_LABEL[r.arta_class]) : "—"],
-    [t("Due date"), r.due_date ? fmtDate(r.due_date) : "—"],
-    [t("Logged in"), fmtDateTime(r.created_at)],
+    [t("Due date"), r.due_date ? fmtDate(r.due_date, lang) : "—"],
+    [t("Logged in"), fmtDateTime(r.created_at, lang)],
   ];
   return (
     <div className="space-y-4">
@@ -65,7 +65,7 @@ export async function OversightView({ id, meId }: { id: string; meId: string }) 
               <li key={i}>
                 <div className="font-semibold">{statusText(h.status)}{h.from_code || h.to_code ? ` · ${h.from_code ?? "—"} → ${h.to_code ?? "—"}` : ""}</div>
                 {h.action_taken && <div className="text-slate-700">{h.action_taken}</div>}
-                <div className="text-xs text-slate-500">{fmtDateTime(h.created_at)}</div>
+                <div className="text-xs text-slate-500">{fmtDateTime(h.created_at, lang)}</div>
               </li>
             ))}
           </ol>

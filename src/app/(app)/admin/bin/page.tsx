@@ -9,7 +9,7 @@ import { restoreRecord } from "../../records/[id]/actions";
 type Row = { id: string; tracking_no: string; subject: string; deleted_at: string; delete_reason: string | null; deleter: { full_name: string } | null };
 
 export default async function BinPage({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const me = await getProfile();
   if (me.role !== "admin") redirect("/");
   const { deleted } = await searchParams;
@@ -38,10 +38,10 @@ export default async function BinPage({ searchParams }: { searchParams: Promise<
             {rows.map((r) => (
               <tr key={r.id}>
                 <td className="px-3 py-2">
-                  <Link href={`/records/${r.id}`} className="font-mono text-brand-700 hover:underline">{r.tracking_no}</Link>
+                  <Link href={`/records/${r.id}`} className="tap-link font-mono text-brand-700 hover:underline">{r.tracking_no}</Link>
                   <div className="text-slate-700">{r.subject}</div>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.deleted_at)}<div className="text-xs">{t("by {name}", { name: r.deleter?.full_name ?? "—" })}</div></td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.deleted_at, lang)}<div className="text-xs">{t("by {name}", { name: r.deleter?.full_name ?? "—" })}</div></td>
                 <td className="px-3 py-2">{r.delete_reason}</td>
                 <td className="px-3 py-2 text-right">
                   <form action={restoreRecord}>

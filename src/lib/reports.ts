@@ -50,8 +50,8 @@ export function reportBounds(from?: string, to?: string): { from: string | null;
 }
 
 /** "2026-11" -> "Nov 2026" */
-export function monthLabel(ym: string) {
-  return new Intl.DateTimeFormat("en-PH", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${ym}-15T00:00:00Z`));
+export function monthLabel(ym: string, locale = "en-PH") {
+  return new Intl.DateTimeFormat(locale, { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${ym}-15T00:00:00Z`));
 }
 
 /** Maps keys to labels, merges equal labels, and sorts biggest first (ties keep their order). */

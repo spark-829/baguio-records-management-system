@@ -38,7 +38,7 @@ export function LoginForm({ next = "", email = "" }: { next?: string; email?: st
           <p>{t("Questions or requests about personal data go to the City's Data Protection Officer: {contact}.", { contact: "dpo@rms-demo.test" })}</p>
         </div>
       </details>
-      <label className="flex cursor-pointer items-start gap-3 text-base">
+      <label className="flex min-h-11 cursor-pointer items-start gap-3 text-base">
         <input
           key={state?.email ?? "default"}
           type="checkbox"

@@ -1,5 +1,5 @@
 import { getT } from "@/lib/i18n/server";
-import { actionText } from "@/lib/i18n/core";
+import { actionText, dateLocale, type Lang } from "@/lib/i18n/core";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -10,11 +10,11 @@ import { CONF_LABEL, PRIORITY_LABEL, fmtDate, fmtDateTime } from "@/lib/labels";
 import { PrintButton } from "./print-button";
 import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 
-const shortStamp = (iso: string) =>
-  new Intl.DateTimeFormat("en-PH", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "Asia/Manila" }).format(new Date(iso));
+const shortStamp = (iso: string, lang: Lang) =>
+  new Intl.DateTimeFormat(dateLocale(lang), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "Asia/Manila" }).format(new Date(iso));
 
 export default async function SlipPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ size?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const { id } = await params;
   const { size } = await searchParams;
   const sticker = size === "sticker";
@@ -98,9 +98,9 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
           <dt className="font-semibold">{t("Subject")}</dt><dd className="col-span-2">{r.subject}</dd>
           <dt className="font-semibold">{t(r.direction === "incoming" ? "From" : "To")}</dt><dd className="col-span-2">{party.filter(Boolean).join(", ") || "—"}</dd>
           {r.reference_no && (<><dt className="font-semibold">{t(r.reference_label ?? DEFAULT_REF_LABEL)}</dt><dd className="col-span-2 font-mono">{r.reference_no}</dd></>)}
-          <dt className="font-semibold">{t("Date on document")}</dt><dd className="col-span-2">{fmtDate(r.document_date)}</dd>
-          <dt className="font-semibold">{t("Registered")}</dt><dd className="col-span-2">{fmtDateTime(r.created_at)} · {r.origin?.name} · {r.creator?.full_name}</dd>
-          <dt className="font-semibold">{t("Action due")}</dt><dd className="col-span-2">{fmtDate(r.due_date)}</dd>
+          <dt className="font-semibold">{t("Date on document")}</dt><dd className="col-span-2">{fmtDate(r.document_date, lang)}</dd>
+          <dt className="font-semibold">{t("Registered")}</dt><dd className="col-span-2">{fmtDateTime(r.created_at, lang)} · {r.origin?.name} · {r.creator?.full_name}</dd>
+          <dt className="font-semibold">{t("Action due")}</dt><dd className="col-span-2">{fmtDate(r.due_date, lang)}</dd>
           <dt className="font-semibold">{t("Action officer")}</dt>
           <dd className="col-span-2">{r.assignee?.full_name ?? <span className="inline-block w-48 border-b border-slate-900" aria-hidden="true">&nbsp;</span>}</dd>
         </dl>
@@ -116,7 +116,7 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
           <tbody>
             {done.map((d, i) => (
               <tr key={`d${i}`} className="align-top text-xs leading-snug">
-                <td className="border border-slate-900 px-1 whitespace-nowrap">{shortStamp(d.created_at)}</td>
+                <td className="border border-slate-900 px-1 whitespace-nowrap">{shortStamp(d.created_at, lang)}</td>
                 <td className="border border-slate-900 px-1">{d.from_office?.code}</td>
                 <td className="border border-slate-900 px-1">{d.to_office?.code}</td>
                 <td className="border border-slate-900 px-1">{[actionText(d.action_taken, t), d.remarks].filter(Boolean).join(" · ")}</td>

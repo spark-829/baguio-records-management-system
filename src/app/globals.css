@@ -206,6 +206,10 @@ main table tbody tr:hover {
 @utility card {
   @apply rounded-lg border border-line bg-white;
 }
+/* a text link with a phone-sized hit area (44px) that drops to 24px (WCAG 2.2 target size) from the sm breakpoint */
+@utility tap-link {
+  @apply inline-flex min-h-11 items-center sm:min-h-6;
+}
 @utility btn {
   @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 py-2 text-base leading-tight font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60;
 }

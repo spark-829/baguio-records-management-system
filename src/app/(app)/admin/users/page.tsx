@@ -21,7 +21,7 @@ const STATUS_CLASS: Record<UserStatus, string> = {
 type SP = { q?: string; office?: string; role?: string; status?: string; locked?: string; edit?: string; saved?: string; failed?: string; add?: string };
 
 export default async function UsersPage({ searchParams }: { searchParams: Promise<SP> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const me = await getProfile();
   if (me.role !== "admin") redirect("/");
   const sp = await searchParams;
@@ -121,7 +121,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                       {window && <span className="block text-slate-600">{t("At the window")}</span>}
                     </td>
                     <td className="px-3">{office?.name ?? "—"}</td>
-                    <td className="px-3 whitespace-nowrap">{u.last_login_at ? fmtDateTime(u.last_login_at) : t("Never")}</td>
+                    <td className="px-3 whitespace-nowrap">{u.last_login_at ? fmtDateTime(u.last_login_at, lang) : t("Never")}</td>
                     <td className="px-3">
                       <span className={`badge ${STATUS_CLASS[status]}`}>{t(STATUS_LABEL[status])}</span>
                       {status === "locked" && (
@@ -146,7 +146,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
             <section id="edit-user" className="card scroll-mt-4 p-4" aria-labelledby="edit-user-h">
               <h2 id="edit-user-h" className="font-semibold">{t("Edit {name}", { name: editing.full_name })}</h2>
               <p className="mt-1 text-slate-600">
-                {t("since {a} · last sign-in {b}", { a: fmtDate(editing.created_at), b: editing.last_login_at ? fmtDateTime(editing.last_login_at) : t("never") })}
+                {t("since {a} · last sign-in {b}", { a: fmtDate(editing.created_at, lang), b: editing.last_login_at ? fmtDateTime(editing.last_login_at, lang) : t("never") })}
               </p>
               {sp.failed === "1" && <p role="alert" className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-red-900">{t("The changes were not saved. Please try again.")}</p>}
               {(() => {

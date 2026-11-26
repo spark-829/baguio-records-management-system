@@ -1,12 +1,14 @@
 "use client";
 
-import { useT } from "@/lib/i18n/client";
+import { useLang, useT } from "@/lib/i18n/client";
+import { fmtDate } from "@/lib/labels";
 
 import { useCallback, useEffect, useState } from "react";
 import { confirmMfa, listMfa, removeMfa, startMfa, type MfaFactor as Factor } from "./actions";
 
 export function MfaSetup() {
   const t = useT();
+  const lang = useLang();
   const [factors, setFactors] = useState<Factor[] | null>(null);
   const [enroll, setEnroll] = useState<{ id: string; qr: string; secret: string } | null>(null);
   const [code, setCode] = useState("");
@@ -51,7 +53,7 @@ export function MfaSetup() {
     <div className="mt-3 space-y-3 text-sm">
       {verified.length > 0 ? (
         <div className="flex items-center justify-between rounded-lg bg-emerald-50 p-3 text-emerald-900">
-          <span>{t("On since {date}", { date: new Date(verified[0].created_at).toLocaleDateString("en-PH") })}</span>
+          <span>{t("On since {date}", { date: fmtDate(verified[0].created_at, lang) })}</span>
           <button className="text-red-700 hover:underline" onClick={() => remove(verified[0].id)}>{t("Turn off")}</button>
         </div>
       ) : enroll ? (

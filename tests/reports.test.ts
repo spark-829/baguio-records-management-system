@@ -26,6 +26,7 @@ describe("toBars", () => {
 
 describe("monthLabel", () => {
   it("formats a year-month", () => expect(monthLabel("2026-11")).toBe("Nov 2026"));
+  it("formats a year-month in Filipino", () => expect(monthLabel("2026-11", "fil-PH")).toBe("Nob 2026"));
 });
 
 describe("parseSummary / parseRetention", () => {

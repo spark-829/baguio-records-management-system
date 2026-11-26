@@ -58,7 +58,7 @@ function bucketLabel(start: string, grain: "week" | "month") {
 }
 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<SP> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const me = await getProfile();
   if (me.role !== "admin") redirect("/");
   const sp = await searchParams;
@@ -85,7 +85,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         <p className="mt-1 max-w-prose text-slate-600">
           {t("Where records get stuck, and whether the offices are keeping up. Counts include every office.")}
         </p>
-        {data && <p className="mt-1 text-sm text-slate-600">{t("Figures as of {time}", { time: fmtDateTime(data.asOf) })}</p>}
+        {data && <p className="mt-1 text-sm text-slate-600">{t("Figures as of {time}", { time: fmtDateTime(data.asOf, lang) })}</p>}
       </div>
       <Group label={t("Period")} links={periodLinks} />
     </div>

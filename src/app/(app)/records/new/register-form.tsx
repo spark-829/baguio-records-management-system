@@ -509,7 +509,7 @@ export function RegisterForm(props: {
   const kindBlock = showKind ? (
     <div>
       <label className="label" htmlFor="f-document_type_id">{t("Kind of document")}</label>
-      <select id="f-document_type_id" name="document_type_id" required className={`input ${hl("document_type_id")}`} value={f.document_type_id} onChange={(e) => set("document_type_id", e.target.value)}>
+      <select id="f-document_type_id" name="document_type_id" required aria-required="true" className={`input ${hl("document_type_id")}`} value={f.document_type_id} onChange={(e) => set("document_type_id", e.target.value)}>
         <option value="">{t("Choose…")}</option>
         {props.types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
       </select>
@@ -536,14 +536,14 @@ export function RegisterForm(props: {
         <legend className="label px-1">{t("About the copy")}</legend>
         <div className="md:col-span-2">
           <label className="label" htmlFor="f-copy_source">{t("Tracking number of the record asked for")}</label>
-          <input id="f-copy_source" name="copy_source" required className="input font-mono uppercase" placeholder="IN-2026-0001" autoComplete="off" />
+          <input id="f-copy_source" name="copy_source" required aria-required="true" className="input font-mono uppercase" placeholder="IN-2026-0001" autoComplete="off" />
         </div>
         <div>
-          <label className="label" htmlFor="f-copy_pages">{t("Number of pages")}</label>
+          <label className="label" htmlFor="f-copy_pages">{t("Number of pages (optional)")}</label>
           <input id="f-copy_pages" name="copy_pages" type="number" min={1} max={5000} className="input" />
         </div>
         <div>
-          <label className="label" htmlFor="f-copy_fee">{t("Fee (₱)")}</label>
+          <label className="label" htmlFor="f-copy_fee">{t("Fee (₱) (optional)")}</label>
           <input id="f-copy_fee" name="copy_fee" inputMode="decimal" className="input" />
         </div>
         <fieldset className="md:col-span-2">
@@ -561,11 +561,11 @@ export function RegisterForm(props: {
         </fieldset>
         <label className="flex min-h-11 items-center gap-3 md:col-span-2">
           <input type="checkbox" name="copy_id" className="checkbox" />
-          <span>{t("Valid ID checked")}</span>
+          <span>{t("Valid ID checked (optional)")}</span>
         </label>
         {copyKind === "representative" && (
           <label className="flex min-h-11 items-center gap-3 md:col-span-2">
-            <input type="checkbox" name="copy_auth" className="checkbox" required />
+            <input type="checkbox" name="copy_auth" className="checkbox" required aria-required="true" />
             <span>{t("Authorization letter or SPA checked")}</span>
           </label>
         )}
@@ -574,7 +574,7 @@ export function RegisterForm(props: {
   const subjectBlock = (
     <div className="md:col-span-2">
       <label className="label" htmlFor="f-subject">{t("Subject (what it is about)")}</label>
-      <input id="f-subject" name="subject" required className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />
+      <input id="f-subject" name="subject" required aria-required="true" className={`input ${hl("subject")}`} value={f.subject} onChange={(e) => set("subject", e.target.value)} />
       {filledNote("subject")}
     </div>
   );
@@ -744,6 +744,8 @@ export function RegisterForm(props: {
           </ul>
         </div>
       )}
+
+      <p className="text-sm text-slate-700">{t("Every field needs an answer unless it says (optional).")}</p>
 
       <div
         className={`rounded-lg border-2 border-dashed p-4 sm:p-6 ${over ? "border-brand-600 bg-brand-50" : "border-line"}`}

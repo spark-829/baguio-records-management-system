@@ -19,20 +19,20 @@ export type Dispatch = {
 export async function SendingCard({
   recordId, trackingNo, dispatch, canDeliver, justDelivered, today,
 }: { recordId: string; trackingNo: string; dispatch: Dispatch; canDeliver: boolean; justDelivered: boolean; today: string }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const delivered = Boolean(dispatch.received_by);
   const [before, after] = t("Attach the signed receiving copy under {link}.").split("{link}");
   const rows: [string, React.ReactNode][] = [
     [t("How it was sent"), `${t(METHOD_LABEL[dispatch.method] ?? dispatch.method)}${dispatch.courier ? ` · ${dispatch.courier}` : ""}`],
     [t("Tracking number"), dispatch.tracking_no ? <span className="font-mono text-base">{dispatch.tracking_no}</span> : "—"],
-    [t("Date sent"), fmtDate(dispatch.sent_on)],
+    [t("Date sent"), fmtDate(dispatch.sent_on, lang)],
     [t("Sent by"), dispatch.sender?.full_name ?? "—"],
     [
       t("Delivery"),
       delivered ? (
         <span className="flex flex-wrap items-center gap-2">
           <span className="badge bg-emerald-100 text-emerald-900">{t("Delivered")}</span>
-          {t("Received by {name} on {date}", { name: dispatch.received_by ?? "", date: fmtDate(dispatch.received_on) })}
+          {t("Received by {name} on {date}", { name: dispatch.received_by ?? "", date: fmtDate(dispatch.received_on, lang) })}
         </span>
       ) : (
         <span className="badge bg-blue-100 text-blue-900">{t("Waiting for delivery")}</span>

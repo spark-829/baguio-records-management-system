@@ -17,9 +17,10 @@ import { isOversight } from "@/lib/office-features";
 import { maskedSubject, parseCityRows } from "@/lib/oversight";
 import { activeView, savedViews, viewHref } from "@/lib/records-desk";
 import { ScopeLinks } from "../city-overview";
+import { ListAnnouncer } from "./list-announcer";
 
 export default async function RecordsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const sp = await searchParams;
   const who = await getProfile();
   const oversight = isOversight({ role: who.role, officeCode: who.office?.code, features: who.office?.features });
@@ -72,6 +73,8 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
           )}
         </p>
       </div>
+
+      <ListAnnouncer token={JSON.stringify(sp)} message={`${view ? `${t("Showing {view}", { view: t(view.label) })}: ` : ""}${t(foundText(rows.length, page.more, onlyOpen), { n: rows.length })}`} />
 
       <TabNav label={t("Saved views")} items={views.map((v) => ({ key: v.key, href: viewHref(f, v), label: t(v.label), current: view?.key === v.key }))} />
 
@@ -218,7 +221,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
                 {isOverdue(r.due_date, r.status) && <OverdueBadge />}
               </span>
               <span className="mt-2 block text-sm text-slate-700">
-                {t("Now with {office} · logged {date}", { office: officeNames.get(r.current_office) ?? r.current_office, date: fmtDate(r.created_at) })}
+                {t("Now with {office} · logged {date}", { office: officeNames.get(r.current_office) ?? r.current_office, date: fmtDate(r.created_at, lang) })}
               </span>
             </Link>
           </li>
@@ -245,7 +248,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
                   {r.tracking_no}
                 </td>
                 <td className="min-w-[18rem] px-4 py-2">
-                  <Link prefetch={false} href={recordHref(r.id)} className="inline-block py-0.5 font-semibold text-ink hover:underline">{r.subject}</Link>
+                  <Link prefetch={false} href={recordHref(r.id)} className="inline-block py-1 font-semibold text-ink hover:underline">{r.subject}</Link>
                   <div className="mt-1 flex flex-wrap gap-1">
                     <PriorityBadge priority={r.priority} />
                     <ConfBadge level={r.confidentiality} />
@@ -255,7 +258,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
                 <td className="hidden px-4 py-2 text-slate-600 xl:table-cell">{r.document_type}</td>
                 <td className="px-4 py-2 text-slate-600">{r.direction === "incoming" ? partyLabel(r.sender_name, r.sender_org) : partyLabel(r.recipient_name, r.recipient_org)}</td>
                 <td className="px-4 py-2"><StatusBadge status={r.status} /><div className="mt-1 text-sm text-slate-600">{officeNames.get(r.current_office) ?? r.current_office}</div></td>
-                <td className="whitespace-nowrap px-4 py-2 text-slate-600">{fmtDate(r.created_at)}</td>
+                <td className="whitespace-nowrap px-4 py-2 text-slate-600">{fmtDate(r.created_at, lang)}</td>
               </tr>
             ))}
             {rows.length === 0 && (
@@ -282,7 +285,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
 
 /** City-wide read-only list for the CMO and CAO heads. Confidential records show no subject and no link. */
 async function CityRecords({ sp }: { sp: Record<string, string | string[] | undefined> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const one = (k: string) => { const v = sp[k]; return cleanParam(Array.isArray(v) ? v[0] : v)?.slice(0, 100) ?? ""; };
   const q = one("q");
   const office = one("office");
@@ -330,7 +333,7 @@ async function CityRecords({ sp }: { sp: Record<string, string | string[] | unde
               )}
               <span className="text-sm text-slate-600">
                 <span className="font-mono">{r.tracking_no}</span> · {r.office} · {t(STATUS_LABEL[r.status] ?? r.status)}
-                {r.due_date ? ` · ${t("Due {date}", { date: fmtDate(r.due_date) })}` : ""}
+                {r.due_date ? ` · ${t("Due {date}", { date: fmtDate(r.due_date, lang) })}` : ""}
               </span>
             </li>
           ))}

@@ -16,6 +16,13 @@ describe("allowedActions", () => {
     expect(allowedActions({ ...base, status: "forwarded", role: "staff" })).toEqual(["receive", "remark"]);
   });
 
+  it("does not offer sending a completed record to another office (QA-084)", () => {
+    for (const role of ["staff", "dept_head", "records_officer"] as const) {
+      expect(allowedActions({ ...base, status: "completed", role })).not.toContain("forward");
+    }
+    expect(allowedActions({ ...base, status: "completed", role: "records_officer" })).toContain("archive");
+  });
+
   it("does not offer release for an incoming record that was just registered", () => {
     expect(allowedActions({ ...base, status: "registered", role: "records_officer" })).not.toContain("release");
   });

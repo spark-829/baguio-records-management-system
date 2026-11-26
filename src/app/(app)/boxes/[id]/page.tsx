@@ -27,7 +27,7 @@ type Box = {
 type InBox = { id: string; tracking_no: string; subject: string; status: Status; created_at: string };
 
 export default async function BoxPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string }> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const { id } = await params;
   const { saved } = await searchParams;
   if (!UUID.test(id)) notFound();
@@ -54,7 +54,7 @@ export default async function BoxPage({ params, searchParams }: { params: Promis
     [t("Years covered"), y ? t(y.key, y.vars) : "—"],
     [t("What is inside"), box.contents ? <span className="whitespace-pre-line">{box.contents}</span> : "—"],
     [t("Notes"), box.notes ? <span className="whitespace-pre-line">{box.notes}</span> : "—"],
-    [t("Added by"), t("{date} by {name}", { date: fmtDate(box.created_at), name: box.creator?.full_name ?? "—" })],
+    [t("Added by"), t("{date} by {name}", { date: fmtDate(box.created_at, lang), name: box.creator?.full_name ?? "—" })],
   ];
 
   return (
@@ -94,7 +94,7 @@ export default async function BoxPage({ params, searchParams }: { params: Promis
                 <li key={r.id} className="min-h-11 py-2">
                   <Link href={`/records/${r.id}`} className="font-mono font-semibold">{r.tracking_no}</Link>
                   <p className="min-w-0 break-words text-sm">{r.subject}</p>
-                  <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600"><StatusBadge status={r.status} />{fmtDate(r.created_at)}</p>
+                  <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600"><StatusBadge status={r.status} />{fmtDate(r.created_at, lang)}</p>
                 </li>
               ))}
             </ul>
@@ -114,7 +114,7 @@ export default async function BoxPage({ params, searchParams }: { params: Promis
                       <td className="px-3 py-2"><Link href={`/records/${r.id}`} className="font-mono whitespace-nowrap">{r.tracking_no}</Link></td>
                       <td className="min-w-0 break-words px-3 py-2">{r.subject}</td>
                       <td className="px-3 py-2"><StatusBadge status={r.status} /></td>
-                      <td className="px-3 py-2 whitespace-nowrap">{fmtDate(r.created_at)}</td>
+                      <td className="px-3 py-2 whitespace-nowrap">{fmtDate(r.created_at, lang)}</td>
                     </tr>
                   ))}
                 </tbody>

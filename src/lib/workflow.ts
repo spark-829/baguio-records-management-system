@@ -38,7 +38,7 @@ const BY_STATUS: Record<Status, ActionKind[]> = {
   forwarded: ["receive", "remark"],
   received: ["act", "forward", "remark", "complete"],
   under_action: ["remark", "forward", "complete"],
-  completed: ["release", "archive", "forward", "remark"],
+  completed: ["release", "archive", "remark"],
   released: ["archive", "remark"],
   archived: [],
 };

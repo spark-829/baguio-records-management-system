@@ -34,7 +34,7 @@ type Row = {
 type SP = { user?: string; record?: string; event?: string; person?: string; more?: string };
 
 export default async function AccessHistoryPage({ searchParams }: { searchParams: Promise<SP> }) {
-  const { t } = await getT();
+  const { t, lang } = await getT();
   const me = await getProfile();
   if (!canAudit(me)) redirect("/");
   const sp = await searchParams;
@@ -99,14 +99,14 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
           <tbody className="divide-y divide-slate-100">
             {rows.map((r) => (
               <tr key={r.id} className={ALERT.has(r.event) ? "bg-red-50/60" : ""}>
-                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.created_at)}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.created_at, lang)}</td>
                 <td className="px-3 py-2">{r.user?.full_name ?? r.email ?? "—"}</td>
                 <td className="whitespace-nowrap px-3 py-2">
                   {t(EVENT_LABEL[r.event] ?? r.event)}
                   {r.event === "login_failed" && r.detail?.attempt ? <span className="text-xs text-slate-500"> (attempt {String(r.detail.attempt)})</span> : null}
                 </td>
                 <td className="px-3 py-2">
-                  {r.record ? <Link className="font-mono whitespace-nowrap text-brand-700 hover:underline" href={`/records/${r.record.id}`}>{r.record.tracking_no}</Link> : "—"}
+                  {r.record ? <Link className="tap-link font-mono whitespace-nowrap text-brand-700 hover:underline" href={`/records/${r.record.id}`}>{r.record.tracking_no}</Link> : "—"}
                   {r.detail?.file ? <span className="text-slate-600"> · {String(r.detail.file)}</span> : null}
                 </td>
                 <td className="px-3 py-2 font-mono text-xs text-slate-600" title={r.user_agent ?? ""}>{r.ip || "—"}</td>
@@ -146,10 +146,10 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
               <tbody className="divide-y divide-slate-100">
                 {(report.data as { tracking_no: string; subject: string; record_id: string; event: string; accessed_by: string; ip: string | null; accessed_at: string }[]).map((r, i) => (
                   <tr key={i}>
-                    <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.accessed_at)}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.accessed_at, lang)}</td>
                     <td className="px-3 py-2">{r.accessed_by}</td>
                     <td className="px-3 py-2">{t(EVENT_LABEL[r.event] ?? r.event)}</td>
-                    <td className="px-3 py-2"><Link className="font-mono whitespace-nowrap text-brand-700 hover:underline" href={`/records/${r.record_id}`}>{r.tracking_no}</Link> <span className="text-slate-600">{r.subject}</span></td>
+                    <td className="px-3 py-2"><Link className="tap-link font-mono whitespace-nowrap text-brand-700 hover:underline" href={`/records/${r.record_id}`}>{r.tracking_no}</Link> <span className="text-slate-600">{r.subject}</span></td>
                     <td className="px-3 py-2 font-mono text-xs">{r.ip || "—"}</td>
                   </tr>
                 ))}
