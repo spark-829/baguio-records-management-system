@@ -3,7 +3,8 @@ import { safeNextPath } from "@/lib/safe-next";
 import { LoginForm } from "./login-form";
 import { BrandLockup, SiteFooter } from "@/components/brand";
 import { LangToggle } from "@/components/lang-toggle";
-import { DEMO_OFFICES, DEMO_START, demoAccountCount, demoEmailParam, demoHref } from "@/lib/demo-accounts";
+import { DEMO_START, demoEmailParam, demoHref } from "@/lib/demo-accounts";
+import { AllAccounts } from "./all-accounts";
 
 
 const NOTICES: Record<string, string> = {
@@ -48,24 +49,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
                   </li>
                 ))}
               </ul>
-              <details className="mt-4">
-                <summary className="cursor-pointer py-1 font-semibold text-brand-800">{t("All {n} accounts, by office", { n: demoAccountCount() })}</summary>
-                <div className="mt-3 space-y-4">
-                  {DEMO_OFFICES.map((o) => (
-                    <div key={o.office}>
-                      <h3 className="text-sm font-semibold text-ink">{t(o.office)}</h3>
-                      <ul className="mt-1 space-y-1">
-                        {o.accounts.map((a) => (
-                          <li key={a.email} className="flex flex-wrap items-baseline gap-x-2">
-                            <a href={demoHref(a.email, nextPath)} className="font-mono text-sm break-all text-brand-700 underline underline-offset-2">{a.email}</a>
-                            <span className="text-sm text-slate-600">{t(a.role)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </details>
+              <AllAccounts next={nextPath} />
             </section>
             <p className="mt-4 text-sm text-slate-600">
               {t("Portfolio demo built by")}{" "}
