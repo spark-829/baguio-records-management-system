@@ -1719,4 +1719,6 @@ export const FIL: Record<string, string> = {
   "Confidential: subject hidden from administrators": "Kumpidensyal: nakatago ang paksa sa mga administrator",
   "Confidential records are not shown to administrators. The records desk and the office holding them can open them.": "Hindi ipinapakita sa mga administrator ang mga kumpidensyal na rekord. Ang records desk at ang opisinang may hawak nito ang maaaring magbukas.",
   "Confidential record": "Kumpidensyal na record",
+  "Auditor: audit log and access history only": "Auditor: audit log at kasaysayan ng pag-access lamang",
+  "Auditor (independent, read-only)": "Auditor (independiyente, basa lamang)",
 };

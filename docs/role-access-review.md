@@ -28,7 +28,7 @@ or RLS), so they show exactly the records in the Records column.
    live, so any signed-in user can read every account's `last_login_at` and `failed_attempts` through the API.
 3. Gap (fixed in app): the admin Users screen could not see or set the auditor flag, had no "no office"
    choice, and changing an auditor's role failed silently (the database refuses `is_auditor` on non-viewers).
-4. Too broad (Vic chose "list only, confidential masked"; `20261126000500`): the Administrator read every
+4. Too broad (Vic chose "list only, confidential masked"; `20261126000500`, applied 2026-11-26): the Administrator read every
    confidential record, file and assistant answer although the role does no records work. Now hidden in the
    database; the Bin and the audit log show confidential entries with details hidden. Raw audit rows still hold
    the old values (the hash chain cannot be edited), so an admin calling the API directly could read them.
