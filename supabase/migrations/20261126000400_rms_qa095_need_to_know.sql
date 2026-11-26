@@ -1,4 +1,4 @@
--- QA-095 (High, 2026-11-26): need-to-know access to records. NOT APPLIED until Vic says so.
+-- QA-095 (High, 2026-11-26): need-to-know access to records. Applied live 2026-11-26 after Vic's okay.
 -- Idempotent. No DROP or DELETE statements.
 --
 -- Before: any signed-in staff member could read every "public" record of every office through the REST API,

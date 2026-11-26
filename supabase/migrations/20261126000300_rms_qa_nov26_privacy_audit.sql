@@ -1,6 +1,5 @@
 -- QA privacy and audit batch, 2026-11-26: QA-097, QA-098, QA-100.
--- Idempotent. No DROP or DELETE statements. Waiting for Vic's okay before it is applied (2026-11-26).
--- Until then the app keeps working: auditor flag reads as false and access-log calls for export and AI fail quietly.
+-- Idempotent. No DROP or DELETE statements. Applied live 2026-11-26 after Vic's okay.
 --
 -- QA-097  Independent read-only auditor. A Viewer (read-only) account flagged is_auditor (for example a
 --         COA resident auditor) may read the audit trail and access history, check the audit chain and run
