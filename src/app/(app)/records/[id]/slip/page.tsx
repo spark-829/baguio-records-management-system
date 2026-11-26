@@ -1,4 +1,4 @@
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import { actionText, dateLocale, type Lang } from "@/lib/i18n/core";
 import Link from "next/link";
 import { headers } from "next/headers";
@@ -12,6 +12,8 @@ import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
 
 const shortStamp = (iso: string, lang: Lang) =>
   new Intl.DateTimeFormat(dateLocale(lang), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "Asia/Manila" }).format(new Date(iso));
+
+export const generateMetadata = pageTitle("Document Routing Slip");
 
 export default async function SlipPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ size?: string }> }) {
   const { t, lang } = await getT();
@@ -63,7 +65,7 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
         </div>
         <div className="mx-auto flex w-fit items-center gap-3 border-2 border-slate-900 bg-white p-2 text-slate-900">
           <div className="text-center">
-            <div dangerouslySetInnerHTML={{ __html: qr }} />
+            <div role="img" aria-label={`${t("QR code")}: ${t("Scan to log receipt")}`} dangerouslySetInnerHTML={{ __html: qr }} />
             <p className="mt-1 text-[9px]">{t("Scan to log receipt")}</p>
           </div>
           <div className="w-40">
@@ -90,7 +92,7 @@ export default async function SlipPage({ params, searchParams }: { params: Promi
             <p className="text-sm">{t(r.direction === "incoming" ? "Incoming" : "Outgoing")} · {r.doc_type?.name} · {t(PRIORITY_LABEL[r.priority])} · {t(CONF_LABEL[r.confidentiality])}</p>
           </div>
           <div className="shrink-0 text-center">
-            <div dangerouslySetInnerHTML={{ __html: qr }} />
+            <div role="img" aria-label={`${t("QR code")}: ${t("Scan to log receipt")}`} dangerouslySetInnerHTML={{ __html: qr }} />
             <p className="mt-1 text-[10px]">{t("Scan to log receipt")}</p>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import Form from "next/form";
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile, canAudit } from "@/lib/session";
@@ -32,6 +32,8 @@ type Row = {
 };
 
 type SP = { user?: string; record?: string; event?: string; person?: string; more?: string };
+
+export const generateMetadata = pageTitle("Access history");
 
 export default async function AccessHistoryPage({ searchParams }: { searchParams: Promise<SP> }) {
   const { t, lang } = await getT();

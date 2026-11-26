@@ -1,7 +1,9 @@
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import { Rich } from "@/components/rich";
 import { getProfile, getSettings } from "@/lib/session";
 import { MfaSetup } from "./mfa-setup";
+
+export const generateMetadata = pageTitle("My account");
 
 export default async function SecurityPage() {
   const { t } = await getT();

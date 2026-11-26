@@ -24,7 +24,7 @@ export function BrandLockup({ sub = true }: { sub?: boolean }) {
       <PineMark className="h-11 w-11 shrink-0 text-gold-100" />
       <span className="leading-tight">
         <span className="block text-xl font-bold tracking-tight text-white">{t("Baguio RMS")}</span>
-        {sub && <span className="hidden text-xs text-brand-100 sm:block">{t("Records Management System")}</span>}
+        {sub && <span className="brand-sub hidden text-xs text-brand-100 sm:block">{t("Records Management System")}</span>}
       </span>
     </span>
   );

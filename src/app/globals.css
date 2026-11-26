@@ -272,6 +272,20 @@ main table tbody tr:hover {
   html[data-assistant="open"] .shell-who { display: none; }
 }
 
+/* Phones held sideways (QA-109): the screen is short, so the header keeps to one slim row (name and office are
+   on My account), and the assistant button shrinks to "Ask" so it does not sit on the Menu button. */
+@media (orientation: landscape) and (max-height: 32rem) {
+  .shell-bar { padding-block: 0.25rem; }
+  .shell-who, .brand-sub { display: none; }
+  .assistant-fab { right: 1rem; bottom: 1rem; }
+  .assistant-fab .fab-long { display: none; }
+  .assistant-fab .fab-short { display: inline; }
+}
+/* Below md "My account" is also in the Menu, so the sideways header can drop it and stay on one row. */
+@media (orientation: landscape) and (max-height: 32rem) and (max-width: 47.99rem) {
+  .shell-account { display: none; }
+}
+
 /* Top page-change bar (src/components/nav-progress.tsx): grows quickly, then slowly, never reaches the end on its own. */
 .nav-progress {
   transform-origin: left;

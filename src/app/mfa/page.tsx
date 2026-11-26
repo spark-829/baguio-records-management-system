@@ -1,7 +1,9 @@
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MfaChallenge } from "./challenge";
+
+export const generateMetadata = pageTitle("Two-step sign-in");
 
 export default async function MfaPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { t } = await getT();

@@ -1,5 +1,5 @@
 import Form from "next/form";
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProfile, canAudit } from "@/lib/session";
@@ -58,6 +58,8 @@ function describe(table: string, action: string, data: Record<string, unknown> |
       return "";
   }
 }
+
+export const generateMetadata = pageTitle("Audit log");
 
 export default async function AuditPage({ searchParams }: { searchParams: Promise<{ t?: string; table?: string; more?: string }> }) {
   const me = await getProfile();

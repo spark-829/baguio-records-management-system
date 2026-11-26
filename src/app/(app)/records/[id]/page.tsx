@@ -108,6 +108,18 @@ type Route = {
   actor: { full_name: string } | null;
 };
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Tab title names the tracking number, never the subject (subjects can be personal or confidential).
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = await getT();
+  const { id } = await params;
+  if (!UUID_RE.test(id)) return { title: t("Records") };
+  const supabase = await createClient();
+  const { data } = await supabase.from("rms_records").select("tracking_no").eq("id", id).maybeSingle();
+  return { title: data?.tracking_no ? t("Record {no}", { no: data.tracking_no }) : t("Records") };
+}
+
 export default async function RecordPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; scan?: string; file?: string; back?: string; copy?: string; delivered?: string; scope?: string }> }) {
   const { t, lang } = await getT();
   const { id } = await params;

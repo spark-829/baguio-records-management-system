@@ -1,8 +1,10 @@
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import { isAiDemo } from "@/lib/ai-demo";
 import { getProfile } from "@/lib/session";
 import { assistantContext } from "@/lib/chat-prompts";
 import { Chat } from "./chat";
+
+export const generateMetadata = pageTitle("Records assistant");
 
 export default async function AssistantPage() {
   const [{ t }, me] = await Promise.all([getT(), getProfile()]);

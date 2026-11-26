@@ -1,4 +1,4 @@
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import QRCode from "qrcode";
@@ -12,6 +12,8 @@ import { DEFAULT_REF_LABEL } from "@/lib/reference-no";
  * Acknowledgment receipt for the person who filed the document: tracking number, tracking code
  * and a QR code that opens the public tracking page. It shows no other personal data.
  */
+export const generateMetadata = pageTitle("Acknowledgment Receipt");
+
 export default async function ReceiptPage({ params }: { params: Promise<{ id: string }> }) {
   const { t, lang } = await getT();
   const { id } = await params;
@@ -56,11 +58,11 @@ export default async function ReceiptPage({ params }: { params: Promise<{ id: st
         <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-300 pt-4">
           <div className="flex shrink-0 gap-4">
             <div>
-              <div dangerouslySetInnerHTML={{ __html: qr }} />
+              <div role="img" aria-label={`${t("QR code")}: ${t("Track your document")}`} dangerouslySetInnerHTML={{ __html: qr }} />
               <p className="mt-1 text-center text-xs font-semibold">{t("Track your document")}</p>
             </div>
             <div>
-              <div dangerouslySetInnerHTML={{ __html: surveyQr }} />
+              <div role="img" aria-label={`${t("QR code")}: ${t("Rate our service")}`} dangerouslySetInnerHTML={{ __html: surveyQr }} />
               <p className="mt-1 text-center text-xs font-semibold">{t("Rate our service")}</p>
             </div>
           </div>

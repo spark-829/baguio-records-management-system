@@ -10,3 +10,11 @@ export async function getT() {
   const lang = await getLang();
   return { lang, t: makeT(lang) };
 }
+
+/** Page title for a static page, in the reader's language (WCAG 2.4.2). Use as `export const generateMetadata = pageTitle("Records")`. */
+export function pageTitle(text: string) {
+  return async () => {
+    const { t } = await getT();
+    return { title: t(text) };
+  };
+}

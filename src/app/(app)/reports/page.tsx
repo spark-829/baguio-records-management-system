@@ -1,7 +1,7 @@
 import Form from "next/form";
 import { txLabel } from "@/lib/transaction-type";
 import { dateLocale } from "@/lib/i18n/core";
-import { getT } from "@/lib/i18n/server";
+import { getT, pageTitle } from "@/lib/i18n/server";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ReportsNav } from "@/components/reports-nav";
@@ -63,6 +63,8 @@ async function Bars({ title, data, limit = 12, latest = false }: { title: string
     </section>
   );
 }
+
+export const generateMetadata = pageTitle("Reports");
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ from?: string; to?: string; scope?: string }> }) {
   const { t, lang } = await getT();

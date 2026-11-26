@@ -1621,4 +1621,8 @@ export const FIL: Record<string, string> = {
   "In this demo, some AI features use DeepSeek, an AI service outside the Philippines. Names and contact details are removed before a record is summarized, and confidential records are never sent.": "Sa demo na ito, gumagamit ang ilang AI feature ng DeepSeek, isang AI service sa labas ng Pilipinas. Tinatanggal ang mga pangalan at contact details bago ibuod ang rekord, at hindi kailanman ipinapadala ang mga kumpidensyal na rekord.",
   "Questions or requests about personal data go to the City's Data Protection Officer: {contact}.": "Ang mga tanong o kahilingan tungkol sa personal na datos ay ipadala sa Data Protection Officer ng Lungsod: {contact}.",
   "Always on: the AI service is outside the Philippines, so this can no longer be switched off.": "Laging naka-on: nasa labas ng Pilipinas ang AI service, kaya hindi na ito maaaring i-off.",
+  "Record {no}": "Record {no}",
+  "Yes, send it": "Oo, ipadala",
+  "Delete this record?": "Burahin ang record na ito?",
+  "QR code": "QR code",
 };

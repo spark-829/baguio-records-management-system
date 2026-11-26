@@ -6,7 +6,7 @@ import { NavProgress } from "@/components/nav-progress";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Baguio RMS",
+  title: { default: "Baguio RMS", template: "%s · Baguio RMS" },
   description: "Records Management System demo: register, route, track, search and report on city government documents.",
 };
 

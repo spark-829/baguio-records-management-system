@@ -30,6 +30,17 @@ type Rec = {
 
 type Step = { created_at: string; action_taken: string | null; actor: { full_name: string } | null; from_office: { name: string } | null };
 
+export async function generateMetadata({ params }: { params: Promise<{ tracking: string }> }) {
+  const { t } = await getT();
+  let tn = "";
+  try {
+    tn = decodeURIComponent((await params).tracking).trim().toUpperCase();
+  } catch {
+    tn = "";
+  }
+  return { title: TRACKING_RE.test(tn) ? t("Record {no}", { no: tn }) : t("Records") };
+}
+
 export default async function ScanReceivePage({ params, searchParams }: { params: Promise<{ tracking: string }>; searchParams: Promise<{ received?: string }> }) {
   const { t, lang } = await getT();
   const { tracking: raw } = await params;

@@ -38,11 +38,19 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
   const heading = useRef<HTMLHeadingElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
   const confirmBox = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLParagraphElement>(null);
+  const focusStatus = useRef(false);
   const wasOpen = useRef(false);
   // Keyboard users: focus moves into the panel when it opens, to the question when confirming, and back when it closes.
+  // After a save the button that opened the panel may be gone (the record moved on), so focus goes to the result
+  // message instead of dropping to the page (QA-106).
   useEffect(() => {
     if (open) heading.current?.focus();
-    else if (wasOpen.current) opener.current?.focus();
+    else if (wasOpen.current) {
+      if (focusStatus.current || !opener.current) statusRef.current?.focus();
+      else opener.current.focus();
+      focusStatus.current = false;
+    }
     wasOpen.current = open;
   }, [open]);
   const [office, setOffice] = useState("");
@@ -81,7 +89,10 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
     if (!saving || pending || state === before.current) return;
     setSaving(false);
     setConfirming(false);
-    if (state?.ok) setOpen(false);
+    if (state?.ok) {
+      focusStatus.current = true;
+      setOpen(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, pending]);
   const kind: ActionKind = choice === "return" ? "forward" : (choice as ActionKind);
@@ -116,11 +127,19 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
       {labelOf(c)}
     </button>
   );
+  // One live region that stays on the page whether the panel is open or not, so "Saving…" is announced the
+  // moment the save starts and the result as soon as it comes back (QA-106).
+  const isSend = kind === "forward";
+  const statusText = busy ? t(isSend ? "Sending…" : "Saving…") : !open && state?.ok ? t(state.ok) : "";
+  const status = (
+    <p ref={statusRef} tabIndex={-1} role="status" className={`text-sm outline-none ${busy ? "text-slate-700" : "text-emerald-700"} ${statusText ? "" : "sr-only"}`}>
+      {statusText}
+    </p>
+  );
   if (!open)
     return (
       <div className="space-y-2">
-        {pending && <p className="text-sm text-slate-700" role="status">{t("Saving…")}</p>}
-        {!pending && state?.ok && <p className="text-sm text-emerald-700" role="status">{t(state.ok)}</p>}
+        {status}
         {!pending && state?.error && <p className="text-sm text-red-700" role="alert">{t("Not saved:")} {t(state.error)}</p>}
         <div className="space-y-2">
           {btns.primary && choiceButton(btns.primary, "btn-primary")}
@@ -136,6 +155,8 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
     );
 
   return (
+    <div className="space-y-2">
+    {status}
     <form
       ref={panel}
       action={(fd) => {
@@ -270,14 +291,14 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
             <p className="text-sm text-amber-950">{t("Delivery is not recorded yet. You cannot add it after filing away.")}</p>
           )}
           <div className="flex gap-2">
-            <button className="btn-primary flex-1" disabled={busy} aria-busy={busy}>{t(busy ? "Saving…" : "Yes, save it")}</button>
+            <button className="btn-primary flex-1" disabled={busy} aria-busy={busy}>{t(busy ? (isSend ? "Sending…" : "Saving…") : isSend ? "Yes, send it" : "Yes, save it")}</button>
             <button type="button" className="btn-secondary flex-1" disabled={busy} onClick={() => setConfirming(false)}>{t("No, go back")}</button>
           </div>
         </div>
       ) : (
         <div className="flex gap-2">
           <button type="submit" className="btn-primary flex-1" disabled={choice === "forward" && !office}>
-            {t("Save")}
+            {t(isSend ? "Send" : "Save")}
           </button>
           <button type="button" className="btn-secondary flex-1" onClick={close}>
             {t("Cancel")}
@@ -285,6 +306,7 @@ export function ActionForm({ recordId, trackingNo, actions, offices, returnTo, e
         </div>
       )}
     </form>
+    </div>
   );
 }
 
@@ -293,8 +315,15 @@ export function NoteForm({ recordId }: { recordId: string }) {
   const t = useT();
   const [state, action, pending] = useActionState(recordAction, undefined);
   const [text, setText] = useState("");
+  const done = useRef<HTMLParagraphElement>(null);
+  const box = useRef<HTMLTextAreaElement>(null);
+  // The button is disabled while saving, which drops focus to the page. Put it back: on the "Note added"
+  // message after a save, or in the box to fix and retry after an error (QA-106).
   useEffect(() => {
-    if (state?.ok) setText("");
+    if (state?.ok) {
+      setText("");
+      done.current?.focus();
+    } else if (state?.error) box.current?.focus();
   }, [state]);
   return (
     <form
@@ -309,9 +338,9 @@ export function NoteForm({ recordId }: { recordId: string }) {
       <input type="hidden" name="record_id" value={recordId} />
       <input type="hidden" name="kind" value="remark" />
       <label className="label" htmlFor="note-text">{t("Add a note")}</label>
-      <textarea id="note-text" name="remarks" rows={3} maxLength={2000} className="input" value={text} readOnly={pending} onChange={(e) => setText(e.target.value)} />
+      <textarea ref={box} id="note-text" name="remarks" rows={3} maxLength={2000} className="input" value={text} readOnly={pending} onChange={(e) => setText(e.target.value)} />
       {pending && <p className="text-sm text-slate-700" role="status">{t("Saving…")}</p>}
-      {!pending && state?.ok && <p className="text-sm text-emerald-700" role="status">{t("Note added")}</p>}
+      {!pending && state?.ok && <p ref={done} tabIndex={-1} className="text-sm text-emerald-700 outline-none" role="status">{t("Note added")}</p>}
       {!pending && state?.error && <p className="text-sm text-red-700" role="alert">{t("Not saved:")} {t(state.error)}</p>}
       <button type="submit" className="btn-secondary" disabled={pending || !text.trim()}>{t(pending ? "Saving…" : "Add note")}</button>
     </form>
@@ -385,24 +414,50 @@ export function DeleteForm({ recordId }: { recordId: string }) {
   const t = useT();
   const [state, action, pending] = useActionState(deleteRecord, undefined);
   const [open, setOpen] = useState(false);
+  const opener = useRef<HTMLButtonElement>(null);
+  const reason = useRef<HTMLInputElement>(null);
+  const wasOpen = useRef(false);
+  // Same pattern as the Send confirm (QA-104): focus goes into the confirm box when it opens, Esc closes it,
+  // and focus returns to the "Delete this record…" button.
+  useEffect(() => {
+    if (open) reason.current?.focus();
+    else if (wasOpen.current) opener.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
+  useEffect(() => {
+    if (state?.error) reason.current?.focus();
+  }, [state]);
   if (!open)
     return (
-      <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 items-center text-sm text-red-700 hover:underline">
+      <button ref={opener} type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 items-center text-sm text-red-700 hover:underline">
         {t("Delete this record…")}
       </button>
     );
   return (
-    <form action={action} className="space-y-2">
+    <form
+      action={action}
+      className="space-y-2 rounded-lg border border-red-300 bg-red-50 p-3"
+      role="alertdialog"
+      aria-labelledby="del-title"
+      aria-describedby="del-note"
+      onKeyDown={(e) => {
+        if (e.key === "Escape" && !pending) {
+          e.preventDefault();
+          setOpen(false);
+        }
+      }}
+    >
+      <h3 id="del-title" className="font-semibold text-red-900">{t("Delete this record?")}</h3>
       <input type="hidden" name="record_id" value={recordId} />
       <label className="label" htmlFor="reason">{t("Reason for deleting")}</label>
-      <input id="reason" name="reason" className="input" placeholder={t("e.g. Duplicate of IN-2026-0004")} minLength={5} required />
-      <p className="text-xs text-slate-500">{t("The record moves to the deleted-records bin. Only an administrator can restore it. This is logged.")}</p>
-      {state?.error && <p className="text-sm text-red-700">{t(state.error)}</p>}
-      <div className="flex gap-2">
-        <button className="btn bg-red-700 text-white hover:bg-red-800" disabled={pending}>
+      <input ref={reason} id="reason" name="reason" className="input" placeholder={t("e.g. Duplicate of IN-2026-0004")} minLength={5} required aria-invalid={state?.error ? true : undefined} aria-describedby={state?.error ? "del-err" : undefined} />
+      <p id="del-note" className="text-sm text-slate-700">{t("The record moves to the deleted-records bin. Only an administrator can restore it. This is logged.")}</p>
+      {state?.error && <p id="del-err" className="text-sm text-red-700" role="alert">{t(state.error)}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button className="btn bg-red-700 text-white hover:bg-red-800" disabled={pending} aria-busy={pending}>
           {t(pending ? "Deleting…" : "Yes, move to bin")}
         </button>
-        <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>{t("Cancel")}</button>
+        <button type="button" className="btn-secondary" disabled={pending} onClick={() => setOpen(false)}>{t("Cancel")}</button>
       </div>
     </form>
   );
