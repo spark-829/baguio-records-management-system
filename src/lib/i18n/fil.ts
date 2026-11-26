@@ -1601,7 +1601,7 @@ export const FIL: Record<string, string> = {
   "The _Actions_ box has one button for each thing you can do, such as [[Mark as received]], [[Send to another office]] or [[Mark as done]]. Less common ones are under _More actions_.": "May isang button ang kahong _Actions_ para sa bawat puwede ninyong gawin, gaya ng [[Mark as received]], [[Send to another office]] o [[Mark as done]]. Nasa _More actions_ ang mga hindi gaanong ginagamit.",
   "Press the button for what you want to do. To return it to the office that sent it, press _Send back to …_. To add a note only, type it under _History and notes_ and press [[Add note]].": "Pindutin ang button ng gusto ninyong gawin. Para ibalik sa opisinang nagpadala, pindutin ang _Send back to …_. Para magdagdag lang ng tala, i-type ito sa ilalim ng _History and notes_ at pindutin ang [[Add note]].",
   "Showing {view}": "Ipinapakita ang {view}",
-  "Every field needs an answer unless it says (optional).": "Kailangang sagutan ang bawat patlang maliban kung nakasulat na (optional).",
+  "Every field needs an answer unless it says (optional).": "Kailangang sagutan ang bawat patlang maliban kung nakasulat na (hindi kailangan).",
   "Late in all offices": "Huli na sa lahat ng opisina",
   "Late records in every office you can see": "Mga huling record sa bawat opisinang nakikita ninyo",
   "Late records now in your office": "Mga huling record na nasa opisina ninyo ngayon",
