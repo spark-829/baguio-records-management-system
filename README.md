@@ -82,7 +82,8 @@ Set up a new Supabase project by running the files in `supabase/migrations/` in 
 ## Test
 
 ```bash
-npm test                         # workflow rules
+npm test                         # workflow rules (Node 22, see .nvmrc)
+npm run test:vm                  # same tests in VM threads, if the default run fails on every file
 # access rules: run supabase/tests/access_rules.sql in the Supabase SQL editor
 ```
 
@@ -95,6 +96,8 @@ npm run deploy
 ```
 
 The Supabase URL and publishable key are public values set in `wrangler.jsonc`.
+
+Cloudflare Workers Builds is connected to the repo: merging to `main` deploys production by itself, and each PR branch gets a preview version. Setup for local checks (`npm run design-check`), preview URLs and other notes: [`docs/local-setup-and-deploy.md`](docs/local-setup-and-deploy.md).
 
 ### AI demo mode
 
