@@ -129,7 +129,7 @@ export function AssistantLauncher({ userId, greeting, scope, office, prompts, de
             aria-labelledby="assistant-panel-title"
             className={`no-print fixed top-0 right-0 bottom-0 z-40 h-dvh w-full flex-col overflow-hidden border-l border-slate-300 bg-white shadow-xl sm:w-[26rem] ${shown ? "flex" : "hidden"}`}
           >
-            <div className="on-dark flex items-center gap-2 bg-brand-800 px-4 py-2 text-white">
+            <div className="on-dark flex items-center gap-2 bg-brand-700 px-4 py-2 text-white">
               <h2 id="assistant-panel-title" className="min-w-0 flex-1 text-lg font-bold text-white">{t("Records assistant")}</h2>
               <button type="button" onClick={closeAndReturnFocus} aria-label={t("Close assistant")} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-white/10">
                 <CloseIcon />

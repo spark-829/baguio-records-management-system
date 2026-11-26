@@ -28,7 +28,7 @@ export default async function SurveyPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="on-dark border-b-4 border-gold-500 bg-brand-800 text-white">
+      <header className="on-dark border-b-4 border-gold-500 bg-brand-700 text-white">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
           <BrandLockup />
           <div className="ml-auto"><LangToggle dark /></div>

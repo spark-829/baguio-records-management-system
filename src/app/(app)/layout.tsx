@@ -50,7 +50,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <a href="#main" className="sr-only z-50 rounded-lg bg-white px-4 py-3 font-semibold text-brand-800 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         {t("Skip to main content")}
       </a>
-      <header className="no-print on-dark border-b-4 border-gold-500 bg-brand-800 text-white">
+      <header className="no-print on-dark border-b-4 border-gold-500 bg-brand-700 text-white">
         <div className="shell-bar mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
           <Link prefetch={false} href="/" className="flex min-h-11 items-center rounded-lg">
             <BrandLockup />
