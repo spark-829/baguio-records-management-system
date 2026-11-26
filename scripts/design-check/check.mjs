@@ -8,18 +8,52 @@
 //   RMS_EMAIL=records@rms-demo.test RMS_PASSWORD=... \
 //     node scripts/design-check/check.mjs                     # + signed-in pages
 //   options: --url <base> --only /records,/reports --out report.json
+//            --browser msedge|chrome|chromium
 //
-// Needs Playwright with Chromium (preinstalled in Claude cloud sessions;
-// elsewhere: npm i -g playwright && npx playwright install chromium).
+// Settings can also come from .env.local (read if present, never committed):
+//   RMS_URL       site to check (default: the live site); a PR preview URL or
+//                 http://localhost:3000 for local work
+//   RMS_EMAIL, RMS_PASSWORD   a demo account, for the signed-in pages
+//   RMS_BROWSER   msedge or chrome to use an installed browser (no download);
+//                 empty uses Playwright's own Chromium
+//   RMS_PLAYWRIGHT  folder where playwright-core is installed outside the
+//                 repo (keeps the repo's node_modules clean)
+// Needs the Playwright package (preinstalled in Claude cloud sessions).
+// Locally: npm i --prefix <folder> playwright-core, set RMS_PLAYWRIGHT=<folder>
+// and RMS_BROWSER=msedge (Edge ships with Windows).
+// Full setup: docs/local-setup-and-deploy.md.
 // Signing in writes the normal login and record-view audit rows. A wrong
 // password counts toward the account lockout, so double-check it.
 // Gentle on purpose: pages load one at a time (the live site is on
 // Cloudflare's free plan). About 2 loads per page.
 import { createRequire } from "node:module";
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 const require = createRequire(import.meta.url);
-const { chromium } = require("playwright");
+if (existsSync(".env.local")) process.loadEnvFile(".env.local"); // does not override variables already set
+
+const loadPlaywright = () => {
+  const extra = process.env.RMS_PLAYWRIGHT;
+  const requirers = [...(extra ? [createRequire(join(resolve(extra), "package.json"))] : []), require];
+  for (const req of requirers) {
+    for (const name of ["playwright", "playwright-core"]) {
+      try {
+        return req(name);
+      } catch (e) {
+        if (e?.code !== "MODULE_NOT_FOUND") throw e;
+      }
+    }
+  }
+  console.error(
+    "design-check: Playwright is not installed.\n" +
+      "  npm i --prefix <folder outside the repo> playwright-core\n" +
+      "  then set RMS_PLAYWRIGHT=<that folder> and RMS_BROWSER=msedge (or put them in .env.local).\n" +
+      "  See docs/local-setup-and-deploy.md.",
+  );
+  process.exit(2);
+};
+const { chromium } = loadPlaywright();
 const axeSource = require("fs").readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
 
 const arg = (name) => {
@@ -27,6 +61,9 @@ const arg = (name) => {
   return i > -1 ? process.argv[i + 1] : undefined;
 };
 const BASE = (arg("url") ?? process.env.RMS_URL ?? "https://baguio-rms.vicsonyaris29.workers.dev").replace(/\/$/, "");
+// "chromium" or empty = Playwright's bundled Chromium; msedge / chrome = the installed browser.
+const BROWSER = arg("browser") ?? process.env.RMS_BROWSER ?? "";
+const CHANNEL = BROWSER && BROWSER !== "chromium" ? BROWSER : undefined;
 const OUT = arg("out");
 const ONLY = arg("only")?.split(",");
 
@@ -205,7 +242,8 @@ async function checkPage(page, path, vp) {
   return problems;
 }
 
-const browser = await chromium.launch();
+const browser = await chromium.launch(CHANNEL ? { channel: CHANNEL } : {});
+console.log(`design-check: ${BASE} in ${CHANNEL ?? "chromium"}`);
 const results = [];
 const signedIn = Boolean(process.env.RMS_EMAIL && process.env.RMS_PASSWORD);
 const paths = ONLY ? ONLY.filter((p) => signedIn || PUBLIC.includes(p)) : [...PUBLIC, ...(signedIn ? SIGNED_IN : [])];
