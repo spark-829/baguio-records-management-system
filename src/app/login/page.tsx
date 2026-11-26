@@ -27,7 +27,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <a href="#main" className="sr-only z-50 rounded-lg bg-white px-4 py-3 font-semibold text-brand-800 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         {t("Skip to main content")}
       </a>
-      <header className="on-dark border-b-4 border-gold-500 bg-brand-800 text-white">
+      <header className="on-dark border-b-4 border-gold-500 bg-brand-700 text-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
           <BrandLockup />
           <div className="ml-auto"><LangToggle dark /></div>

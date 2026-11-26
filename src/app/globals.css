@@ -2,19 +2,19 @@
 
 /*
  * Design tokens: city palette, read from baguio.gov.ph on 2026-11-26
- * (teal, deep forest, mint tints, navy text accents, cool grey page; no gold).
+ * (teal, deep forest, mint tints, navy text accents, light mint page; no gold; header is brand-700 teal, only the footer is deep).
  * Used by every office and role since 2026-11-26 (first CGSO only).
  * Original design for a demo system: no official seals, logos or emblems.
  *
  * Contrast (WCAG 2.1):
  *   white on brand-700 #1f7360 ............. 5.7:1 (on page 4.9:1)
- *   white on brand-800 #1c373e ............. 12.6:1
- *   brand-900 #0f342c on page #ebeff3 ...... 11.7:1
+ *   white on brand-800 #195849 ............. 8.3:1
+ *   brand-900 #0f342c on page #f4f8f7 ...... 12.6:1
  *   brand-600 #288c75 on white ............. 4.1:1 (large text, borders only)
- *   gold-500 #addfd3 on brand-800 .......... 8.6:1 (mint stripe)
+ *   gold-500 #addfd3 on brand-700 .......... 3.9:1 (mint stripe, non-text)
  *   gold-800 #0f342c on gold-100 #d6efe9 ... 11.2:1
  *   slate-400 #4f6a86 to slate-600 #2a4a6c .. 4.9 to 9.2:1
- *   ink #404040 on page #ebeff3 ............ 9:1
+ *   ink #404040 on page #f4f8f7 ............ 9:1
  *   line #d3dbe3 on page ................... decorative only
  *   input border #7d8b99 on white .......... 3.5:1 (non-text, >= 3:1)
  */
@@ -25,7 +25,7 @@
   --color-brand-200: #addfd3;
   --color-brand-600: #288c75;
   --color-brand-700: #1f7360;
-  --color-brand-800: #1c373e; /* header (city footer colour) */
+  --color-brand-800: #195849; /* hover, dark text (city teal-800) */
   --color-brand-900: #0f342c; /* headings, footer */
 
   /* "Gold" names kept so classes stay stable; the city site has no gold, so these are mints. */
@@ -40,7 +40,7 @@
   --color-slate-500: #355c87;
   --color-slate-600: #2a4a6c;
 
-  --color-page: #ebeff3;
+  --color-page: #f4f8f7; /* light mint-white, like the city site */
   --color-line: #d3dbe3; /* card edges, dividers: decorative, never the only signal */
   --color-ink: #404040;
   --color-input-border: #7d8b99; /* 3.5:1 on white */
