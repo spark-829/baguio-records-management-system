@@ -3,6 +3,10 @@
 Read this instead of exploring. Update it in the same PR when you add a
 screen, lib module, table or migration.
 
+Claude setup: `.claude/agents/` (designer, planner, implementer, reviewer),
+`.claude/skills/` (impeccable, design-taste-frontend, ui-ux-pro-max,
+lean-session). Token rules: `CLAUDE.md`; usage log: `docs/token-usage.md`.
+
 ## Request flow
 
 `src/middleware.ts` refreshes the Supabase session and sends signed-out users
