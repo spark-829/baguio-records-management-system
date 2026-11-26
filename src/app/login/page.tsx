@@ -12,6 +12,7 @@ const NOTICES: Record<string, string> = {
   locked: "This account is locked. Try again later or ask an administrator to unlock it.",
   idle: "You were signed out because the computer was not used for a while. This keeps records safe. Please sign in again.",
   "signed-out": "You have signed out safely.",
+  expired: "Your sign-in has ended. Please sign in again.",
 };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string; email?: string }> }) {

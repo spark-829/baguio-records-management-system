@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
+import { SEEN_COOKIE, hardenCookie, signSeen } from "@/lib/session-cookie";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import { safeNextPath } from "@/lib/safe-next";
@@ -19,7 +21,7 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   const { data: guard } = await supabase.rpc("rms_login_check", { p_email: email });
   if (guard?.locked) return { email, error: t("This account is locked after too many failed sign-ins. Try again in {n} minute(s) or ask an administrator to unlock it.", { n: guard.minutes }) };
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data: signed, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     const { data: fail } = await supabase.rpc("rms_login_failed", { p_email: email });
     if (fail?.locked) return { email, error: t("Too many failed sign-ins. This account is locked for {n} minutes.", { n: fail.minutes }) };
@@ -32,6 +34,17 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   if (!ok) {
     await supabase.auth.signOut();
     return { email, error: "This account is locked or has no active RMS access. Ask an administrator." };
+  }
+
+  // Start the server-side idle clock (QA-089); the middleware renews it on each page the user opens.
+  const key = process.env.RMS_SESSION_KEY || process.env.RMS_PROXY_KEY;
+  const userId = signed.user?.id;
+  if (key && userId) {
+    const { data: idle } = await supabase.from("rms_settings").select("value").eq("key", "idle_timeout_minutes").maybeSingle();
+    const minutes = Number(idle?.value ?? 15);
+    const now = Date.now() / 1000;
+    const value = await signSeen(key, userId, { start: now, seen: now, limit: Number.isFinite(minutes) && minutes > 0 ? minutes : 0 });
+    (await cookies()).set(SEEN_COOKIE, value, hardenCookie({}, process.env.NODE_ENV === "production"));
   }
 
   // Admins who turned on two-step sign-in must enter their authenticator code next.

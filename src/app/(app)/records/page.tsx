@@ -3,7 +3,7 @@ import { getT } from "@/lib/i18n/server";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getProfile } from "@/lib/session";
-import { filtersFromParams, filtersToParams, searchRecordsPage } from "@/lib/search";
+import { cleanParam, filtersFromParams, filtersToParams, searchRecordsPage } from "@/lib/search";
 import { STATUS_LABEL, STATUS_ORDER, fmtDate, partyLabel } from "@/lib/labels";
 import { foundText, listSize } from "@/lib/list-size";
 import { listQuery } from "@/lib/back-link";
@@ -283,7 +283,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
 /** City-wide read-only list for the CMO and CAO heads. Confidential records show no subject and no link. */
 async function CityRecords({ sp }: { sp: Record<string, string | string[] | undefined> }) {
   const { t } = await getT();
-  const one = (k: string) => { const v = sp[k]; const x = Array.isArray(v) ? v[0] : v; return typeof x === "string" ? x.trim().slice(0, 100) : ""; };
+  const one = (k: string) => { const v = sp[k]; return cleanParam(Array.isArray(v) ? v[0] : v)?.slice(0, 100) ?? ""; };
   const q = one("q");
   const office = one("office");
   const late = one("late") === "1";

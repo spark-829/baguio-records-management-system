@@ -16,7 +16,7 @@ export function AlertBell({ officeCode }: { officeCode: string | null }) {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch("/api/alerts", { cache: "no-store" });
+      const res = await fetch("/api/alerts", { cache: "no-store", headers: { "x-rms-background": "1" } });
       if (!res.ok) return;
       setData(parseAlerts(await res.json()));
     } catch {

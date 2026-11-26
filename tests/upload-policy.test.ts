@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   checkUpload,
+  matchesMagic,
   duplicateOf,
   encodePlan,
   formatBytes,
@@ -108,5 +109,21 @@ describe("formatBytes", () => {
   it("formats", () => {
     expect(formatBytes(491520)).toBe("480 KB");
     expect(formatBytes(4404019)).toBe("4.2 MB");
+  });
+});
+
+describe("matchesMagic (QA-093)", () => {
+  const b = (...x: number[]) => new Uint8Array([...x, ...new Array(12).fill(0)].slice(0, 12));
+  it("accepts real file starts", () => {
+    expect(matchesMagic("application/pdf", new TextEncoder().encode("%PDF-1.7\n   "))).toBe(true);
+    expect(matchesMagic("image/png", b(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))).toBe(true);
+    expect(matchesMagic("image/jpeg", b(0xff, 0xd8, 0xff, 0xe0))).toBe(true);
+    expect(matchesMagic("image/webp", new TextEncoder().encode("RIFF\0\0\0\0WEBP"))).toBe(true);
+  });
+  it("refuses a page or script renamed as a PDF or image", () => {
+    expect(matchesMagic("application/pdf", new TextEncoder().encode("<html><script"))).toBe(false);
+    expect(matchesMagic("image/png", b(0xff, 0xd8, 0xff))).toBe(false);
+    expect(matchesMagic("image/webp", new TextEncoder().encode("RIFF\0\0\0\0WAVE"))).toBe(false);
+    expect(matchesMagic("text/html", new TextEncoder().encode("%PDF-1.7"))).toBe(false);
   });
 });
