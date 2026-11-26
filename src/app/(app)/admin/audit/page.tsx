@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getProfile, canAudit } from "@/lib/session";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS_LABEL, fmtDateTime } from "@/lib/labels";
-import { integrityErrorText, profileText, routeText, checkCoverageText, type CheckInfo, type RouteLookups } from "@/lib/audit-text";
+import { adminMaskedText, integrityErrorText, profileText, routeText, checkCoverageText, type CheckInfo, type RouteLookups } from "@/lib/audit-text";
 import type { Status } from "@/lib/types";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -87,7 +87,8 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   }
 
   // Routing rows only hold ids; look up tracking numbers and office names in batches.
-  const routeRows = (rows ?? []).filter((r) => r.table_name === "rms_routes");
+  // Attachment rows are looked up too: a record the admin cannot see (confidential) gets its details hidden.
+  const routeRows = (rows ?? []).filter((r) => r.table_name === "rms_routes" || r.table_name === "rms_attachments");
   const recordIds = [
     ...new Set(
       routeRows
@@ -146,7 +147,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
                 <td className="px-3 py-2">{r.actor_id ? names.get(r.actor_id) ?? "—" : t("System")}</td>
                 <td className="px-3 py-2">{t(TABLE_LABEL[r.table_name] ?? r.table_name)}</td>
                 <td className="px-3 py-2">{t(r.action === "INSERT" ? "Added" : r.action === "UPDATE" ? "Changed" : "Removed")}</td>
-                <td className="px-3 py-2 text-slate-700">{describe(r.table_name, r.action, r.new_data, r.old_data, lk)}</td>
+                <td className="px-3 py-2 text-slate-700">{(me.role === "admin" && adminMaskedText(r.table_name, (r.new_data ?? r.old_data ?? {}) as Record<string, unknown>, lk)) || describe(r.table_name, r.action, r.new_data, r.old_data, lk)}</td>
                 <td className="px-3 py-2 font-mono text-xs text-slate-500">{r.ip || "—"}</td>
               </tr>
             ))}
