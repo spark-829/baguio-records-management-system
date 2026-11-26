@@ -74,7 +74,7 @@ export default async function RecordsPage({ searchParams }: { searchParams: Prom
         </p>
       </div>
 
-      <ListAnnouncer message={`${view ? `${t("Showing {view}", { view: t(view.label) })}: ` : ""}${t(foundText(rows.length, page.more, onlyOpen), { n: rows.length })}`} />
+      <ListAnnouncer token={JSON.stringify(sp)} message={`${view ? `${t("Showing {view}", { view: t(view.label) })}: ` : ""}${t(foundText(rows.length, page.more, onlyOpen), { n: rows.length })}`} />
 
       <TabNav label={t("Saved views")} items={views.map((v) => ({ key: v.key, href: viewHref(f, v), label: t(v.label), current: view?.key === v.key }))} />
 

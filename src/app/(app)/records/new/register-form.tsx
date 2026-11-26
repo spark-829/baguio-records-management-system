@@ -539,11 +539,11 @@ export function RegisterForm(props: {
           <input id="f-copy_source" name="copy_source" required aria-required="true" className="input font-mono uppercase" placeholder="IN-2026-0001" autoComplete="off" />
         </div>
         <div>
-          <label className="label" htmlFor="f-copy_pages">{t("Number of pages")}</label>
+          <label className="label" htmlFor="f-copy_pages">{t("Number of pages (optional)")}</label>
           <input id="f-copy_pages" name="copy_pages" type="number" min={1} max={5000} className="input" />
         </div>
         <div>
-          <label className="label" htmlFor="f-copy_fee">{t("Fee (₱)")}</label>
+          <label className="label" htmlFor="f-copy_fee">{t("Fee (₱) (optional)")}</label>
           <input id="f-copy_fee" name="copy_fee" inputMode="decimal" className="input" />
         </div>
         <fieldset className="md:col-span-2">
@@ -561,7 +561,7 @@ export function RegisterForm(props: {
         </fieldset>
         <label className="flex min-h-11 items-center gap-3 md:col-span-2">
           <input type="checkbox" name="copy_id" className="checkbox" />
-          <span>{t("Valid ID checked")}</span>
+          <span>{t("Valid ID checked (optional)")}</span>
         </label>
         {copyKind === "representative" && (
           <label className="flex min-h-11 items-center gap-3 md:col-span-2">
