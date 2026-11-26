@@ -18,9 +18,11 @@ Rules:
   2. Security: role and RLS checks, input validation, injection, secrets,
      data exposure, file handling.
   3. Missed plan steps and missing tests.
-  4. If the diff touches `.tsx` or CSS: the checks in
-     `docs/design/checklist.md` that apply to it (contrast tokens, target
-     size, `t()` strings, one `h1`, no heavy additions).
+  4. If the diff touches `.tsx` or CSS: only the diff-only design items
+     (`t()` strings with a Filipino line, tokens instead of raw colours,
+     D-WEIGHT-1). The automated checks (contrast, target size, headings,
+     layout) run in QA's nightly `design-check`; do not repeat them here
+     (`docs/qa-checks.md`).
   5. Run `npx tsc --noEmit && npm run lint && npm test 2>&1 | tail -n 40`
      once.
   6. Clear simplifications. Skip style nitpicks.

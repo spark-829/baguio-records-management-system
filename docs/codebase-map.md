@@ -173,6 +173,7 @@ One Vitest file per lib module (`workflow`, `qr`, `deepseek`, `ai-budget`,
 
 Design: `docs/design/` (principles, checklist), `scripts/design-check/check.mjs`
 (`npm run design-check`, axe-core + house checks), `.claude/agents/designer.md`.
+QA: `docs/qa-checks.md` (one owner per check; tester groups).
 
 Secret-dependent jobs skip (exit 0) when their GitHub secrets are missing.
 

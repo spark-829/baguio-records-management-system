@@ -1,8 +1,10 @@
 # Design checklist
 
 Used by the designer agent before a UI change, the reviewer on UI diffs,
-and the QA design checker. Each item cites `principles.md`. **Auto** means
+and QA. Each item cites `principles.md`. **Auto** means
 `npm run design-check` finds it; the rest need eyes on a screenshot.
+Each item has one owner, so nobody checks it twice: see
+`docs/qa-checks.md`.
 
 Severity for QA findings: **High** blocks a task or fails WCAG AA on a core
 flow; **Medium** fails WCAG AA elsewhere or confuses users; **Low** polish.
