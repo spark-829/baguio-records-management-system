@@ -8,7 +8,7 @@ const BAD_ESCAPE = /%(?:0[0-8bcef]|1[0-9a-f]|7f)/i;
 const SECURE = process.env.NODE_ENV === "production";
 
 // The public tracking and developer pages are open to citizens without an account.
-const PUBLIC_PATHS = ["/track", "/survey", "/developer", "/api/health"];
+const PUBLIC_PATHS = ["/track", "/survey", "/developer", "/terms", "/privacy", "/api/health"];
 
 function toLogin(request: NextRequest) {
   const url = request.nextUrl.clone();

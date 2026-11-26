@@ -326,3 +326,16 @@ html[data-navigating] { cursor: progress; }
 @media (min-width: 640px) {
   :root:has([data-sticky-actions]) .assistant-fab { bottom: 5.5rem; }
 }
+
+/* A box that scrolls shows a soft shadow at the edge that has more below or above (scroll shadows). */
+@utility scroll-fade {
+  background:
+    linear-gradient(#fff 30%, rgb(255 255 255 / 0)) center top,
+    linear-gradient(rgb(255 255 255 / 0), #fff 70%) center bottom,
+    radial-gradient(farthest-side at 50% 0, rgb(0 0 0 / 0.18), transparent) center top,
+    radial-gradient(farthest-side at 50% 100%, rgb(0 0 0 / 0.18), transparent) center bottom;
+  background-color: #fff;
+  background-repeat: no-repeat;
+  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+  background-attachment: local, local, scroll, scroll;
+}

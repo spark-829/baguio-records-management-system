@@ -1,10 +1,11 @@
 import { getT, pageTitle } from "@/lib/i18n/server";
 import { safeNextPath } from "@/lib/safe-next";
 import { LoginForm } from "./login-form";
-import { BrandLockup, SiteFooter } from "@/components/brand";
-import { LangToggle } from "@/components/lang-toggle";
+import { SiteFooter } from "@/components/brand";
+import { PublicHeader } from "@/components/public-header";
 import { DEMO_START, demoEmailParam, demoHref } from "@/lib/demo-accounts";
 import { AllAccounts } from "./all-accounts";
+import { LEGAL_VARS } from "@/lib/legal";
 
 
 const NOTICES: Record<string, string> = {
@@ -27,12 +28,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <a href="#main" className="sr-only z-50 rounded-lg bg-white px-4 py-3 font-semibold text-brand-800 focus:not-sr-only focus:fixed focus:top-2 focus:left-2">
         {t("Skip to main content")}
       </a>
-      <header className="on-dark border-b-4 border-gold-500 bg-brand-700 text-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2 sm:py-3">
-          <BrandLockup />
-          <div className="ml-auto"><LangToggle dark /></div>
-        </div>
-      </header>
+      <PublicHeader developer />
       <main id="main" className="flex-1 bg-page px-4 py-8 sm:py-12">
         <div className="mx-auto grid w-full max-w-5xl items-start gap-8 md:grid-cols-2">
           <div className="card p-6 sm:p-8">
@@ -42,14 +38,31 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             )}
             <LoginForm next={nextPath} email={prefill} />
           </div>
-          <div>
+          <section id="help" aria-labelledby="help-h" className="card scroll-mt-4 border-brand-600 bg-brand-50 p-5 md:order-3">
+            <h2 id="help-h" className="text-lg font-bold">{t("Need help signing in?")}</h2>
+            <ul className="mt-2 list-disc space-y-1.5 pl-6">
+              <li>{t("Forgot your password, or is your account locked? Contact the administrator of the system for support.")}</li>
+              <li>{t("New staff member? Ask the administrator to make your own account. Accounts are never shared.")}</li>
+              <li>{t("After {n} wrong passwords the account locks for {m} minutes. Wait, or ask the administrator to unlock it.", { n: LEGAL_VARS.tries, m: LEGAL_VARS.lockMinutes })}</li>
+              <li>
+                {t("Filed a document and want to know where it is? You do not need an account.")}{" "}
+                <a href="/track" className="font-semibold text-brand-700 underline">{t("Track your document")}</a>
+              </li>
+            </ul>
+            <p className="mt-3 flex flex-wrap gap-x-5">
+              <a href="/terms" className="tap-link font-semibold text-brand-700 underline">{t("Terms of use")}</a>
+              <a href="/privacy" className="tap-link font-semibold text-brand-700 underline">{t("Privacy notice")}</a>
+            </p>
+          </section>
+          <div className="md:row-span-2">
             <p className="text-lg text-slate-700">{t("Register incoming and outgoing documents, route them between offices, see where each one is, and find it again in seconds.")}</p>
             {/* The demo account list is for this portfolio demo only; RMS_PRODUCTION=1 hides it (QA-102). */}
             {process.env.RMS_PRODUCTION !== "1" && (
             <section className="card mt-6 p-5" aria-labelledby="demo-accounts">
               <h2 id="demo-accounts" className="text-lg font-bold">{t("Demo accounts (password: Demo@2026)")}</h2>
               <p className="mt-1 text-sm text-slate-600">{t("Choose an email to fill in the sign-in form.")}</p>
-              <ul className="mt-4 divide-y divide-slate-200 border-y border-slate-200">
+              <h3 className="mt-4 font-semibold text-ink">{t("Good places to start")}</h3>
+              <ul className="mt-2 divide-y divide-slate-200 border-y border-slate-200">
                 {DEMO_START.map((d) => (
                   <li key={d.email} className="py-2.5">
                     <a href={demoHref(d.email, nextPath)} className="font-mono text-sm break-words text-brand-700 underline underline-offset-2">{d.email}</a>
