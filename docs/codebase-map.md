@@ -141,8 +141,8 @@ Functions are redefined in later migrations. **Latest definition** lives in:
 | `20261126000100_rms_qa_nov26_privacy_search` | latest `rms_search_records_v5` (text inputs capped, QA-078); `rms_admin_user_signins`; column-level SELECT on `rms_profiles` hides `last_login_at`, `failed_attempts` from non-admins (QA-077) |
 | `20261126000200_rms_qa_nov26_auth_storage` | Storage select/insert need the server proxy key (no direct downloads, QA-088); `rms_login_tickets` + `rms_login_check` issues a ticket; Auth hook `rms_auth_token_hook` (enable in dashboard, QA-087); latest `rms_my_role` (session must exist, under `session_max_hours`, QA-094) |
 <<<<<<< HEAD
-| `20261126000300_rms_qa_nov26_privacy_audit` | NOT APPLIED yet (Vic's okay): `rms_profiles.is_auditor` + `rms_is_auditor` (QA-097), privacy request doc type (QA-098), `rms_log_access_many` + latest `rms_person_access_report` (QA-100) |
-| `20261126000400_rms_qa095_need_to_know` | NOT APPLIED yet (Vic's okay): latest `rms_can_view` and `rms_records_select`, public records only for involved offices (QA-095) |
+| `20261126000300_rms_qa_nov26_privacy_audit` | applied 2026-11-26: `rms_profiles.is_auditor` + `rms_is_auditor` (QA-097), privacy request doc type (QA-098), `rms_log_access_many` + latest `rms_person_access_report` (QA-100) |
+| `20261126000400_rms_qa095_need_to_know` | applied 2026-11-26: latest `rms_can_view` and `rms_records_select`, public records only for involved offices (QA-095) |
 =======
 >>>>>>> f9170f897e6b00e16868becb50764e627ec66a8c
 
