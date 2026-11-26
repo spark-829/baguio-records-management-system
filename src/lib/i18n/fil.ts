@@ -1718,4 +1718,5 @@ export const FIL: Record<string, string> = {
   "For an independent auditor such as the COA resident auditor. Leave the office empty so they see the audit trail only, not the records of an office.": "Para sa independiyenteng auditor gaya ng resident auditor ng COA. Iwanang walang opisina para audit trail lang ang makita nila, hindi ang mga rekord ng isang opisina.",
   "Confidential: subject hidden from administrators": "Kumpidensyal: nakatago ang paksa sa mga administrator",
   "Confidential records are not shown to administrators. The records desk and the office holding them can open them.": "Hindi ipinapakita sa mga administrator ang mga kumpidensyal na rekord. Ang records desk at ang opisinang may hawak nito ang maaaring magbukas.",
+  "Confidential record": "Kumpidensyal na record",
 };

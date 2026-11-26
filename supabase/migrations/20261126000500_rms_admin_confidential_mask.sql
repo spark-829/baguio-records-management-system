@@ -94,3 +94,21 @@ begin
     order by a.created_at desc
     limit 500;
 end $function$;
+
+-- Access history "filter by record": admins can no longer select confidential records, so the tracking number is
+-- turned into an id here (id only, no content). Admins and auditors only.
+create or replace function public.rms_record_id_by_tracking(p_tracking text)
+returns uuid
+language plpgsql
+stable security definer
+set search_path to ''
+as $function$
+begin
+  if public.rms_my_role() is distinct from 'admin' and not public.rms_is_auditor() then raise exception 'admins and auditors only'; end if;
+  return (select r.id from public.rms_records r where r.tracking_no = upper(trim(left(p_tracking, 40))) limit 1);
+end $function$;
+revoke all on function public.rms_record_id_by_tracking(text) from public, anon;
+grant execute on function public.rms_record_id_by_tracking(text) to authenticated;
+
+-- is_auditor stays readable (the table-level revoke in 20261126000100 also drops this column grant when re-run).
+grant select (is_auditor) on public.rms_profiles to authenticated;

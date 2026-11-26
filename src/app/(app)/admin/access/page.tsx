@@ -44,8 +44,9 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
 
   let recordId: string | null = null;
   if (sp.record) {
-    const { data } = await supabase.from("rms_records").select("id").eq("tracking_no", sp.record.trim().toUpperCase()).maybeSingle();
-    recordId = data?.id ?? "00000000-0000-0000-0000-000000000000";
+    // An RPC, not a select: admins cannot select confidential records but still need to see who opened them.
+    const { data } = await supabase.rpc("rms_record_id_by_tracking", { p_tracking: sp.record.trim().toUpperCase() });
+    recordId = (typeof data === "string" && data) || "00000000-0000-0000-0000-000000000000";
   }
   let q = supabase
     .from("rms_access_log")
@@ -108,8 +109,8 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
                   {r.event === "login_failed" && r.detail?.attempt ? <span className="text-xs text-slate-500"> (attempt {String(r.detail.attempt)})</span> : null}
                 </td>
                 <td className="px-3 py-2">
-                  {r.record ? <Link className="tap-link font-mono whitespace-nowrap text-brand-700 hover:underline" href={`/records/${r.record.id}`}>{r.record.tracking_no}</Link> : "—"}
-                  {r.detail?.file ? <span className="text-slate-600"> · {String(r.detail.file)}</span> : null}
+                  {r.record ? <Link className="tap-link font-mono whitespace-nowrap text-brand-700 hover:underline" href={`/records/${r.record.id}`}>{r.record.tracking_no}</Link> : r.detail?.file ? t("Confidential record") : "—"}
+                  {r.record && r.detail?.file ? <span className="text-slate-600"> · {String(r.detail.file)}</span> : null}
                 </td>
                 <td className="px-3 py-2 font-mono text-xs text-slate-600" title={r.user_agent ?? ""}>{r.ip || "—"}</td>
               </tr>
@@ -151,7 +152,7 @@ export default async function AccessHistoryPage({ searchParams }: { searchParams
                     <td className="whitespace-nowrap px-3 py-2 text-slate-600">{fmtDateTime(r.accessed_at, lang)}</td>
                     <td className="px-3 py-2">{r.accessed_by}</td>
                     <td className="px-3 py-2">{t(EVENT_LABEL[r.event] ?? r.event)}</td>
-                    <td className="px-3 py-2"><Link className="tap-link font-mono whitespace-nowrap text-brand-700 hover:underline" href={`/records/${r.record_id}`}>{r.tracking_no}</Link> <span className="text-slate-600">{r.subject}</span></td>
+                    <td className="px-3 py-2">{r.subject === "(confidential)" ? <span className="font-mono whitespace-nowrap">{r.tracking_no}</span> : <Link className="tap-link font-mono whitespace-nowrap text-brand-700 hover:underline" href={`/records/${r.record_id}`}>{r.tracking_no}</Link>} <span className="text-slate-600">{r.subject === "(confidential)" ? t("Confidential record") : r.subject}</span></td>
                     <td className="px-3 py-2 font-mono text-xs">{r.ip || "—"}</td>
                   </tr>
                 ))}

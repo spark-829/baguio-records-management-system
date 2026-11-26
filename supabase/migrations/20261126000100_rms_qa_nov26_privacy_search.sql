@@ -1,6 +1,5 @@
 -- QA Nov 26: QA-077 (sign-in activity readable by every user) and QA-078 (uncapped search text). Idempotent.
--- Nothing here removes rows or rewrites data. is_auditor (added in 20261126000300) is in the grant list:
--- the table-level revoke below also revokes its column grant, so it must be granted again here.
+-- Nothing here removes rows or rewrites data.
 
 -- ============================================================================================
 -- QA-077: last_login_at and failed_attempts are sign-in activity, for administrators only.
@@ -20,7 +19,7 @@ revoke execute on function public.rms_admin_user_signins() from public, anon;
 grant execute on function public.rms_admin_user_signins() to authenticated;
 
 revoke select on public.rms_profiles from anon, authenticated;
-grant select (id, full_name, role, office_id, is_active, created_at, updated_at, locked_until, window_intake, is_auditor)
+grant select (id, full_name, role, office_id, is_active, created_at, updated_at, locked_until, window_intake)
   on public.rms_profiles to authenticated;
 
 -- ============================================================================================
